@@ -1,0 +1,176 @@
+<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
+    <Import Project=".\Sts2PathDiscovery.props" />
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>true</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
+        <PathMap>$(AppOutputBase)=.\</PathMap>
+        <GodotDisabledSourceGenerators>GodotPluginsInitializer</GodotDisabledSourceGenerators>
+        <BaseLibPackageVersion>3.3.2</BaseLibPackageVersion>
+        <ModAnalyzersPackageVersion>0.1.9</ModAnalyzersPackageVersion>
+        <PckPackerPackageVersion>0.1.1</PckPackerPackageVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Mods are built as MSIL while the local game install is platform-specific. -->
+        <NoWarn>$(NoWarn);MSB3270</NoWarn>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Sts2DataDir)' != ''">
+        <ModResourceOutputPath>$(Sts2DataDir)/mods/$(MSBuildProjectName)/</ModResourceOutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Sts2MacOsX64DataDir)' != '' and '$(Sts2MacOsX64DataDir)' != '$(Sts2DataDir)' and Exists('$(Sts2MacOsX64DataDir)')">
+        <SecondaryModResourceOutputPath>$(Sts2MacOsX64DataDir)/mods/$(MSBuildProjectName)/</SecondaryModResourceOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup Condition="Exists('$(Sts2DataDir)')">
+        <Reference Include="0Harmony">
+            <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <Reference Include="sts2">
+            <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup Condition="false">
+        <Publicize Include="sts2" IncludeVirtualMembers="false" IncludeCompilerGeneratedMembers="false" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Alchyr.Sts2.BaseLib" Version="$(BaseLibPackageVersion)" PrivateAssets="All" GeneratePathProperty="true" />
+        <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="$(ModAnalyzersPackageVersion)" PrivateAssets="All" />
+        <PackageReference Include="BSchneppe.StS2.PckPacker" Version="$(PckPackerPackageVersion)" PrivateAssets="All" />
+        <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="All" />
+        <AdditionalFiles Include="Diviner/localization/**/*.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="Diviner/**" />
+        <Compile Remove="materials/**" />
+        <Compile Remove="shaders/**" />
+        <Compile Remove="images/**" />
+        <EmbeddedResource Remove="Diviner/**" />
+        <EmbeddedResource Remove="materials/**" />
+        <EmbeddedResource Remove="shaders/**" />
+        <EmbeddedResource Remove="images/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Condition="Exists('Directory.Build.props')" Include="Directory.Build.props" />
+        <None Include=".gitignore" />
+        <None Include="Diviner.json" />
+        <None Include="project.godot" />
+        <None Include="Diviner/**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ModResourceFiles Include="Diviner/**" />
+    </ItemGroup>
+
+    <Target Name="CheckDependencyPaths">
+        <Error
+            Text="Slay the Spire 2 data not found at path '$(Sts2DataDir)'. Set Sts2Path in Directory.Build.props or pass /p:Sts2Path=..."
+            Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
+    </Target>
+
+    <Target Name="UpdateDependencyVersions" BeforeTargets="BeforeBuild" Condition="Exists('$(MSBuildProjectName).json')">
+        <PropertyGroup>
+            <ManifestPath>$(MSBuildProjectName).json</ManifestPath>
+            <OldManifestContent>$([System.IO.File]::ReadAllText($(ManifestPath)))</OldManifestContent>
+            <NewManifestContent>$([System.Text.RegularExpressions.Regex]::Replace($(OldManifestContent), '("id":\s*"BaseLib",\s*"min_version":\s*")[^"]*', '${1}$(BaseLibPackageVersion)'))</NewManifestContent>
+        </PropertyGroup>
+
+        <WriteLinesToFile
+            Condition="'$(OldManifestContent)' != '$(NewManifestContent)'"
+            File="$(ManifestPath)"
+            Lines="$(NewManifestContent)"
+            Overwrite="true"
+            Encoding="UTF-8" />
+
+        <Message
+            Condition="'$(OldManifestContent)' != '$(NewManifestContent)'"
+            Text="Updated BaseLib dependency version in $(ManifestPath) to $(BaseLibPackageVersion)."
+            Importance="high" />
+    </Target>
+
+    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
+        <ItemGroup>
+            <BuiltModFiles Include="$(TargetPath)" />
+            <BuiltModFiles Include="$(AssemblyName).json" />
+            <BuiltModFiles Include="$(TargetDir)$(TargetName).pdb" Condition="Exists('$(TargetDir)$(TargetName).pdb')" />
+        </ItemGroup>
+
+        <Message Text="Copying Diviner build outputs to $(ModsPath)$(MSBuildProjectName)/." Importance="high" />
+        <Copy SourceFiles="@(BuiltModFiles)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="CopyModResourcesToResourceRoot" AfterTargets="CopyToModsFolderOnBuild" Condition="'$(ModResourceOutputPath)' != ''">
+        <Message Text="Copying Diviner resources to $(ModResourceOutputPath)." Importance="high" />
+        <Copy
+            SourceFiles="@(ModResourceFiles)"
+            DestinationFiles="@(ModResourceFiles->'$(ModResourceOutputPath)%(RecursiveDir)%(Filename)%(Extension)')"
+            SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="CopyModResourcesToSecondaryResourceRoot" AfterTargets="CopyModResourcesToResourceRoot" Condition="'$(SecondaryModResourceOutputPath)' != ''">
+        <Message Text="Copying Diviner resources to $(SecondaryModResourceOutputPath)." Importance="high" />
+        <Copy
+            SourceFiles="@(ModResourceFiles)"
+            DestinationFiles="@(ModResourceFiles->'$(SecondaryModResourceOutputPath)%(RecursiveDir)%(Filename)%(Extension)')"
+            SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="CopyBaseLibDependencyToModsFolder" AfterTargets="CopyModResourcesToResourceRoot" Condition="'$(PkgAlchyr_Sts2_BaseLib)' != ''">
+        <ItemGroup>
+            <BaseLibRuntimeFiles Include="$(PkgAlchyr_Sts2_BaseLib)/lib/net9.0/BaseLib.dll" />
+            <BaseLibRuntimeFiles Include="$(PkgAlchyr_Sts2_BaseLib)/Content/BaseLib.json" />
+            <BaseLibRuntimeFiles Include="$(PkgAlchyr_Sts2_BaseLib)/Content/BaseLib.pck" />
+        </ItemGroup>
+
+        <Message Text="Copying BaseLib $(BaseLibPackageVersion) dependency to $(ModsPath)BaseLib/." Importance="high" />
+        <Copy SourceFiles="@(BaseLibRuntimeFiles)" DestinationFolder="$(ModsPath)BaseLib/" SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="CleanQuickPckOutputsBeforePack" BeforeTargets="PackPck" Condition="'$(PckPackerEnabled)' == 'true'">
+        <ItemGroup>
+            <StaleQuickPckFiles Include="$(PckPackerOutputPath)" />
+            <StaleQuickPckFiles Include="$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck" Condition="'$(ModsPath)' != ''" />
+        </ItemGroup>
+
+        <Delete Files="@(StaleQuickPckFiles)" TreatErrorsAsWarnings="true" />
+    </Target>
+
+    <Target Name="CopyQuickPck" AfterTargets="PackPck" Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
+        <Message Text="Copying quick .pck to $(ModsPath)$(MSBuildProjectName)/." Importance="high" />
+        <Copy SourceFiles="$(PckPackerOutputPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" SkipUnchangedFiles="true" />
+    </Target>
+
+    <Target Name="RequireQuickPckForScriptDeploys" AfterTargets="PackPck" DependsOnTargets="CopyQuickPck" Condition="'$(RequireQuickPck)' == 'true'">
+        <Error
+            Text="Quick PCK packing was skipped because unsupported files were detected. Use Godot publish/export for this asset set, or remove unsupported files."
+            Condition="'$(PckPackerSkipped)' == 'true'" />
+        <Error
+            Text="Quick PCK packing did not produce $(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck."
+            Condition="!Exists('$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck')" />
+    </Target>
+
+    <Target Name="NeedGodotForPublish" BeforeTargets="Publish">
+        <Error
+            Text="Godot path must be set before publishing; Godot not found at '$(GodotPath)'. Set GodotPath in Directory.Build.props."
+            Condition="'$(GodotPath)' == '' or !Exists('$(GodotPath)')" />
+    </Target>
+
+    <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'">
+        <Message Text="Exporting Godot .pck to $(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck." Importance="high" />
+        <Exec
+            Command="&quot;$(GodotPath)&quot; --headless --path &quot;$(MSBuildProjectDirectory)&quot; --export-pack &quot;BasicExport&quot; &quot;$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;"
+            WorkingDirectory="$(MSBuildProjectDirectory)"
+            EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1" />
+    </Target>
+</Project>

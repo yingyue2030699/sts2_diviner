@@ -1,0 +1,15 @@
+.godot/
+.nuget/
+bin/
+obj/
+publish/
+packages/
+.idea/
+.vs/
+*.user
+*.suo
+.DS_Store
+Directory.Build.props
+dist/*-runtime/
+!dist/packages/
+!dist/packages/*.zip

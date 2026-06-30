@@ -1,0 +1,10 @@
+<Project>
+    <PropertyGroup>
+        <!-- Optional: path to MegaDot / Godot 4.5.1 mono for publish/export-pack. -->
+        <!-- <GodotPath>/absolute/path/to/MegaDot_v4.5.1-stable_mono_macos</GodotPath> -->
+
+        <!-- Optional: override if automatic Steam discovery does not find the game. -->
+        <!-- <Sts2Path>/absolute/path/to/steamapps/common/Slay the Spire 2</Sts2Path> -->
+    </PropertyGroup>
+</Project>
+
