@@ -47,15 +47,9 @@ public class TheWrittenHourPower : DivinerCardPower
         "你的回合开始时，如果命运正好为 3，获得 1 点能量并抽 1 张牌。"
     );
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
+    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
-        if (Owner?.Player is not { } player ||
-            side != Owner.Side ||
-            !participants.Contains(Owner) ||
+        if (!ReferenceEquals(player, Owner?.Player) ||
             DestinyService.CurrentDestiny != DestinyConstants.DefaultDestiny)
         {
             return;
