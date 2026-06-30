@@ -16,6 +16,7 @@ public partial class MainFile : Node
     public const string ModId = "Diviner";
 
     private static readonly Regex[] KeywordHighlightRules = BuildKeywordHighlightRules();
+    private static readonly Regex GoldMarkerRegex = new(@"\*([^*]+)\*", RegexOptions.CultureInvariant);
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
@@ -52,7 +53,7 @@ public partial class MainFile : Node
         }
 
         UseUpgradedCardDescription(card, ref description);
-        description = SimpleLoc.TrySimplify("#" + HighlightKeywordTerms(description));
+        description = ApplyGoldHighlights(HighlightKeywordTerms(description));
     }
 
     private static void UseUpgradedCardDescription(CardModel card, ref string description)
@@ -83,6 +84,13 @@ public partial class MainFile : Node
         }
 
         return description;
+    }
+
+    private static string ApplyGoldHighlights(string description)
+    {
+        return GoldMarkerRegex
+            .Replace(description, "[gold]$1[/gold]")
+            .Replace("/*", "*", StringComparison.Ordinal);
     }
 
     private static string ReplaceOutsideGoldHighlights(string description, Regex pattern)
