@@ -213,6 +213,8 @@ public static class DivinationService
             return FallbackRecord(source, "No active run state is available to read.");
         }
 
+        RefreshActivity(runState, player);
+
         List<ForecastCandidate> candidates = [];
         AddBossCandidates(candidates, runState);
         AddAncientCandidates(candidates, runState);
@@ -227,7 +229,7 @@ public static class DivinationService
 
         var freshCandidates = candidates.Where(candidate => !candidate.IsDuplicate).ToList();
         var selectionPool = freshCandidates.Count > 0 ? freshCandidates : candidates;
-        var selected = PickWeighted(selectionPool);
+        var selected = PickWeightedByCategory(selectionPool);
         return new DivinationRecord(
             selected.Category,
             selected.Text,
@@ -322,7 +324,7 @@ public static class DivinationService
             return;
         }
 
-        var option = TryDescribeGeneratedAncientOption(ancient);
+        var option = TryDescribeGeneratedAncientOption(ancient, category);
         if (option == null)
         {
             return;
@@ -377,19 +379,27 @@ public static class DivinationService
             return;
         }
 
-        var selectedIds = fromBack
-            ? ids.AsEnumerable().Reverse().Take(count).Reverse().ToList()
-            : ids.Take(count).ToList();
+        var orderedIds = fromBack
+            ? ids.AsEnumerable().Reverse().ToList()
+            : ids.ToList();
+        var category = $"Relic.{rarity}";
+        var activeForecastIds = GetActiveQueuedRelicForecastIds(category, orderedIds);
+        var selectedIds = SelectNextRelicForecastIds(category, orderedIds, count, activeForecastIds);
         if (selectedIds.Count == 0)
         {
             return;
         }
 
-        var text = DivinerLoc.Text(
-            $"Next {label}: {string.Join(", ", selectedIds.Select(FormatModelId))}.",
-            $"下一件{TranslateRelicLabel(rarity)}：{string.Join("，", selectedIds.Select(FormatModelId))}。");
-        var category = $"Relic.{rarity}";
-        bool isDuplicate = Records.Any(record => record.Category == category && record.Text == text);
+        var englishNames = string.Join(", ", selectedIds.Select(FormatModelId));
+        var chineseNames = string.Join("，", selectedIds.Select(FormatModelId));
+        var text = activeForecastIds.Count > 0
+            ? DivinerLoc.Text(
+                $"Next {label} after current forecasts: {englishNames}.",
+                $"当前预示之后的下一件{TranslateRelicLabel(rarity)}：{chineseNames}。")
+            : DivinerLoc.Text(
+                $"Next {label}: {englishNames}.",
+                $"下一件{TranslateRelicLabel(rarity)}：{chineseNames}。");
+        bool isDuplicate = selectedIds.All(id => activeForecastIds.Any(activeId => activeId.Equals(id)));
 
         candidates.Add(new ForecastCandidate(
             category,
@@ -397,6 +407,66 @@ public static class DivinationService
             text,
             PreviewRelicIds: selectedIds,
             IsDuplicate: isDuplicate));
+    }
+
+    private static IReadOnlyList<ModelId> GetActiveQueuedRelicForecastIds(
+        string category,
+        IReadOnlyList<ModelId> orderedQueue)
+    {
+        return Records
+            .Where(record => record.IsActive && record.Category == category)
+            .SelectMany(record => record.GetPreviewRelicIds())
+            .Where(id => orderedQueue.Any(queuedId => queuedId.Equals(id)))
+            .Distinct()
+            .ToList();
+    }
+
+    private static List<ModelId> SelectNextRelicForecastIds(
+        string category,
+        IReadOnlyList<ModelId> orderedQueue,
+        int count,
+        IReadOnlyList<ModelId> activeForecastIds)
+    {
+        int startIndex = FindMostRecentActiveForecastIndex(category, orderedQueue);
+        var selectedIds = orderedQueue
+            .Skip(startIndex + 1)
+            .Where(id => activeForecastIds.All(activeId => !activeId.Equals(id)))
+            .Take(count)
+            .ToList();
+
+        if (selectedIds.Count > 0)
+        {
+            return selectedIds;
+        }
+
+        return orderedQueue
+            .Where(id => activeForecastIds.All(activeId => !activeId.Equals(id)))
+            .Take(count)
+            .ToList();
+    }
+
+    private static int FindMostRecentActiveForecastIndex(string category, IReadOnlyList<ModelId> orderedQueue)
+    {
+        foreach (var record in Records.AsEnumerable().Reverse())
+        {
+            if (!record.IsActive || record.Category != category)
+            {
+                continue;
+            }
+
+            foreach (var relicId in record.GetPreviewRelicIds().Reverse())
+            {
+                for (int i = 0; i < orderedQueue.Count; i++)
+                {
+                    if (orderedQueue[i].Equals(relicId))
+                    {
+                        return i;
+                    }
+                }
+            }
+        }
+
+        return -1;
     }
 
     private static void AddEliteCandidates(List<ForecastCandidate> candidates, IRunState runState)
@@ -475,7 +545,7 @@ public static class DivinationService
         }
     }
 
-    private static AncientOptionForecast? TryDescribeGeneratedAncientOption(AncientEventModel ancient)
+    private static AncientOptionForecast? TryDescribeGeneratedAncientOption(AncientEventModel ancient, string category)
     {
         try
         {
@@ -491,29 +561,63 @@ public static class DivinationService
                 return null;
             }
 
-            var option = optionList.FirstOrDefault(current => !current.IsLocked) ?? optionList.First();
-            if (option.Relic != null)
+            var forecasts = optionList
+                .Where(option => !option.IsLocked)
+                .Select(TryBuildAncientOptionForecast)
+                .Where(forecast => forecast != null)
+                .Cast<AncientOptionForecast>()
+                .ToList();
+            if (forecasts.Count == 0)
             {
-                return new AncientOptionForecast(
-                    DivinerLoc.Text($"relic {FormatModelName(option.Relic)}", $"遗物 {FormatModelName(option.Relic)}"),
-                    option.Relic.Id);
+                forecasts = optionList
+                    .Select(TryBuildAncientOptionForecast)
+                    .Where(forecast => forecast != null)
+                    .Cast<AncientOptionForecast>()
+                    .ToList();
             }
 
-            var title = SafeFormat(option.Title);
-            var description = SafeFormat(option.Description);
-            if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(description))
+            if (forecasts.Count == 0)
             {
-                return new AncientOptionForecast($"{title}: {description}", null);
+                return null;
             }
 
-            var text = !string.IsNullOrWhiteSpace(title) ? title : description;
-            return string.IsNullOrWhiteSpace(text) ? null : new AncientOptionForecast(text, null);
+            var seenRelics = Records
+                .Where(record => record.Category == category)
+                .SelectMany(record => record.GetPreviewRelicIds())
+                .ToList();
+            return forecasts.FirstOrDefault(forecast =>
+                    forecast.PreviewRelicId is { } relicId &&
+                    seenRelics.All(seenId => !seenId.Equals(relicId))) ??
+                forecasts.FirstOrDefault(forecast =>
+                    Records.Where(record => record.Category == category)
+                        .All(record => !record.Text.Contains(forecast.Text, StringComparison.Ordinal))) ??
+                forecasts[0];
         }
         catch (Exception ex)
         {
             MainFile.Logger.Info($"Diviner ancient divination could not inspect options: {ex}");
             return null;
         }
+    }
+
+    private static AncientOptionForecast? TryBuildAncientOptionForecast(EventOption option)
+    {
+        if (option.Relic != null)
+        {
+            return new AncientOptionForecast(
+                DivinerLoc.Text($"relic {FormatModelName(option.Relic)}", $"遗物 {FormatModelName(option.Relic)}"),
+                option.Relic.Id);
+        }
+
+        var title = SafeFormat(option.Title);
+        var description = SafeFormat(option.Description);
+        if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(description))
+        {
+            return new AncientOptionForecast($"{title}: {description}", null);
+        }
+
+        var text = !string.IsNullOrWhiteSpace(title) ? title : description;
+        return string.IsNullOrWhiteSpace(text) ? null : new AncientOptionForecast(text, null);
     }
 
     private static bool IsRecordStillActive(DivinationRecord record, IRunState runState, Player? player)
@@ -601,15 +705,38 @@ public static class DivinationService
         };
     }
 
-    private static ForecastCandidate PickWeighted(IReadOnlyList<ForecastCandidate> candidates)
+    private static ForecastCandidate PickWeightedByCategory(IReadOnlyList<ForecastCandidate> candidates)
     {
         var recentGroups = Records
             .TakeLast(2)
             .Select(record => GetCategoryGroup(record.Category))
             .ToHashSet(StringComparer.Ordinal);
-        var weights = candidates
-            .Select(candidate => recentGroups.Contains(candidate.Group) ? Math.Max(1, candidate.Weight / 8) : candidate.Weight)
+
+        var groups = candidates
+            .GroupBy(candidate => candidate.Group, StringComparer.Ordinal)
+            .Select(group => new ForecastGroup(
+                group.Key,
+                group.ToList(),
+                recentGroups.Contains(group.Key) ? 12 : 100))
             .ToList();
+        int totalGroupWeight = groups.Sum(group => group.Weight);
+        int groupRoll = Random.Shared.Next(Math.Max(1, totalGroupWeight));
+
+        foreach (var group in groups)
+        {
+            groupRoll -= group.Weight;
+            if (groupRoll < 0)
+            {
+                return PickWeightedWithinGroup(group.Candidates);
+            }
+        }
+
+        return PickWeightedWithinGroup(groups[^1].Candidates);
+    }
+
+    private static ForecastCandidate PickWeightedWithinGroup(IReadOnlyList<ForecastCandidate> candidates)
+    {
+        var weights = candidates.Select(candidate => candidate.Weight).ToList();
         int totalWeight = weights.Sum();
         int roll = Random.Shared.Next(Math.Max(1, totalWeight));
 
@@ -740,6 +867,11 @@ public static class DivinationService
         int Weight = 100,
         IReadOnlyList<ModelId>? PreviewRelicIds = null,
         bool IsDuplicate = false);
+
+    private sealed record ForecastGroup(
+        string Group,
+        IReadOnlyList<ForecastCandidate> Candidates,
+        int Weight);
 
     private sealed record AncientOptionForecast(string Text, ModelId? PreviewRelicId);
 }

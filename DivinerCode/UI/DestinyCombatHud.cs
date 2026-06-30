@@ -34,6 +34,7 @@ public static class DestinyCombatHud
 
     private static bool _isOpen;
     private static bool _hideInactive = true;
+    private static string _lastRenderedDivinationSignature = "";
 
     public static void Toggle()
     {
@@ -51,6 +52,7 @@ public static class DestinyCombatHud
     public static void CloseAndDispose()
     {
         _isOpen = false;
+        _lastRenderedDivinationSignature = "";
         if (Engine.GetMainLoop() is not SceneTree tree)
         {
             return;
@@ -259,6 +261,7 @@ public static class DestinyCombatHud
         hideInactive.Toggled += pressed =>
         {
             _hideInactive = pressed;
+            _lastRenderedDivinationSignature = "";
             RefreshIfMounted();
         };
         hideInactive.AddThemeColorOverride("font_color", TextColor);
@@ -330,13 +333,20 @@ public static class DestinyCombatHud
 
     private static void RefreshDivinationList(VBoxContainer list)
     {
+        var records = DivinationService.GetVisibleRecords(_hideInactive);
+        var signature = BuildDivinationListSignature(records);
+        if (signature == _lastRenderedDivinationSignature && list.GetChildCount() > 0)
+        {
+            return;
+        }
+
+        _lastRenderedDivinationSignature = signature;
         foreach (var child in list.GetChildren())
         {
             list.RemoveChild(child);
             child.QueueFree();
         }
 
-        var records = DivinationService.GetVisibleRecords(_hideInactive);
         if (records.Count == 0)
         {
             list.AddChild(CreateRecordLabel(
@@ -382,15 +392,24 @@ public static class DestinyCombatHud
         return row;
     }
 
+    private static string BuildDivinationListSignature(IReadOnlyList<DivinationRecord> records)
+    {
+        return string.Join(
+            "|",
+            records.Select(record =>
+                $"{_hideInactive}:{record.Category}:{record.Text}:{record.Floor}:{record.PreviewRelicIds}:{record.IsActive}"));
+    }
+
     private static Control CreateRelicPreview(RelicModel relic)
     {
         var wrapper = new Control
         {
             Name = $"RelicPreview{Guid.NewGuid():N}",
-            CustomMinimumSize = new Vector2(48, 42),
+            CustomMinimumSize = new Vector2(58, 54),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkEnd,
-            ClipContents = true
+            ClipContents = false
         };
+        wrapper.TooltipText = BuildRelicTooltipText(relic);
 
         var holder = NRelicBasicHolder.Create(relic);
         if (holder == null)
@@ -398,17 +417,22 @@ public static class DestinyCombatHud
             return wrapper;
         }
 
-        holder.Position = new Vector2(7, 2);
-        holder.Scale = new Vector2(0.58f, 0.58f);
+        holder.Position = new Vector2(3, 0);
+        holder.Scale = new Vector2(0.56f, 0.56f);
         wrapper.AddChild(holder);
         return wrapper;
+    }
+
+    private static string BuildRelicTooltipText(RelicModel relic)
+    {
+        return SafeFormat(relic.Title) ?? DivinerLoc.Text("Relic", "遗物");
     }
 
     private static Label CreateRecordLabel(string text, Color color)
     {
         var label = CreateStatusLabel($"Record{Guid.NewGuid():N}", text, color);
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        label.CustomMinimumSize = new Vector2(346, 0);
+        label.CustomMinimumSize = new Vector2(306, 0);
         return label;
     }
 
@@ -459,5 +483,24 @@ public static class DestinyCombatHud
             <= 2 => BadOmenColor,
             >= 3 => GoodOmenColor
         };
+    }
+
+    private static string? SafeFormat(MegaCrit.Sts2.Core.Localization.LocString? locString)
+    {
+        if (locString == null || locString.IsEmpty)
+        {
+            return null;
+        }
+
+        try
+        {
+            var formatted = locString.GetFormattedText();
+            return string.IsNullOrWhiteSpace(formatted) ? null : formatted;
+        }
+        catch
+        {
+            var fallback = locString.ToString();
+            return string.IsNullOrWhiteSpace(fallback) ? null : fallback;
+        }
     }
 }
