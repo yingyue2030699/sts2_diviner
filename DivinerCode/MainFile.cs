@@ -17,6 +17,8 @@ public partial class MainFile : Node
 
     private static readonly Regex[] KeywordHighlightRules = BuildKeywordHighlightRules();
     private static readonly Regex GoldMarkerRegex = new(@"\*([^*]+)\*", RegexOptions.CultureInvariant);
+    private static readonly Regex SimpleDynamicVarRegex = new(@"!([A-Za-z][A-Za-z0-9_]*)!", RegexOptions.CultureInvariant);
+    private static readonly Regex ProcessedDynamicVarRegex = new(@"\{([A-Za-z][A-Za-z0-9_]*):diff\(\)\}", RegexOptions.CultureInvariant);
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
@@ -53,6 +55,7 @@ public partial class MainFile : Node
         }
 
         UseUpgradedCardDescription(card, ref description);
+        description = ResolveDynamicValueMarkers(card, description);
         description = ApplyGoldHighlights(HighlightKeywordTerms(description));
     }
 
@@ -74,6 +77,23 @@ public partial class MainFile : Node
         {
             description = new LocString("cards", upgradedDescriptionKey).GetFormattedText();
         }
+    }
+
+    private static string ResolveDynamicValueMarkers(CardModel card, string description)
+    {
+        description = SimpleDynamicVarRegex.Replace(description, match => ResolveDynamicValueMarker(card, match));
+        return ProcessedDynamicVarRegex.Replace(description, match => ResolveDynamicValueMarker(card, match));
+    }
+
+    private static string ResolveDynamicValueMarker(CardModel card, Match match)
+    {
+        var varName = match.Groups[1].Value;
+        if (!card.DynamicVars.TryGetValue(varName, out var dynamicVar))
+        {
+            return match.Value;
+        }
+
+        return dynamicVar.ToHighlightedString(false);
     }
 
     private static string HighlightKeywordTerms(string description)

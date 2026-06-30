@@ -2,6 +2,14 @@
 
 Updated on 2026-06-30 for the starter/generated/basic portrait pass.
 
+## 2026-06-30 Duplicate Reading/Future Follow-up
+
+This pass removed the remaining exact duplicate portraits in both the normal and `big/` card portrait folders. The following cards received distinct minimalist replacements while preserving the existing palette, dimensions, and one-symbol readability rule:
+
+`the_last_word`, `white_room`, `threadcutter`, `loaded_reading`, `many_futures`, `perfect_forecast`, `haruspex_method`, `the_written_hour`
+
+The replacements focus on broad symbols that stay legible in reward/library thumbnails: a terminal omen line, white-room doorway, thread-cutting scissors, layered reading pages, branching timelines, target-star forecast, ritual bowl, and clock-star mark.
+
 ## 2026-06-30 Duplicate Cluster Follow-up
 
 This pass replaced the remaining exact duplicate portraits found in the clusters below, preserving the existing `250x190` normal and `500x380` big dimensions:

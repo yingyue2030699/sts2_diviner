@@ -17,8 +17,8 @@ Last updated: 2026-06-30
 | Common card batch | Implemented commons now include Palm Strike, Destiny's Fall, Crossed Lines, Thread Cut, Wax Seal, Misread Strike, Eclipse Jab, Forewarned Blow, Destined Lance, Read the Room, Insurance, Bad Feeling, Palm Reading, Lucky Break, Mark Calendar, False Alarm, Omens Align, Skeptic's Charm, Reconsult, Narrow Escape, Thread Pull, Ward Sign, Smoke and Mirrors, and Small Ritual. |
 | Uncommon and rare card batch | All cards listed in `docs/card-pool-v01-balance-fix.md` now have playable implementations and in-code English/Simplified Chinese localization. |
 | Persistence v0 | Destiny is stored with `SavedSpireField<RunState,int>`; divination records are stored as JSON through `SavedSpireField<RunState,string>`. |
-| Art batch v2 | Every implemented Diviner card now has regular and big portrait PNGs. The uncommon/rare batch uses minimalist generated icon art to avoid placeholder panels. |
-| Card description polish | Upgraded Diviner cards now route to `upgradedDesc` localization when present, and Predestined Path explicitly uses `Foretell`/`预言` in its descriptor. |
+| Art batch v3 | Every implemented Diviner card now has regular and big portrait PNGs. The latest pass removes the remaining exact duplicate portraits with distinct minimalist symbols. |
+| Card description polish | Upgraded Diviner cards now route to `upgradedDesc` localization when present, keyword terms are colored, and dynamic value markers resolve from live card variables before display. |
 
 ## Confirmed Deferred Gates
 
