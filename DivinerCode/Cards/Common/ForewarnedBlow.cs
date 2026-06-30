@@ -21,10 +21,10 @@ public class ForewarnedBlow : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Forewarned Blow",
-        "#Deal !Damage! damage. If the target has Weak, draw !Cards! card.",
+        "Deal !Damage! damage. If the target has Weak, draw !Cards! card.",
         "先兆打击",
-        "#造成 !Damage! 点伤害。如果目标有虚弱，抽 !Cards! 张牌。",
-        ("upgradedDesc", "#Deal !Damage! damage. If the target has Weak, draw !Cards! cards.", "#造成 !Damage! 点伤害。如果目标有虚弱，抽 !Cards! 张牌。")
+        "造成 !Damage! 点伤害。如果目标有虚弱，抽 !Cards! 张牌。",
+        ("upgradedDesc", "Deal !Damage! damage. If the target has Weak, draw !Cards! cards.", "造成 !Damage! 点伤害。如果目标有虚弱，抽 !Cards! 张牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

@@ -18,9 +18,9 @@ public class Fortune : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Fortune",
-        "#Draw !Cards! cards.",
+        "Draw !Cards! cards.",
         "福运",
-        "#抽 !Cards! 张牌。"
+        "抽 !Cards! 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

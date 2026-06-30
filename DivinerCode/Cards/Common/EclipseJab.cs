@@ -16,10 +16,10 @@ public class EclipseJab : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Eclipse Jab",
-        "#Deal !Damage! damage. Then deal 8 damage.",
+        "Deal !Damage! damage. Then deal 8 damage.",
         "蚀月刺击",
-        "#造成 !Damage! 点伤害。然后造成 8 点伤害。",
-        ("upgradedDesc", "#Deal !Damage! damage. Then deal 10 damage.", "#造成 !Damage! 点伤害。然后造成 10 点伤害。")
+        "造成 !Damage! 点伤害。然后造成 8 点伤害。",
+        ("upgradedDesc", "Deal !Damage! damage. Then deal 10 damage.", "造成 !Damage! 点伤害。然后造成 10 点伤害。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

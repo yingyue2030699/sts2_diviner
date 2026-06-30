@@ -19,10 +19,10 @@ public class PalmReading : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Palm Reading",
-        "#Scry 4. If you divinated this combat, draw !Cards! card.",
+        "Scry 4. If you divinated this combat, draw !Cards! card.",
         "掌纹解读",
-        "#预见 4。如果你在本场战斗中占卜过，抽 !Cards! 张牌。",
-        ("upgradedDesc", "#Scry 6. If you divinated this combat, draw !Cards! card.", "#预见 6。如果你在本场战斗中占卜过，抽 !Cards! 张牌。"),
+        "预见 4。如果你在本场战斗中占卜过，抽 !Cards! 张牌。",
+        ("upgradedDesc", "Scry 6. If you divinated this combat, draw !Cards! card.", "预见 6。如果你在本场战斗中占卜过，抽 !Cards! 张牌。"),
         ("selectPrompt", "Choose cards to discard.", "选择要丢弃的牌。")
     );
 

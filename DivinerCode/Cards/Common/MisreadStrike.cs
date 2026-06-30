@@ -18,9 +18,9 @@ public class MisreadStrike : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Misread Strike",
-        "#Deal !Damage! damage. Lose 1 Destiny.",
+        "Deal !Damage! damage. Lose 1 Destiny.",
         "误读打击",
-        "#造成 !Damage! 点伤害。失去 1 点命运。"
+        "造成 !Damage! 点伤害。失去 1 点命运。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

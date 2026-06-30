@@ -25,9 +25,9 @@ public class Clairvoyance : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Clairvoyance",
-        "#Search your draw pile for 1 card. Put it into your hand; it is Fated.",
+        "Search your draw pile for 1 card. Put it into your hand; it is Fated.",
         "千里眼",
-        "#从你的抽牌堆中选择 1 张牌加入手牌；它为注定。",
+        "从你的抽牌堆中选择 1 张牌加入手牌；它为注定。",
         ("selectPrompt", "Choose a card to put into your hand.", "选择一张牌加入你的手牌。")
     );
 
@@ -54,9 +54,9 @@ public class Apocalypse : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Apocalypse",
-        "#Deal !Damage! damage to all enemies. Set Destiny to 0. Doomed: costs 3 less.",
+        "Deal !Damage! damage to all enemies. Set Destiny to 0. Doomed: costs 3 less.",
         "天启",
-        "#对所有敌人造成 !Damage! 点伤害。将命运设为 0。劫兆：费用减少 3 点。"
+        "对所有敌人造成 !Damage! 点伤害。将命运设为 0。劫兆：费用减少 3 点。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -104,9 +104,9 @@ public class FallenSky : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Fallen Sky",
-        "#Deal !Damage! damage to all enemies. Foretell: play this card again.",
+        "Deal !Damage! damage to all enemies. Foretell: play this card again.",
         "坠天",
-        "#对所有敌人造成 !Damage! 点伤害。预言：再次打出本牌。"
+        "对所有敌人造成 !Damage! 点伤害。预言：再次打出本牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -170,9 +170,9 @@ public class HandOfFate : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Hand of Fate",
-        "#Deal !Damage! damage. Draw !Cards! card. Revelation: play this 3 times.",
+        "Deal !Damage! damage. Draw !Cards! card. Revelation: play this 3 times.",
         "命运之手",
-        "#造成 !Damage! 点伤害。抽 !Cards! 张牌。启示：打出本牌 3 次。"
+        "造成 !Damage! 点伤害。抽 !Cards! 张牌。启示：打出本牌 3 次。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -201,9 +201,9 @@ public class TheLastWord : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "The Last Word",
-        "#Deal !Damage! damage. If Fatal, gain 1 Destiny.",
+        "Deal !Damage! damage. If Fatal, gain 1 Destiny.",
         "终言",
-        "#造成 !Damage! 点伤害。如果致命，获得 1 点命运。"
+        "造成 !Damage! 点伤害。如果致命，获得 1 点命运。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -237,9 +237,9 @@ public class UnavoidableEnd : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Unavoidable End",
-        "#Deal !Damage! damage. Foretell: deal double that damage to all enemies.",
+        "Deal !Damage! damage. Foretell: deal double that damage to all enemies.",
         "无可避免的结局",
-        "#造成 !Damage! 点伤害。预言：对所有敌人造成两倍该伤害。"
+        "造成 !Damage! 点伤害。预言：对所有敌人造成两倍该伤害。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -298,9 +298,9 @@ public class GreaterPortent : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Greater Portent",
-        "#Search 3 cards from your draw pile. Put them into your hand; they are Fated.",
+        "Search 3 cards from your draw pile. Put them into your hand; they are Fated.",
         "大预兆",
-        "#从你的抽牌堆中选择 3 张牌加入手牌；它们为注定。",
+        "从你的抽牌堆中选择 3 张牌加入手牌；它们为注定。",
         ("selectPrompt", "Choose cards to put into your hand.", "选择要加入手牌的牌。")
     );
 
@@ -327,9 +327,9 @@ public class Reversal : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Reversal",
-        "#Set Destiny to 5 minus its current value.",
+        "Set Destiny to 5 minus its current value.",
         "逆转",
-        "#将命运设为 5 减去当前命运。"
+        "将命运设为 5 减去当前命运。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -356,9 +356,9 @@ public class OraclesBargain : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Oracle's Bargain",
-        "#Gain 1 Destiny and add 3 Misfortunes to your draw pile.",
+        "Gain 1 Destiny and add 3 Misfortunes to your draw pile.",
         "神谕交易",
-        "#获得 1 点命运，并将 3 张厄运加入抽牌堆。"
+        "获得 1 点命运，并将 3 张厄运加入抽牌堆。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -386,9 +386,9 @@ public class PerfectForecast : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Perfect Forecast",
-        "#Divinate twice. Gain [E] for each unique category ever recorded.",
+        "Divinate twice. Gain [E] for each unique category ever recorded.",
         "完美预测",
-        "#占卜两次。每有一种已记录过的独特类别，获得 [E]。"
+        "占卜两次。每有一种已记录过的独特类别，获得 [E]。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -422,9 +422,9 @@ public class CheatTheEnding : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Cheat the Ending",
-        "#The next time you would die this combat, heal to 13 and set Destiny to 0.",
+        "The next time you would die this combat, heal to 13 and set Destiny to 0.",
         "欺瞒终局",
-        "#本场战斗中下次你将要死亡时，恢复至 13 点生命并将命运设为 0。"
+        "本场战斗中下次你将要死亡时，恢复至 13 点生命并将命运设为 0。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -448,9 +448,9 @@ public class FixedPoint : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Fixed Point",
-        "#Destiny cannot decrease below 3 this combat. At the start of your turn, lose 1 HP.",
+        "Destiny cannot decrease below 3 this combat. At the start of your turn, lose 1 HP.",
         "定点",
-        "#本场战斗中命运不会降至 3 以下。你的回合开始时，失去 1 点生命。"
+        "本场战斗中命运不会降至 3 以下。你的回合开始时，失去 1 点生命。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -474,9 +474,9 @@ public class ManyFutures : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Many Futures",
-        "#Card rewards at the end of this combat have 1 additional option. When you Scry, choose 1 additional card.",
+        "Card rewards at the end of this combat have 1 additional option. When you Scry, choose 1 additional card.",
         "诸多未来",
-        "#本场战斗结束后的卡牌奖励多 1 个选项。每当你预见时，多查看 1 张牌。"
+        "本场战斗结束后的卡牌奖励多 1 个选项。每当你预见时，多查看 1 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -500,9 +500,9 @@ public class DoomSpiral : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Doom Spiral",
-        "#At end of turn, if Bad Omen, add a Misfortune to your hand.",
+        "At end of turn, if Bad Omen, add a Misfortune to your hand.",
         "厄运螺旋",
-        "#回合结束时，如果处于凶兆，将一张厄运加入你的手牌。"
+        "回合结束时，如果处于凶兆，将一张厄运加入你的手牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -526,9 +526,9 @@ public class EchoedOmen : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Echoed Omen",
-        "#Foretell effects trigger an additional time.",
+        "Foretell effects trigger an additional time.",
         "回响征兆",
-        "#预言效果额外触发一次。"
+        "预言效果额外触发一次。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -552,11 +552,11 @@ public class BreakTheSequence : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Break the Sequence",
-        "#Scry 8. Revelation: if you have an active relic divination, choose up to 1 foretold relic and remove it from the relic sequence.",
+        "Scry 8. Revelation: if you have an active relic divination, choose up to 1 foretold relic and remove it from the relic sequence.",
         "断序",
-        "#预见 8。启示：如果你有有效的遗物占卜，选择至多 1 件预示遗物并将其移出遗物序列。",
+        "预见 8。启示：如果你有有效的遗物占卜，选择至多 1 件预示遗物并将其移出遗物序列。",
         ("selectPrompt", "Choose cards to discard.", "选择要丢弃的牌。"),
-        ("upgradedDesc", "#Scry 10. Revelation: if you have an active relic divination, choose up to 1 foretold relic and remove it from the relic sequence.", "#预见 10。启示：如果你有有效的遗物占卜，选择至多 1 件预示遗物并将其移出遗物序列。")
+        ("upgradedDesc", "Scry 10. Revelation: if you have an active relic divination, choose up to 1 foretold relic and remove it from the relic sequence.", "预见 10。启示：如果你有有效的遗物占卜，选择至多 1 件预示遗物并将其移出遗物序列。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -596,10 +596,10 @@ public class AscendedForm : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Ascended Form",
-        "#Revelation card effects can be triggered with 2 less Destiny.",
+        "Revelation card effects can be triggered with 2 less Destiny.",
         "升华形态",
-        "#启示卡牌效果可以用低 2 点的命运触发。",
-        ("upgradedDesc", "#Revelation card effects can be triggered with 3 less Destiny.", "#启示卡牌效果可以用低 3 点的命运触发。")
+        "启示卡牌效果可以用低 2 点的命运触发。",
+        ("upgradedDesc", "Revelation card effects can be triggered with 3 less Destiny.", "启示卡牌效果可以用低 3 点的命运触发。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

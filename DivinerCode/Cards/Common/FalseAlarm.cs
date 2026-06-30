@@ -18,9 +18,9 @@ public class FalseAlarm : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "False Alarm",
-        "#Gain !Block! Block. Lose 1 Destiny.",
+        "Gain !Block! Block. Lose 1 Destiny.",
         "虚惊",
-        "#获得 !Block! 点格挡。失去 1 点命运。"
+        "获得 !Block! 点格挡。失去 1 点命运。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

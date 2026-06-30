@@ -16,9 +16,9 @@ public class DefendDiviner : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Defend",
-        "#Gain !Block! Block.",
+        "Gain !Block! Block.",
         "防御",
-        "#获得 !Block! 点格挡。"
+        "获得 !Block! 点格挡。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

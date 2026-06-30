@@ -21,9 +21,9 @@ public class WardSign : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Ward Sign",
-        "#Gain !Block! Block. Good Omen: Retain a card in your hand this turn.",
+        "Gain !Block! Block. Good Omen: Retain a card in your hand this turn.",
         "守护符记",
-        "#获得 !Block! 点格挡。吉兆：使你手牌中的一张牌在本回合保留。",
+        "获得 !Block! 点格挡。吉兆：使你手牌中的一张牌在本回合保留。",
         ("selectPrompt", "Choose a card to Retain this turn.", "选择一张本回合保留的牌。")
     );
 

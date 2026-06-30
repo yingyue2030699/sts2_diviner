@@ -16,9 +16,9 @@ public class StrikeDiviner : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Strike",
-        "#Deal !Damage! damage.",
+        "Deal !Damage! damage.",
         "打击",
-        "#造成 !Damage! 点伤害。"
+        "造成 !Damage! 点伤害。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

@@ -28,9 +28,9 @@ public class ThreadPull : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Thread Pull",
-        "#Put a card from your hand on top of your draw pile. Foretell: draw !Cards! cards.",
+        "Put a card from your hand on top of your draw pile. Foretell: draw !Cards! cards.",
         "牵引命线",
-        "#将一张手牌放到抽牌堆顶。预言：抽 !Cards! 张牌。",
+        "将一张手牌放到抽牌堆顶。预言：抽 !Cards! 张牌。",
         ("selectPrompt", "Choose a card to put on top of your draw pile.", "选择一张牌放到抽牌堆顶。")
     );
 

@@ -18,9 +18,9 @@ public class DestinedLance : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Destined Lance",
-        "#Deal !Damage! damage. Good Omen: hit all enemies.",
+        "Deal !Damage! damage. Good Omen: hit all enemies.",
         "命定长枪",
-        "#造成 !Damage! 点伤害。吉兆：改为命中所有敌人。"
+        "造成 !Damage! 点伤害。吉兆：改为命中所有敌人。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

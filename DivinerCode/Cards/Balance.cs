@@ -22,9 +22,9 @@ public class Balance : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Balance",
-        "#Good Omen: lose 1 Destiny, Divinate, and draw !Cards! card. Bad Omen: this costs 2 extra Energy, then gain 1 Destiny.",
+        "Good Omen: lose 1 Destiny, Divinate, and draw !Cards! card. Bad Omen: this costs 2 extra Energy, then gain 1 Destiny.",
         "平衡",
-        "#吉兆：失去 1 点命运，占卜，并抽 !Cards! 张牌。凶兆：本牌多消耗 2 点能量，然后获得 1 点命运。"
+        "吉兆：失去 1 点命运，占卜，并抽 !Cards! 张牌。凶兆：本牌多消耗 2 点能量，然后获得 1 点命运。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

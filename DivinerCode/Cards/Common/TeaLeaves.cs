@@ -25,9 +25,9 @@ public class TeaLeaves : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Tea Leaves",
-        "#Foretell: Divinate.",
+        "Foretell: Divinate.",
         "茶叶占形",
-        "#预言：占卜。"
+        "预言：占卜。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

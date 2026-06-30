@@ -20,9 +20,9 @@ public class WaxSeal : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Wax Seal",
-        "#Deal !Damage! damage. Put a card from your draw or discard pile on top of your draw pile.",
+        "Deal !Damage! damage. Put a card from your draw or discard pile on top of your draw pile.",
         "蜡封",
-        "#造成 !Damage! 点伤害。将一张抽牌堆或弃牌堆中的牌放到抽牌堆顶。",
+        "造成 !Damage! 点伤害。将一张抽牌堆或弃牌堆中的牌放到抽牌堆顶。",
         ("selectPrompt", "Choose a card to put on top of your draw pile.", "选择一张牌放到抽牌堆顶。")
     );
 

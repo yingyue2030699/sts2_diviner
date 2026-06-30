@@ -26,9 +26,9 @@ public class MarkCalendar : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Mark Calendar",
-        "#Foretell: gain !Block! Block.",
+        "Foretell: gain !Block! Block.",
         "标记日历",
-        "#预言：获得 !Block! 点格挡。"
+        "预言：获得 !Block! 点格挡。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

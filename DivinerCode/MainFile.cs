@@ -15,8 +15,7 @@ public partial class MainFile : Node
 {
     public const string ModId = "Diviner";
 
-    private static readonly (Regex Pattern, string Replacement)[] KeywordHighlightRules =
-        BuildKeywordHighlightRules();
+    private static readonly Regex[] KeywordHighlightRules = BuildKeywordHighlightRules();
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
@@ -53,7 +52,7 @@ public partial class MainFile : Node
         }
 
         UseUpgradedCardDescription(card, ref description);
-        description = HighlightKeywordTerms(description);
+        description = SimpleLoc.TrySimplify("#" + HighlightKeywordTerms(description));
     }
 
     private static void UseUpgradedCardDescription(CardModel card, ref string description)
@@ -78,15 +77,26 @@ public partial class MainFile : Node
 
     private static string HighlightKeywordTerms(string description)
     {
-        foreach (var (pattern, replacement) in KeywordHighlightRules)
+        foreach (var pattern in KeywordHighlightRules)
         {
-            description = pattern.Replace(description, replacement);
+            description = ReplaceOutsideGoldHighlights(description, pattern);
         }
 
-        return description.Replace("#Countdown of #Destiny", "#Countdown of Destiny", StringComparison.Ordinal);
+        return description;
     }
 
-    private static (Regex Pattern, string Replacement)[] BuildKeywordHighlightRules()
+    private static string ReplaceOutsideGoldHighlights(string description, Regex pattern)
+    {
+        var segments = description.Split('*');
+        for (int i = 0; i < segments.Length; i += 2)
+        {
+            segments[i] = pattern.Replace(segments[i], match => $"*{match.Value}*");
+        }
+
+        return string.Join("*", segments);
+    }
+
+    private static Regex[] BuildKeywordHighlightRules()
     {
         string[] englishTerms =
         [
@@ -123,16 +133,18 @@ public partial class MainFile : Node
             "虚弱",
             "易伤",
             "保留",
-            "消耗",
             "状态",
             "诅咒"
         ];
 
         return englishTerms
-            .Select(term => (Pattern: new Regex($@"(?<!#)\b{Regex.Escape(term)}\b", RegexOptions.CultureInvariant), Replacement: $"#{term}"))
-            .Concat(chineseTerms.Select(term => (
-                Pattern: new Regex($@"(?<!#){Regex.Escape(term)}", RegexOptions.CultureInvariant),
-                Replacement: $"#{term}")))
+            .OrderByDescending(term => term.Length)
+            .Select(term => new Regex(
+                $@"(?<![\p{{L}}\p{{N}}_]){Regex.Escape(term)}(?![\p{{L}}\p{{N}}_])",
+                RegexOptions.CultureInvariant))
+            .Concat(chineseTerms
+                .OrderByDescending(term => term.Length)
+                .Select(term => new Regex(Regex.Escape(term), RegexOptions.CultureInvariant)))
             .ToArray();
     }
 }

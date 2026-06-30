@@ -26,10 +26,10 @@ public class DestinyFall : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Destiny's Fall",
-        "#Deal !Damage! damage. Foretell: Deal 8 damage to the same enemy.",
+        "Deal !Damage! damage. Foretell: Deal 8 damage to the same enemy.",
         "命运坠落",
-        "#造成 !Damage! 点伤害。预言：对同一敌人造成 8 点伤害。",
-        ("upgradedDesc", "#Deal !Damage! damage. Foretell: Deal 10 damage to the same enemy.", "#造成 !Damage! 点伤害。预言：对同一敌人造成 10 点伤害。")
+        "造成 !Damage! 点伤害。预言：对同一敌人造成 8 点伤害。",
+        ("upgradedDesc", "Deal !Damage! damage. Foretell: Deal 10 damage to the same enemy.", "造成 !Damage! 点伤害。预言：对同一敌人造成 10 点伤害。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

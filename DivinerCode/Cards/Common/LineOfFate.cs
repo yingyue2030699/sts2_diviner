@@ -20,10 +20,10 @@ public class LineOfFate : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Line of Fate",
-        "#Deal !Damage! damage. If Fatal, Divinate.",
+        "Deal !Damage! damage. If Fatal, Divinate.",
         "命运之线",
-        "#造成 !Damage! 点伤害。如果致命，占卜。",
-        ("upgradedDesc", "#Deal !Damage! damage. If Fatal, Divinate.", "#造成 !Damage! 点伤害。如果致命，占卜。")
+        "造成 !Damage! 点伤害。如果致命，占卜。",
+        ("upgradedDesc", "Deal !Damage! damage. If Fatal, Divinate.", "造成 !Damage! 点伤害。如果致命，占卜。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

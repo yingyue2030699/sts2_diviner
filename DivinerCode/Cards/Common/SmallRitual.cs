@@ -18,10 +18,10 @@ public class SmallRitual : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Small Ritual",
-        "#The next time you Divinate, gain [E] [E].",
+        "The next time you Divinate, gain [E] [E].",
         "小仪式",
-        "#下一次你占卜时，获得 [E] [E]。",
-        ("upgradedDesc", "#The next time you Divinate, gain [E] [E] [E].", "#下一次你占卜时，获得 [E] [E] [E]。")
+        "下一次你占卜时，获得 [E] [E]。",
+        ("upgradedDesc", "The next time you Divinate, gain [E] [E] [E].", "下一次你占卜时，获得 [E] [E] [E]。")
     );
 
     protected override Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

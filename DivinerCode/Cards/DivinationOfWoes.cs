@@ -26,9 +26,9 @@ public class DivinationOfWoes : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Divination of Woes",
-        "#Foretell: Deal !Damage! damage and apply 1 Weak and 1 Vulnerable to all enemies.",
+        "Foretell: Deal !Damage! damage and apply 1 Weak and 1 Vulnerable to all enemies.",
         "灾厄占卜",
-        "#预言：对所有敌人造成 !Damage! 点伤害，并给予 1 层虚弱和 1 层易伤。"
+        "预言：对所有敌人造成 !Damage! 点伤害，并给予 1 层虚弱和 1 层易伤。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

@@ -20,9 +20,9 @@ public class PalmStrike : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Palm Strike",
-        "#Deal !Damage! damage. Good Omen: draw !Cards! cards.",
+        "Deal !Damage! damage. Good Omen: draw !Cards! cards.",
         "掌击",
-        "#造成 !Damage! 点伤害。吉兆：抽 !Cards! 张牌。"
+        "造成 !Damage! 点伤害。吉兆：抽 !Cards! 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

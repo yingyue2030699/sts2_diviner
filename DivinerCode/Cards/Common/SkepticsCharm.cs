@@ -20,10 +20,10 @@ public class SkepticsCharm : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Skeptic's Charm",
-        "#Gain !Block! Block. Bad Omen: gain 6 more Block.",
+        "Gain !Block! Block. Bad Omen: gain 6 more Block.",
         "怀疑者护符",
-        "#获得 !Block! 点格挡。凶兆：额外获得 6 点格挡。",
-        ("upgradedDesc", "#Gain !Block! Block. Bad Omen: gain 8 more Block.", "#获得 !Block! 点格挡。凶兆：额外获得 8 点格挡。")
+        "获得 !Block! 点格挡。凶兆：额外获得 6 点格挡。",
+        ("upgradedDesc", "Gain !Block! Block. Bad Omen: gain 8 more Block.", "获得 !Block! 点格挡。凶兆：额外获得 8 点格挡。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

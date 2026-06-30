@@ -25,9 +25,9 @@ public class Insurance : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Insurance",
-        "#Gain !Block! Block. Whenever you lose HP this turn, draw !Cards! card.",
+        "Gain !Block! Block. Whenever you lose HP this turn, draw !Cards! card.",
         "预留后路",
-        "#获得 !Block! 点格挡。本回合每当你失去生命时，抽 !Cards! 张牌。"
+        "获得 !Block! 点格挡。本回合每当你失去生命时，抽 !Cards! 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
