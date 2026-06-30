@@ -23,4 +23,3 @@ For machine-specific overrides, create `Directory.Build.props` from `Directory.B
 - `DivinerCode/`: C# entry point and future gameplay code.
 - `Diviner/`: resources, localization, images, and Godot assets packed into the mod PCK.
 - `docs/`: planning, environment, and quality-control notes.
-
