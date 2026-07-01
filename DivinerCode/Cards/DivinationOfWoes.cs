@@ -25,9 +25,9 @@ public class DivinationOfWoes : DivinerCard
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
-        "Divination of Woes",
+        "Omen of Woes",
         "Foretell: Deal !Damage! damage and apply 1 Weak and 1 Vulnerable to all enemies.",
-        "灾厄占卜",
+        "灾厄征兆",
         "预言：对所有敌人造成 !Damage! 点伤害，并给予 1 层虚弱和 1 层易伤。"
     );
 

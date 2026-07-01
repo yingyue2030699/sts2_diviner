@@ -33,7 +33,7 @@ Design constraints:
 | Strike | Attack | 1 | Deal 6 damage. | 9 damage. |
 | Defend | Skill | 1 | Gain 5 Block. | 8 Block. |
 | Balance | Skill | 1 | Good Omen: lose 1 Destiny, divinate, draw 1. Bad Omen: requires 2 extra Energy, gain 1 Destiny. Exhaust. | Costs 0. |
-| Divination of Woes | Skill | 1 | Foretell: deal 9 damage to all enemies. Apply 1 Weak and 1 Vulnerable to all enemies. | 13 damage. |
+| Omen of Woes | Skill | 1 | Foretell: deal 9 damage to all enemies. Apply 1 Weak and 1 Vulnerable to all enemies. | 13 damage. |
 
 ## Common Cards
 
@@ -54,7 +54,7 @@ Design constraints:
 | Bad Feeling | Skill | 0 | Apply 1 Weak. Bad Omen: apply 1 Weak and 1 Vulnerable instead | Bad Omen: apply 1 Weak and 1 Vulnerable to all enemies instead. |
 | Palm Reading | Skill | 1 | Scry 4. If you divinated this combat, draw 1. | Scry 6. |
 | Lucky Break | Skill | 0 | Gain 2 Block. Draw 1. Exhaust. | 3 Block. Retain. |
-| Mark Calendar | Skill | 1 | Foretell: gain 12 Block. | 16 Block. |
+| Omen of Shelter | Skill | 1 | Foretell: gain 12 Block. | 16 Block. |
 | False Alarm | Skill | 1 | Gain 14 Block. Lose 1 Destiny. | Gain 18 Block. |
 | Omens Align | Skill | 1 | Put all Fortune and Misfortune cards into your hand. Exhaust. | Remove Exhaust. |
 | Smoke and Mirrors | Skill | 1 | Gain 6 Block. The next Foretell effect you play this combat resolves with +5 damage or +5 Block. | +9 damage or +9 Block. |
@@ -80,7 +80,7 @@ Design constraints:
 | Dead Star | Attack | 2 | Deal 18 damage. Lose 1 HP. Bad Omen: deal 18 damage again. | +4 damage. |
 | Verdict | Attack | 1 | Deal 5 damage. If the target has Weak or Vulnerable, deal 12 instead. | 8 or 16 damage. |
 | Augury | Skill | 2 | If have Divinated this combat, gain 1 Destiny. Otherwise gain 12 Block. Exhaust. | 16 Block. |
-| Tea Leaves | Skill | 2 | Foretell: Divinate. Exhaust. | cost 1. |
+| Omen of Insight | Skill | 2 | Foretell: Divinate. Exhaust. | cost 1. |
 | Second Sight | Skill | 1 | Retain. Draw until you have 5 cards in hand. Exhaust. | Draw until 6. |
 | Loaded Reading | Skill | 2 | Add a Fortune and a Misfortune to your hand. | cost 1. |
 | Cold Reading | Skill | 1 | Apply 2 Weak and 2 Vulnerable. If you divinated this combat, apply to all enemies. | 3 Weak and 3 Vulnerable. |

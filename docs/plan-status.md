@@ -9,12 +9,12 @@ Last updated: 2026-06-30
 | Development environment | Scaffold, BaseLib dependency, quick PCK packing, Steam copy targets, build script, and deploy script are in place. |
 | Character foundation | Diviner character model, starter deck, Crystal Ball starter relic, card/relic/potion pools, localization, and placeholder resources are wired. |
 | Vocabulary cleanup | Player-facing text now uses `Foretell`, `Doomed`, `Revelation`, and a concrete `Fated` definition. Internal identifiers still use the old Dredge/Enlightenment names for compatibility. |
-| Starter mechanics | Balance, Divination of Woes, Fortune, Misfortune, and Crystal Ball compile and are wired into the starter kit. |
+| Starter mechanics | Balance, Omen of Woes, Fortune, Misfortune, and Crystal Ball compile and are wired into the starter kit. |
 | Doomed v0 | Destiny 0 applies Countdown of Destiny 3, generates 3 Escape from Destiny cards, ticks countdown at player turn end, increases Escape cost tax, and defeats the player at 0. |
 | Revelation v0 | Destiny 5 opens a draw-pile search, moves up to 3 chosen cards to hand, and makes them Fated with absolute cost 0 for the turn. |
 | Destiny scale v1 | Destiny now uses tiered effects: 3+ prevents unknown-room combats, 4+ halves common card/relic outcomes, 5 adds Revelation, 2- guarantees unknown-room combat when allowed, 1- increases common card/relic outcomes, and 0 adds Doomed. |
 | Card balance update | `docs/card-pool-v0.md` is reconciled with `docs/card-pool-v01-balance-fix.md`, including Regent-collision renames. |
-| Common card batch | Implemented commons now include Palm Strike, Destiny's Fall, Crossed Lines, Thread Cut, Wax Seal, Misread Strike, Eclipse Jab, Forewarned Blow, Destined Lance, Read the Room, Insurance, Bad Feeling, Palm Reading, Lucky Break, Mark Calendar, False Alarm, Omens Align, Skeptic's Charm, Reconsult, Narrow Escape, Thread Pull, Ward Sign, Smoke and Mirrors, and Small Ritual. |
+| Common card batch | Implemented commons now include Palm Strike, Destiny's Fall, Crossed Lines, Thread Cut, Wax Seal, Misread Strike, Eclipse Jab, Forewarned Blow, Destined Lance, Read the Room, Insurance, Bad Feeling, Palm Reading, Lucky Break, Omen of Shelter, False Alarm, Omens Align, Skeptic's Charm, Reconsult, Narrow Escape, Thread Pull, Ward Sign, Smoke and Mirrors, and Small Ritual. |
 | Uncommon and rare card batch | All cards listed in `docs/card-pool-v01-balance-fix.md` now have playable implementations and in-code English/Simplified Chinese localization. |
 | Persistence v0 | Destiny is stored with `SavedSpireField<RunState,int>`; divination records are stored as JSON through `SavedSpireField<RunState,string>`. |
 | Art batch v3 | Every implemented Diviner card now has regular and big portrait PNGs. The latest pass removes the remaining exact duplicate portraits with distinct minimalist symbols. |

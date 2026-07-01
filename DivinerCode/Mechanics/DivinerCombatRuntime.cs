@@ -406,8 +406,8 @@ public static class DivinerCombatRuntime
         var detail = label switch
         {
             "Woes" => DivinerLoc.Text(
-                "Divination of Woes: damage, Weak, and Vulnerable to all enemies.",
-                "灾厄占卜：对所有敌人造成伤害，给予虚弱和易伤。"),
+                "Omen of Woes: damage, Weak, and Vulnerable to all enemies.",
+                "灾厄征兆：对所有敌人造成伤害，给予虚弱和易伤。"),
             "Draw" => DivinerLoc.Text(
                 "Thread Pull: draw cards.",
                 "牵引命线：抽牌。"),
@@ -421,11 +421,11 @@ public static class DivinerCombatRuntime
                 "Destiny's Fall: damage the same enemy.",
                 "命运坠落：对同一敌人造成伤害。"),
             "Divinate" => DivinerLoc.Text(
-                "Tea Leaves: Divinate.",
-                "茶叶占形：占卜。"),
+                "Omen of Insight: Divinate.",
+                "洞见征兆：占卜。"),
             "Block" => DivinerLoc.Text(
-                "Mark Calendar: gain Block.",
-                "标记日历：获得格挡。"),
+                "Omen of Shelter: gain Block.",
+                "庇护征兆：获得格挡。"),
             "Haruspex" => DivinerLoc.Text(
                 "Haruspex Method: add Haruspex Method to your hand.",
                 "观兆法：将观兆法加入你的手牌。"),

@@ -781,14 +781,9 @@ public class ReadTheAshes : DivinerCard
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
+    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
-        if (side != Owner.Creature.Side ||
-            !participants.Contains(Owner.Creature) ||
+        if (!ReferenceEquals(player, Owner) ||
             !PendingAshesByPlayer.Remove(Owner, out var pendingAshes))
         {
             return;
@@ -848,14 +843,9 @@ public class BorrowedTomorrow : DivinerCard
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
+    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
-        if (side != Owner.Creature.Side ||
-            !participants.Contains(Owner.Creature) ||
+        if (!ReferenceEquals(player, Owner) ||
             !PendingEnergyLossByPlayer.Remove(Owner, out var energyLoss))
         {
             return;

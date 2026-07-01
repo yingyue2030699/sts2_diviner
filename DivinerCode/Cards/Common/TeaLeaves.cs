@@ -24,9 +24,9 @@ public class TeaLeaves : DivinerCard
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
-        "Tea Leaves",
+        "Omen of Insight",
         "Foretell: Divinate.",
-        "茶叶占形",
+        "洞见征兆",
         "预言：占卜。"
     );
 
@@ -37,15 +37,9 @@ public class TeaLeaves : DivinerCard
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState
-    )
+    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
-        if (side != Owner.Creature.Side ||
-            !participants.Contains(Owner.Creature) ||
+        if (!ReferenceEquals(player, Owner) ||
             !PendingDivinationsByPlayer.Remove(Owner, out var count))
         {
             return;
@@ -57,7 +51,7 @@ public class TeaLeaves : DivinerCard
         {
             for (int i = 0; i < count; i++)
             {
-                await DivinationService.RecordPlaceholder(choiceContext, Owner, "Tea Leaves");
+                await DivinationService.RecordPlaceholder(choiceContext, Owner, "Omen of Insight");
             }
         }
     }

@@ -29,7 +29,7 @@ Files to add:
 Deliverables:
 
 - Diviner appears as a selectable character.
-- Starting deck: 4 Strike, 4 Defend, Balance, Divination of Woes.
+- Starting deck: 4 Strike, 4 Defend, Balance, Omen of Woes.
 - Starting relic: Crystal Ball.
 - Placeholder card/relic/potion images load.
 - `./scripts/build.sh` passes.
@@ -57,7 +57,7 @@ Quality gates:
 Deliverables:
 
 - `Balance`: 1 cost, upgrades to 0. Good Omen: lose 1 Destiny, divinate, draw 1. Bad Omen: requires 2 extra energy, gain 1 Destiny. Exhaust.
-- `Divination of Woes`: 1 cost. Foretell: deal 9 damage to all enemies and apply 1 Weak and 1 Vulnerable. Upgrade damage to 13.
+- `Omen of Woes`: 1 cost. Foretell: deal 9 damage to all enemies and apply 1 Weak and 1 Vulnerable. Upgrade damage to 13.
 - `Fortune`: generated 0 cost, Retain, draw 2, Exhaust.
 - `Misfortune`: generated 3 cost, lose 3 HP, deal 15 damage to all enemies, autoplayed at end of turn.
 - Crystal Ball adds Fortune or Misfortune at combat start.
@@ -170,7 +170,7 @@ Core smoke tests:
 - Destiny 0 combat can be survived by Escape cards and defeats at countdown 0.
 - Enlightenment combat searches/draws 3 cards and makes them free.
 - Balance works in Good Omen and Bad Omen.
-- Foretell cards resolve once at next turn start, including Divination of Woes.
+- Foretell cards resolve once at next turn start, including Omen of Woes.
 - Crystal Ball description records divinations and persists across save/load.
 - Reward odds patch is inactive for non-Diviner characters.
 - Build and Release deploy scripts pass.

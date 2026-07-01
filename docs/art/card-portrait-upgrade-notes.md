@@ -66,7 +66,7 @@ Polished simple fantasy deckbuilder card portrait, landscape crop. One upright p
 
 Polished simple fantasy deckbuilder card portrait, landscape crop. One clean balance scale with two pale hanging pans and a muted teal beam. Plain dark blue-green background, soft glow, no border, no text, no coins, no extra objects. Readable as scales at thumbnail size.
 
-### Divination of Woes
+### Omen of Woes
 
 Polished simple fantasy deckbuilder card portrait, landscape crop. One pale omen eye with three simple muted red falling omen drops beneath it. Plain dark wine-indigo background, soft red glow, no border, no text, no extra eyes, no complex occult scene. Readable as a warning eye at thumbnail size.
 

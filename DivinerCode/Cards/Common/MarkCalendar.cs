@@ -25,9 +25,9 @@ public class MarkCalendar : DivinerCard
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
-        "Mark Calendar",
+        "Omen of Shelter",
         "Foretell: gain !Block! Block.",
-        "标记日历",
+        "庇护征兆",
         "预言：获得 !Block! 点格挡。"
     );
 
@@ -45,15 +45,9 @@ public class MarkCalendar : DivinerCard
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState
-    )
+    public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
-        if (side != Owner.Creature.Side ||
-            !participants.Contains(Owner.Creature) ||
+        if (!ReferenceEquals(player, Owner) ||
             !PendingBlockByPlayer.Remove(Owner, out var pendingBlocks))
         {
             return;

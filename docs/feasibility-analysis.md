@@ -24,7 +24,7 @@ The second pillar is `divinate`: reveal and record future run information in Cry
 | Non-combat top bar display | Medium | Needs scene identification for map/reward/shop screens. Likely Harmony or AddedNode per scene. | Phase 2 after combat HUD proves state model. |
 | Good/Bad Omen card text | High | Cards can read current destiny and branch in `OnPlay`. | Add helper predicates `IsGoodOmen`, `IsBadOmen`, `RequireBadOmenTax`. |
 | Balance starter card | High | Conditional cost/tax is easy if tax is enforced on play; dynamic preview may need later UI polish. | First version: if Bad Omen and energy < base+2, fail play or use dynamic cost hook. |
-| Divination of Woes delayed effect | High | Similar to powers/statuses that trigger at next turn start. | Temporary power/status with stored damage/debuff amount. |
+| Omen of Woes delayed effect | High | Similar to powers/statuses that trigger at next turn start. | Temporary power/status with stored damage/debuff amount. |
 | Fortune/Misfortune generated cards | High | Generated custom cards can be added to hand; Misfortune autoplay can be implemented through end-turn relic/power hook. | Crystal Ball adds one generated card at combat start; end-turn hook plays Misfortune. |
 | Dredge at Destiny 0 | Medium | Start-of-combat hook and countdown power are straightforward. Defeat command and cost-scaling Escape cards need API confirmation. | Implement countdown as a power; Escape increments countdown and a combat escape-tax field. |
 | Enlightenment at Destiny 5 | Medium | Searching deck and temporary free cards should be possible, but player-choice UI and cost modification need specific API selection. | Start with a simple deck-selection command; fallback to "draw 3, make free" if choice UI is unstable. |
@@ -52,7 +52,7 @@ Reward manipulation is feasible but should be conservative. It touches global ge
 1. Diviner character shell with starter deck and Crystal Ball.
 2. Destiny state, combat HUD, and Good/Bad Omen helpers.
 3. Crystal Ball adds Fortune or Misfortune at combat start.
-4. Balance and Divination of Woes.
+4. Balance and Omen of Woes.
 5. Dredge and Enlightenment combat-start effects.
 6. Divinate records placeholder entries plus safe boss/map forecasts.
 7. Card reward and upgraded-card modifiers.
