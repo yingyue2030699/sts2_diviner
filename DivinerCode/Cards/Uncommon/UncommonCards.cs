@@ -356,16 +356,16 @@ public class DeadStar : DivinerCard
     public DeadStar()
         : base(2, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
     {
-        WithDamage(18, 3);
+        WithDamage(18, 4);
         WithDivinerKeywordTips(DivinerKeywords.BadOmen);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Dead Star",
-        "Deal !Damage! damage. Lose 1 HP. Bad Omen: deal 7 more damage.",
+        "Deal !Damage! damage. Lose 1 HP. Bad Omen: deal !Damage! damage again.",
         "死星",
-        "造成 !Damage! 点伤害。失去 1 点生命。凶兆：额外造成 7 点伤害。",
-        ("upgradedDesc", "Deal !Damage! damage. Lose 1 HP. Bad Omen: deal 9 more damage.", "造成 !Damage! 点伤害。失去 1 点生命。凶兆：额外造成 9 点伤害。")
+        "造成 !Damage! 点伤害。失去 1 点生命。凶兆：再次造成 !Damage! 点伤害。",
+        ("upgradedDesc", "Deal !Damage! damage. Lose 1 HP. Bad Omen: deal !Damage! damage again.", "造成 !Damage! 点伤害。失去 1 点生命。凶兆：再次造成 !Damage! 点伤害。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -374,7 +374,7 @@ public class DeadStar : DivinerCard
         await CreatureCmd.Damage(choiceContext, Owner.Creature, 1, DamageProps.nonCardHpLoss, Owner.Creature, this);
         if (cardPlay.Target != null && DestinyService.IsBadOmen())
         {
-            await CommonActions.CardAttack(this, cardPlay.Target, IsUpgraded ? 9 : 7).Execute(choiceContext);
+            await CommonActions.CardAttack(this, cardPlay.Target).Execute(choiceContext);
         }
     }
 

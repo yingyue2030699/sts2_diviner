@@ -77,7 +77,7 @@ Design constraints:
 | Backdated Wound | Attack | 1 | Deal 8 damage. Foretell: deal 8 damage. | 10 and 10 damage. |
 | Inevitability | Attack | 4 | Deal 30 damage. Costs 1 less for every 2 divinations recorded. | 38 damage. |
 | Cursed Prediction | Attack | 1 | Deal 10 damage. Add a Misfortune to your discard pile. | Add it to your hand. |
-| Dead Star | Attack | 2 | Deal 18 damage. Lose 1 HP. Bad Omen: deal 7 more damage. | 21 damage, 9 more. |
+| Dead Star | Attack | 2 | Deal 18 damage. Lose 1 HP. Bad Omen: deal 18 damage again. | +4 damage. |
 | Verdict | Attack | 1 | Deal 5 damage. If the target has Weak or Vulnerable, deal 12 instead. | 8 or 16 damage. |
 | Augury | Skill | 2 | If have Divinated this combat, gain 1 Destiny. Otherwise gain 12 Block. Exhaust. | 16 Block. |
 | Tea Leaves | Skill | 2 | Foretell: Divinate. Exhaust. | cost 1. |
