@@ -108,4 +108,31 @@ public static class StringExtensions
 
         return builder.ToString();
     }
+
+    public static string ToAssetSlug(this string value, params string[] suffixesToStrip)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        var normalized = value.Replace('-', '_');
+        foreach (var suffix in suffixesToStrip)
+        {
+            if (string.IsNullOrEmpty(suffix))
+            {
+                continue;
+            }
+
+            if (normalized.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                normalized = normalized[..^suffix.Length];
+                break;
+            }
+        }
+
+        return normalized.Contains('_') || normalized.All(character => !char.IsLetter(character) || char.IsUpper(character))
+            ? normalized.ToLowerInvariant()
+            : ToSnakeCase(normalized);
+    }
 }

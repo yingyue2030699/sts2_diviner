@@ -55,6 +55,14 @@ public class Diviner : PlaceholderCharacterModel
 
     public override string CustomCharacterSelectLockedIconPath => "char_select_diviner_locked.png".CharacterUiPath();
 
+    public override Control CustomIcon => new TextureRect
+    {
+        CustomMinimumSize = new Vector2(72f, 72f),
+        Texture = ResourceLoader.Load<Texture2D>("character_icon_diviner.png".ImagePath()),
+        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+        StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+    };
+
     public override string CustomIconTexturePath => "character_icon_diviner.png".ImagePath();
 
     public override string CustomIconOutlineTexturePath => "character_icon_diviner.png".ImagePath();

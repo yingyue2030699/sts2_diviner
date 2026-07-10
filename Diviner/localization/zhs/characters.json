@@ -1,4 +1,15 @@
 {
   "DIVINER-DIVINER.title": "占卜师",
-  "DIVINER-DIVINER.description": "与福运、厄运，以及明日轮廓交易的预言者。"
+  "DIVINER-DIVINER.description": "与福运、厄运，以及明日轮廓交易的预言者。",
+  "DIVINER-DIVINER.pronounObject": "them",
+  "DIVINER-DIVINER.pronounSubject": "they",
+  "DIVINER-DIVINER.pronounPossessive": "theirs",
+  "DIVINER-DIVINER.possessiveAdjective": "their",
+  "DIVINER-DIVINER.energyColorName": "命运",
+  "DIVINER-DIVINER.eventVictory": "预兆已明。",
+  "DIVINER-DIVINER.eventDeath": "命线已断。",
+  "DIVINER-DIVINER.eventAttack": "占卜师读出胜利与毁灭之间的细线。",
+  "DIVINER-DIVINER.eventDeathPrevention": "每一种未来都有代价。",
+  "DIVINER-DIVINER.cardsModifierTitle": "占卜师牌",
+  "DIVINER-DIVINER.cardsModifierDescription": "命运、占卜、延迟的灾厄与生成的福运。"
 }

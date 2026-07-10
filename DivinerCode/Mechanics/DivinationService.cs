@@ -89,9 +89,9 @@ public static class DivinationService
             await PlayerCmd.GainEnergy(energyBonus, player);
         }
 
-        if (choiceContext != null && player.Creature.GetPower<PropheticTrancePower>() != null)
+        if (choiceContext != null && player.Creature.GetPower<PropheticTrancePower>() is { } propheticTrance)
         {
-            await CardPileCmd.Draw(choiceContext, 2, player, false);
+            await CardPileCmd.Draw(choiceContext, 2 * Math.Max(1, propheticTrance.Amount), player, false);
         }
 
         await DivinerStatusPowerSync.Sync(player, choiceContext);

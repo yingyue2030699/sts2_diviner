@@ -1,3 +1,4 @@
+using BaseLib.Patches.Localization;
 using Diviner.DivinerCode.Cards;
 using Diviner.DivinerCode.Cards.Uncommon;
 using Diviner.DivinerCode.Localization;
@@ -9,6 +10,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Runs;
@@ -16,48 +18,57 @@ using MegaCrit.Sts2.Core.ValueProps;
 
 namespace Diviner.DivinerCode.Powers.CardPowers;
 
-public abstract class DivinerCardPower : DivinerPower
+public abstract class DivinerCardPower : DivinerPower, IAddDumbVariablesToPowerDescription
 {
     public override PowerType Type => PowerType.Buff;
 
     public override PowerStackType StackType => PowerStackType.Counter;
+
+    public virtual void AddDumbVariablesToPowerDescription(LocString description)
+    {
+        description.Add("Amount", Math.Max(1, Amount).ToString());
+    }
 }
 
 public class PropheticTrancePower : DivinerCardPower
 {
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Prophetic Trance",
-        "Whenever you Divinate, draw 2 cards.",
-        "Whenever you Divinate, draw 2 cards.",
+        "Whenever you Divinate, draw {Cards} cards.",
+        "Whenever you Divinate, draw {Cards} cards.",
         "预言恍惚",
-        "每当你占卜时，抽 2 张牌。",
-        "每当你占卜时，抽 2 张牌。"
+        "每当你占卜时，抽 {Cards} 张牌。",
+        "每当你占卜时，抽 {Cards} 张牌。"
     );
+
+    public override void AddDumbVariablesToPowerDescription(LocString description)
+    {
+        base.AddDumbVariablesToPowerDescription(description);
+        description.Add("Cards", (Math.Max(1, Amount) * 2).ToString());
+    }
 }
 
 public class SmallRitualPower : DivinerCardPower
 {
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Small Ritual",
-        "Whenever you Divinate, gain Energy.",
-        "Whenever you Divinate, gain Energy.",
+        "Whenever you Divinate, gain {Amount} Energy.",
+        "Whenever you Divinate, gain {Amount} Energy.",
         "小仪式",
-        "每当你占卜时，获得能量。",
-        "每当你占卜时，获得能量。"
+        "每当你占卜时，获得 {Amount} 点能量。",
+        "每当你占卜时，获得 {Amount} 点能量。"
     );
 }
 
 public class TheWrittenHourPower : DivinerCardPower
 {
-    public override PowerStackType StackType => PowerStackType.Single;
-
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "The Written Hour",
-        "At the start of your turn, if Destiny is exactly 3, gain 1 Energy and draw 1 card.",
-        "At the start of your turn, if Destiny is exactly 3, gain 1 Energy and draw 1 card.",
+        "At the start of your turn, if Destiny is exactly 3, gain {Amount} Energy and draw {Amount} card(s).",
+        "At the start of your turn, if Destiny is exactly 3, gain {Amount} Energy and draw {Amount} card(s).",
         "写定时刻",
-        "你的回合开始时，如果命运正好为 3，获得 1 点能量并抽 1 张牌。",
-        "你的回合开始时，如果命运正好为 3，获得 1 点能量并抽 1 张牌。"
+        "你的回合开始时，如果命运正好为 3，获得 {Amount} 点能量并抽 {Amount} 张牌。",
+        "你的回合开始时，如果命运正好为 3，获得 {Amount} 点能量并抽 {Amount} 张牌。"
     );
 
     public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
@@ -68,8 +79,9 @@ public class TheWrittenHourPower : DivinerCardPower
             return;
         }
 
-        await PlayerCmd.GainEnergy(1, player);
-        await CardPileCmd.Draw(choiceContext, 1, player, false);
+        int amount = Math.Max(1, Amount);
+        await PlayerCmd.GainEnergy(amount, player);
+        await CardPileCmd.Draw(choiceContext, amount, player, false);
     }
 }
 
@@ -166,17 +178,15 @@ public class HaruspexMethodPower : DivinerCardPower
 
 public class ChosenLinePower : DivinerCardPower
 {
-    private readonly HashSet<Player> _fatedDrawAppliedThisTurn = [];
-
-    public override PowerStackType StackType => PowerStackType.Single;
+    private readonly Dictionary<Player, int> _fatedDrawsAppliedThisTurn = [];
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Chosen Line",
-        "The first card you draw each turn is Fated. Draw 1 extra card per turn.",
-        "The first card you draw each turn is Fated. Draw 1 extra card per turn.",
+        "The first {Amount} card(s) you draw each turn are Fated. Draw {Amount} extra card(s) per turn.",
+        "The first {Amount} card(s) you draw each turn are Fated. Draw {Amount} extra card(s) per turn.",
         "所选命线",
-        "每回合你抽到的第一张牌为注定。每回合多抽 1 张牌。",
-        "每回合你抽到的第一张牌为注定。每回合多抽 1 张牌。"
+        "每回合你抽到的前 {Amount} 张牌为注定。每回合多抽 {Amount} 张牌。",
+        "每回合你抽到的前 {Amount} 张牌为注定。每回合多抽 {Amount} 张牌。"
     );
 
     public override Task BeforeSideTurnStart(
@@ -187,7 +197,7 @@ public class ChosenLinePower : DivinerCardPower
     {
         if (Owner?.Player is { } player && side == Owner.Side)
         {
-            _fatedDrawAppliedThisTurn.Remove(player);
+            _fatedDrawsAppliedThisTurn.Remove(player);
         }
 
         return Task.CompletedTask;
@@ -195,34 +205,37 @@ public class ChosenLinePower : DivinerCardPower
 
     public override Task AfterCardDrawn(PlayerChoiceContext choiceContext, CardModel card, bool fromHandDraw)
     {
-        if (Owner?.Player is not { } player || card.Owner != player || !_fatedDrawAppliedThisTurn.Add(player))
+        if (Owner?.Player is not { } player || card.Owner != player)
         {
             return Task.CompletedTask;
         }
 
+        int applied = _fatedDrawsAppliedThisTurn.GetValueOrDefault(player);
+        if (applied >= Math.Max(1, Amount))
+        {
+            return Task.CompletedTask;
+        }
+
+        _fatedDrawsAppliedThisTurn[player] = applied + 1;
         DivinerCardActions.MakeFated(card);
         return Task.CompletedTask;
     }
 
     public override decimal ModifyHandDraw(Player player, decimal count)
     {
-        return Owner?.Player == player ? count + 1 : count;
+        return Owner?.Player == player ? count + Math.Max(1, Amount) : count;
     }
 }
 
 public class ResonationOfFatePower : DivinerCardPower
 {
-    private readonly Dictionary<CardModel, int> _originalReplayCounts = [];
-
-    public override PowerStackType StackType => PowerStackType.Single;
-
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Resonation of Fate",
-        "Fated cards are played an additional time. At start of turn, make random cards in your hand Fated.",
-        "Fated cards are played an additional time. At start of turn, make random cards in your hand Fated.",
+        "Fated cards are played 1 additional time. At start of turn, make {Amount} random card(s) in your hand Fated.",
+        "Fated cards are played 1 additional time. At start of turn, make {Amount} random card(s) in your hand Fated.",
         "命运共鸣",
-        "注定牌额外打出一次。回合开始时，使你手牌中的随机牌变为注定。",
-        "注定牌额外打出一次。回合开始时，使你手牌中的随机牌变为注定。"
+        "注定牌额外打出 1 次。回合开始时，使你手牌中的 {Amount} 张随机牌变为注定。",
+        "注定牌额外打出 1 次。回合开始时，使你手牌中的 {Amount} 张随机牌变为注定。"
     );
 
     public override async Task BeforeSideTurnStart(
@@ -249,44 +262,36 @@ public class ResonationOfFatePower : DivinerCardPower
         await Task.CompletedTask;
     }
 
-    public override Task BeforeCardPlayed(CardPlay cardPlay)
+    public override int ModifyCardPlayCount(CardModel card, Creature? target, int playCount)
     {
         if (Owner?.Player is not { } player ||
-            cardPlay.Card.Owner != player ||
-            !DivinerCombatRuntime.IsFatedThisTurn(cardPlay.Card) ||
-            _originalReplayCounts.ContainsKey(cardPlay.Card))
+            card.Owner != player ||
+            !DivinerCombatRuntime.IsFatedThisTurn(card))
         {
-            return Task.CompletedTask;
+            return playCount;
         }
 
-        _originalReplayCounts[cardPlay.Card] = cardPlay.Card.BaseReplayCount;
-        cardPlay.Card.BaseReplayCount += 1;
-        return Task.CompletedTask;
-    }
-
-    public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
-    {
-        if (_originalReplayCounts.Remove(cardPlay.Card, out int originalReplayCount))
-        {
-            cardPlay.Card.BaseReplayCount = originalReplayCount;
-        }
-
-        return Task.CompletedTask;
+        return playCount + 1;
     }
 }
 
 public class DoomEnginePower : DivinerCardPower
 {
-    public override PowerStackType StackType => PowerStackType.Single;
-
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Doom Engine",
-        "Misfortunes lose 2 less HP and deal 5 more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
-        "Misfortunes lose 2 less HP and deal 5 more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
+        "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
+        "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
         "厄运引擎",
-        "厄运少失去 2 点生命并额外造成 5 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。",
-        "厄运少失去 2 点生命并额外造成 5 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。"
+        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。",
+        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。"
     );
+
+    public override void AddDumbVariablesToPowerDescription(LocString description)
+    {
+        base.AddDumbVariablesToPowerDescription(description);
+        description.Add("HpLossReduction", (Math.Max(1, Amount) * 2).ToString());
+        description.Add("DamageBonus", (Math.Max(1, Amount) * 5).ToString());
+    }
 
     public override async Task BeforeSideTurnStart(
         PlayerChoiceContext choiceContext,
@@ -311,13 +316,13 @@ public class DoomEnginePower : DivinerCardPower
     public static int GetHpLoss(Player player, int baseLoss = 3)
     {
         var power = player.Creature.GetPower<DoomEnginePower>();
-        return power == null ? baseLoss : Math.Max(0, baseLoss - 2);
+        return power == null ? baseLoss : Math.Max(0, baseLoss - 2 * Math.Max(1, power.Amount));
     }
 
     public static int GetDamageBonus(Player player)
     {
         var power = player.Creature.GetPower<DoomEnginePower>();
-        return power == null ? 0 : 5;
+        return power == null ? 0 : 5 * Math.Max(1, power.Amount);
     }
 }
 
@@ -398,11 +403,11 @@ public class WeaveTheAegisPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Weave the Aegis",
-        "Whenever your Destiny changes, gain Block.",
-        "Whenever your Destiny changes, gain Block.",
+        "Whenever your Destiny changes, gain {Amount} Block.",
+        "Whenever your Destiny changes, gain {Amount} Block.",
         "织成神盾",
-        "每当你的命运变化，获得格挡。",
-        "每当你的命运变化，获得格挡。"
+        "每当你的命运变化，获得 {Amount} 点格挡。",
+        "每当你的命运变化，获得 {Amount} 点格挡。"
     );
 
     public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -540,16 +545,20 @@ public class CheatTheEndingPower : DivinerCardPower
 
 public class ManyFuturesPower : DivinerCardPower
 {
-    public override PowerStackType StackType => PowerStackType.Single;
-
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Many Futures",
-        "Card rewards have 1 additional option. When you Scry, Scry 2 additional cards.",
-        "Card rewards have 1 additional option. When you Scry, Scry 2 additional cards.",
+        "Card rewards have {RewardOptions} additional option(s). When you Scry, Scry {Amount} additional cards.",
+        "Card rewards have {RewardOptions} additional option(s). When you Scry, Scry {Amount} additional cards.",
         "诸多未来",
-        "卡牌奖励多 1 个选项。每当你预见时，额外预见 2 张牌。",
-        "卡牌奖励多 1 个选项。每当你预见时，额外预见 2 张牌。"
+        "卡牌奖励多 {RewardOptions} 个选项。每当你预见时，额外预见 {Amount} 张牌。",
+        "卡牌奖励多 {RewardOptions} 个选项。每当你预见时，额外预见 {Amount} 张牌。"
     );
+
+    public override void AddDumbVariablesToPowerDescription(LocString description)
+    {
+        base.AddDumbVariablesToPowerDescription(description);
+        description.Add("RewardOptions", RewardOptionBonus(Math.Max(1, Amount)).ToString());
+    }
 
     public static int ExtraScryCards(Player player)
     {
@@ -571,22 +580,26 @@ public class ManyFuturesPower : DivinerCardPower
             var existingIds = cardRewardOptions
                 .Select(option => option.Card.Id)
                 .ToHashSet();
-            var extraCard = creationOptions
+            int rewardOptions = RewardOptionBonus(Math.Max(1, Amount));
+            var extraCards = creationOptions
                 .GetPossibleCards(player)
-                .FirstOrDefault(card => !existingIds.Contains(card.Id));
-            if (extraCard == null)
-            {
-                return false;
-            }
+                .Where(card => !existingIds.Contains(card.Id))
+                .Take(rewardOptions)
+                .ToList();
 
-            cardRewardOptions.Add(new CardCreationResult(extraCard));
-            return true;
+            cardRewardOptions.AddRange(extraCards.Select(card => new CardCreationResult(card)));
+            return extraCards.Count > 0;
         }
         catch (Exception ex)
         {
             MainFile.Logger.Info($"Diviner Many Futures failed to add a card reward option: {ex}");
             return false;
         }
+    }
+
+    private static int RewardOptionBonus(int amount)
+    {
+        return Math.Max(1, (int)Math.Ceiling(amount / 2m));
     }
 }
 
@@ -629,15 +642,13 @@ public class DoomSpiralPower : DivinerCardPower
 
 public class EchoedOmenPower : DivinerCardPower
 {
-    public override PowerStackType StackType => PowerStackType.Single;
-
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Echoed Omen",
-        "Foretell effects trigger an additional time.",
-        "Foretell effects trigger an additional time.",
+        "Foretell effects trigger {Amount} additional time(s).",
+        "Foretell effects trigger {Amount} additional time(s).",
         "回响征兆",
-        "预言效果额外触发一次。",
-        "预言效果额外触发一次。"
+        "预言效果额外触发 {Amount} 次。",
+        "预言效果额外触发 {Amount} 次。"
     );
 
     public static int GetTriggerCount(Player player)
@@ -648,15 +659,13 @@ public class EchoedOmenPower : DivinerCardPower
 
 public class AscendedFormPower : DivinerCardPower
 {
-    public override PowerStackType StackType => PowerStackType.Single;
-
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Ascended Form",
-        "Revelation card effects can be triggered with less Destiny.",
-        "Revelation card effects can be triggered with less Destiny.",
+        "Good Omen and Revelation card effects can be triggered with {Amount} less Destiny. Revelation extra effects no longer reduce Destiny.",
+        "Good Omen and Revelation card effects can be triggered with {Amount} less Destiny. Revelation extra effects no longer reduce Destiny.",
         "升华形态",
-        "启示卡牌效果可以用更低的命运触发。",
-        "启示卡牌效果可以用更低的命运触发。"
+        "吉兆和启示卡牌效果可以用低 {Amount} 点的命运触发。启示额外效果不再降低命运。",
+        "吉兆和启示卡牌效果可以用低 {Amount} 点的命运触发。启示额外效果不再降低命运。"
     );
 
     public static int GetThresholdReduction(Player player)

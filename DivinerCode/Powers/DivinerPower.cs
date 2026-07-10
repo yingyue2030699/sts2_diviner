@@ -39,9 +39,6 @@ public abstract class DivinerPower : CustomPowerModel
             powerName = powerName[..^"Power".Length];
         }
 
-        powerName = powerName.Replace('-', '_');
-        return powerName.Contains('_') || powerName.All(character => !char.IsLetter(character) || char.IsUpper(character))
-            ? powerName.ToLowerInvariant()
-            : Diviner.DivinerCode.Extensions.StringExtensions.ToSnakeCase(powerName);
+        return powerName.ToAssetSlug();
     }
 }

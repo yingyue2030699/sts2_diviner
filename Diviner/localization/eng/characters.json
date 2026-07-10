@@ -1,4 +1,15 @@
 {
   "DIVINER-DIVINER.title": "The Diviner",
-  "DIVINER-DIVINER.description": "A seer who bargains with fortune, misfortune, and the shape of tomorrow."
+  "DIVINER-DIVINER.description": "A seer who bargains with fortune, misfortune, and the shape of tomorrow.",
+  "DIVINER-DIVINER.pronounObject": "them",
+  "DIVINER-DIVINER.pronounSubject": "they",
+  "DIVINER-DIVINER.pronounPossessive": "theirs",
+  "DIVINER-DIVINER.possessiveAdjective": "their",
+  "DIVINER-DIVINER.energyColorName": "Destiny",
+  "DIVINER-DIVINER.eventVictory": "The omen is clear.",
+  "DIVINER-DIVINER.eventDeath": "The thread is cut.",
+  "DIVINER-DIVINER.eventAttack": "The Diviner reads the line between victory and ruin.",
+  "DIVINER-DIVINER.eventDeathPrevention": "Every future has a price.",
+  "DIVINER-DIVINER.cardsModifierTitle": "Diviner Cards",
+  "DIVINER-DIVINER.cardsModifierDescription": "Destiny, divinations, delayed woes, and generated fortunes."
 }
