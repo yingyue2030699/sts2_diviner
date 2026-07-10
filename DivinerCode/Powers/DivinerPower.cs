@@ -13,13 +13,7 @@ public abstract class DivinerPower : CustomPowerModel
 
     private string ExistingIconPath(bool big)
     {
-        var powerName = Id.Entry.RemovePrefix();
-        if (powerName.EndsWith("Power", StringComparison.Ordinal))
-        {
-            powerName = powerName[..^"Power".Length];
-        }
-
-        var iconName = $"{Diviner.DivinerCode.Extensions.StringExtensions.ToSnakeCase(powerName)}.png";
+        var iconName = $"{BuildIconSlug()}.png";
         var iconPath = big ? iconName.BigPowerImagePath() : iconName.PowerImagePath();
         if (ResourceLoader.Exists(iconPath))
         {
@@ -27,5 +21,27 @@ public abstract class DivinerPower : CustomPowerModel
         }
 
         return big ? "power.png".BigPowerImagePath() : "power.png".PowerImagePath();
+    }
+
+    private string BuildIconSlug()
+    {
+        var powerName = Id.Entry.RemovePrefix();
+        if (powerName.EndsWith("_POWER", StringComparison.OrdinalIgnoreCase))
+        {
+            powerName = powerName[..^"_POWER".Length];
+        }
+        else if (powerName.EndsWith("-POWER", StringComparison.OrdinalIgnoreCase))
+        {
+            powerName = powerName[..^"-POWER".Length];
+        }
+        else if (powerName.EndsWith("Power", StringComparison.Ordinal))
+        {
+            powerName = powerName[..^"Power".Length];
+        }
+
+        powerName = powerName.Replace('-', '_');
+        return powerName.Contains('_') || powerName.All(character => !char.IsLetter(character) || char.IsUpper(character))
+            ? powerName.ToLowerInvariant()
+            : Diviner.DivinerCode.Extensions.StringExtensions.ToSnakeCase(powerName);
     }
 }

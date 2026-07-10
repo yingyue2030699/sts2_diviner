@@ -17,6 +17,12 @@ public class DestinyFall : DivinerCard
     private const string ForetellLabel = "Falling damage";
     private static readonly Dictionary<Player, List<PendingHit>> PendingHitsByPlayer = [];
 
+    static DestinyFall()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += PendingHitsByPlayer.Clear;
+        DivinerCombatRuntime.ImmediateForetellRequested += ResolveImmediateForetell;
+    }
+
     public DestinyFall()
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
@@ -25,11 +31,11 @@ public class DestinyFall : DivinerCard
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
-        "Destiny's Fall",
-        "Deal !Damage! damage. Foretell: Deal 8 damage to the same enemy.",
-        "命运坠落",
-        "造成 !Damage! 点伤害。预言：对同一敌人造成 8 点伤害。",
-        ("upgradedDesc", "Deal !Damage! damage. Foretell: Deal 10 damage to the same enemy.", "造成 !Damage! 点伤害。预言：对同一敌人造成 10 点伤害。")
+        "Foretold Strike",
+        "Deal !Damage! damage. Foretell: Deal 10 damage to the same enemy.",
+        "预兆打击",
+        "造成 !Damage! 点伤害。预言：对同一敌人造成 10 点伤害。",
+        ("upgradedDesc", "Deal !Damage! damage. Foretell: Deal 12 damage to the same enemy.", "造成 !Damage! 点伤害。预言：对同一敌人造成 12 点伤害。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -50,7 +56,7 @@ public class DestinyFall : DivinerCard
 
         pending.Add(new PendingHit(
             cardPlay.Target,
-            (IsUpgraded ? 10 : 8) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus()
+            (IsUpgraded ? 12 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus()
         ));
         DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
@@ -87,11 +93,41 @@ public class DestinyFall : DivinerCard
                     pendingHit.Target,
                     pendingHit.Damage,
                     DamageProps.nonCardUnpowered,
-                    Owner.Creature,
-                    this
+                    Owner.Creature
                 );
             }
         }
+    }
+
+    private static async Task<int> ResolveImmediateForetell(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!PendingHitsByPlayer.Remove(player, out var pendingHits))
+        {
+            return 0;
+        }
+
+        int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingHits.Count);
+        var hittableEnemies = DivinerCombatRuntime.HittableEnemiesFor(player).ToHashSet();
+        for (int trigger = 0; trigger < triggerCount; trigger++)
+        {
+            foreach (var pendingHit in pendingHits)
+            {
+                if (!hittableEnemies.Contains(pendingHit.Target))
+                {
+                    continue;
+                }
+
+                await CreatureCmd.Damage(
+                    choiceContext,
+                    pendingHit.Target,
+                    pendingHit.Damage,
+                    DamageProps.nonCardUnpowered,
+                    player.Creature
+                );
+            }
+        }
+
+        return triggerCount * pendingHits.Count;
     }
 
     protected override void OnUpgrade()

@@ -19,8 +19,14 @@ public class ThreadPull : DivinerCard
     private const string ForetellLabel = "Draw";
     private static readonly Dictionary<Player, List<int>> PendingDrawByPlayer = [];
 
+    static ThreadPull()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += PendingDrawByPlayer.Clear;
+        DivinerCombatRuntime.ImmediateForetellRequested += ResolveImmediateForetell;
+    }
+
     public ThreadPull()
-        : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
+        : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
         WithCards(2, 1);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
@@ -28,30 +34,14 @@ public class ThreadPull : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Thread Pull",
-        "Put a card from your hand on top of your draw pile. Foretell: draw !Cards! cards.",
+        "Draw !Cards! cards. Foretell: draw 3 cards.",
         "牵引命线",
-        "将一张手牌放到抽牌堆顶。预言：抽 !Cards! 张牌。",
-        ("selectPrompt", "Choose a card to put on top of your draw pile.", "选择一张牌放到抽牌堆顶。")
+        "抽 !Cards! 张牌。预言：抽 3 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        bool hasSelectableCard = PileType.Hand.GetPile(Owner).Cards.Any(card => !ReferenceEquals(card, this));
-        if (hasSelectableCard)
-        {
-            var selectedCard = await CardSelectCmd.FromHand(
-                choiceContext,
-                Owner,
-                new CardSelectorPrefs(new LocString("cards", $"{Id.Entry}.selectPrompt"), 1, 1),
-                card => !ReferenceEquals(card, this),
-                this
-            );
-
-            if (selectedCard != null)
-            {
-                await CardPileCmd.Add(selectedCard, PileType.Draw, CardPilePosition.Top, this, false);
-            }
-        }
+        await CardPileCmd.Draw(choiceContext, IsUpgraded ? 3 : 2, Owner, false);
 
         var pending = PendingDrawByPlayer.GetValueOrDefault(Owner);
         if (pending == null)
@@ -60,7 +50,7 @@ public class ThreadPull : DivinerCard
             PendingDrawByPlayer[Owner] = pending;
         }
 
-        pending.Add(IsUpgraded ? 3 : 2);
+        pending.Add(3);
         DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
@@ -88,6 +78,25 @@ public class ThreadPull : DivinerCard
                 await CardPileCmd.Draw(choiceContext, drawCount, Owner, false);
             }
         }
+    }
+
+    private static async Task<int> ResolveImmediateForetell(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!PendingDrawByPlayer.Remove(player, out var pendingDraws))
+        {
+            return 0;
+        }
+
+        int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingDraws.Count);
+        for (int trigger = 0; trigger < triggerCount; trigger++)
+        {
+            foreach (int drawCount in pendingDraws)
+            {
+                await CardPileCmd.Draw(choiceContext, drawCount, player, false);
+            }
+        }
+
+        return triggerCount * pendingDraws.Count;
     }
 
     protected override void OnUpgrade()

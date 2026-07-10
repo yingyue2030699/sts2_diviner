@@ -1,7 +1,9 @@
 namespace Diviner.DivinerCode.Mechanics;
 
 using Diviner.DivinerCode.Localization;
+using Diviner.DivinerCode.Relics;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Rooms;
 
@@ -27,10 +29,10 @@ public static class DestinyRewardTuning
         return DestinyConstants.Clamp(destiny) >= 4;
     }
 
-    public static CardRarity AdjustCardRarity(CardRarity rarity, int destiny, Func<float, bool> roll)
+    public static CardRarity AdjustCardRarity(CardRarity rarity, int destiny, Func<float, bool> roll, bool suppressPositiveShift = false)
     {
         var clamped = DestinyConstants.Clamp(destiny);
-        if (clamped >= 4 && rarity == CardRarity.Common && roll(0.5f))
+        if (!suppressPositiveShift && clamped >= 4 && rarity == CardRarity.Common && roll(0.5f))
         {
             return PromoteCardRarity(rarity, roll);
         }
@@ -43,10 +45,10 @@ public static class DestinyRewardTuning
         return rarity;
     }
 
-    public static RelicRarity AdjustRelicRarity(RelicRarity rarity, int destiny, Func<float, bool> roll)
+    public static RelicRarity AdjustRelicRarity(RelicRarity rarity, int destiny, Func<float, bool> roll, bool suppressPositiveShift = false)
     {
         var clamped = DestinyConstants.Clamp(destiny);
-        if (clamped >= 4 && rarity == RelicRarity.Common && roll(0.5f))
+        if (!suppressPositiveShift && clamped >= 4 && rarity == RelicRarity.Common && roll(0.5f))
         {
             return PromoteRelicRarity(rarity, roll);
         }
@@ -59,9 +61,15 @@ public static class DestinyRewardTuning
         return rarity;
     }
 
-    public static bool AdjustPotionRoll(bool original, int destiny, Func<float, bool> roll)
+    public static bool AdjustPotionRoll(bool original, int destiny, Func<float, bool> roll, Player? player = null)
     {
-        return original;
+        if (original)
+        {
+            return true;
+        }
+
+        var pouchBonus = DivinerRelicHooks.PotionDropBonus(player);
+        return pouchBonus > 0f && roll(pouchBonus);
     }
 
     public static RoomType AdjustUnknownRoomType(

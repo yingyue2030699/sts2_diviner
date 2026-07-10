@@ -1,4 +1,5 @@
 using Diviner.DivinerCode.Powers.Display;
+using Diviner.DivinerCode.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -17,6 +18,7 @@ public static class DivinerStatusPowerSync
         }
 
         DivinerCombatRuntime.TrackPlayer(player);
+        await DivinerRelicHooks.OnStatusSync(player, choiceContext);
         await SyncPower<DestinyPower>(player.Creature, DestinyService.CurrentDestiny, choiceContext);
         await SyncPower<ForetellPower>(player.Creature, DivinerCombatRuntime.QueuedForetellCount, choiceContext);
     }

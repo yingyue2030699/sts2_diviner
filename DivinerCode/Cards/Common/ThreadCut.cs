@@ -13,7 +13,7 @@ public class ThreadCut : DivinerCard
     public ThreadCut()
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
-        WithDamage(5, 1);
+        WithDamage(6, 2);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(

@@ -1,0 +1,19 @@
+{
+  "DIVINER-BOTTLED_OMEN.title": "瓶装预兆",
+  "DIVINER-BOTTLED_OMEN.description": "下一张牌无视命运，视为同时满足吉兆、凶兆与启示效果。",
+  "DIVINER-BITTER_TEA.title": "苦茶",
+  "DIVINER-BITTER_TEA.description": "占卜。抽 1 张牌。",
+  "DIVINER-TAR_OF_DREAD.title": "恐惧焦油",
+  "DIVINER-TAR_OF_DREAD.description": "将 3 张厄运加入你的手牌。",
+  "DIVINER-BREW_OF_BREW.title": "酿中酿",
+  "DIVINER-BREW_OF_BREW.description": "回复 5 点生命并丢弃所有其他药水。获得 1 点命运；每因此丢弃 1 瓶药水，额外回复 5 点生命。",
+  "DIVINER-MERCURY_MIRROR.title": "水银镜",
+  "DIVINER-MERCURY_MIRROR.description": "查看抽牌堆中 2 张随机牌。将 1 张加入手牌；本回合它为注定。将另一张置于抽牌堆底。",
+  "DIVINER-MERCURY_MIRROR.selectPrompt": "选择 1 张加入你的手牌。",
+  "DIVINER-CONDENSED_MISFORTUNE.title": "凝缩厄运",
+  "DIVINER-CONDENSED_MISFORTUNE.description": "将 1 张厄运加入你的手牌。本场战斗中它耗能为 0。",
+  "DIVINER-STARLESS_DRAUGHT.title": "无星药酒",
+  "DIVINER-STARLESS_DRAUGHT.description": "获得 2 点命运。若因此进入启示，获得 2 点能量。",
+  "DIVINER-BLOOD_OF_THE_MARTYR.title": "殉道者之血",
+  "DIVINER-BLOOD_OF_THE_MARTYR.description": "回复至满生命。失去 5 点命运。"
+}

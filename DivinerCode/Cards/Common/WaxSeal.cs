@@ -13,7 +13,7 @@ namespace Diviner.DivinerCode.Cards.Common;
 public class WaxSeal : DivinerCard
 {
     public WaxSeal()
-        : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
+        : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
     {
         WithDamage(4, 3);
     }

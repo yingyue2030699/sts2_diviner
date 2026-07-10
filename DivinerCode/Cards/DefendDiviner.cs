@@ -12,6 +12,7 @@ public class DefendDiviner : DivinerCard
         : base(1, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
     {
         WithBlock(5, 3);
+        WithTags(CardTag.Defend);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(

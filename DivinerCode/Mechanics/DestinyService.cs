@@ -91,9 +91,9 @@ public static class DestinyService
     public static int SetDestiny(int destiny)
     {
         int clamped = DestinyConstants.Clamp(destiny);
-        if (FixedPointPower.IsActive() && clamped < DestinyConstants.DefaultDestiny)
+        if (FixedPointPower.IsActive())
         {
-            clamped = DestinyConstants.DefaultDestiny;
+            clamped = _destiny;
         }
 
         if (_destiny == clamped)
@@ -101,7 +101,18 @@ public static class DestinyService
             return _destiny;
         }
 
+        int previous = _destiny;
         _destiny = clamped;
+        var player = DivinerCombatRuntime.GetLastObservedPlayer();
+        if (_destiny > previous)
+        {
+            DivinerEffectCue.DestinyIncrease(player?.Creature);
+        }
+        else if (_destiny < previous)
+        {
+            DivinerEffectCue.DestinyDecrease(player?.Creature);
+        }
+
         NotifyChanged();
         return _destiny;
     }
@@ -113,12 +124,20 @@ public static class DestinyService
 
     public static bool IsGoodOmen()
     {
-        return DestinyConstants.IsGoodOmen(_destiny);
+        var player = DivinerCombatRuntime.GetLastObservedPlayer();
+        int thresholdReduction = player == null ? 0 : AscendedFormPower.GetThresholdReduction(player);
+        int threshold = Math.Max(DestinyConstants.MinDestiny, DestinyConstants.GoodOmenMinDestiny - thresholdReduction);
+        return _destiny >= threshold ||
+               DivinerCombatRuntime.IsNextCardForcedFullOmen(player) ||
+               DualityPower.IsActive();
     }
 
     public static bool IsBadOmen()
     {
-        return DestinyConstants.IsBadOmen(_destiny);
+        var player = DivinerCombatRuntime.GetLastObservedPlayer();
+        return DestinyConstants.IsBadOmen(_destiny) ||
+               DivinerCombatRuntime.IsNextCardForcedFullOmen(player) ||
+               DualityPower.IsActive();
     }
 
     public static void PersistCurrentState(IRunState? runState = null)

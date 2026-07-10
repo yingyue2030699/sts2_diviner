@@ -60,6 +60,11 @@ public static class StringExtensions
         return Path.Join(ModContentRoot, "images", "relics", path);
     }
 
+    public static string PotionImagePath(this string path)
+    {
+        return Path.Join(ModContentRoot, "images", "potions", path);
+    }
+
     public static string BigRelicImagePath(this string path)
     {
         return Path.Join(ModContentRoot, "images", "relics", "big", path);

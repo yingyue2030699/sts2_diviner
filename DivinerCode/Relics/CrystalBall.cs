@@ -77,9 +77,7 @@ public class CrystalBall : DivinerRelic
             return;
         }
 
-        var canonicalCard = ChooseStartOfCombatCard();
-        var createdCard = _lastCombatState.CreateCard(canonicalCard, Owner);
-        await CardPileCmd.AddGeneratedCardToCombat(createdCard, PileType.Hand, Owner, CardPilePosition.Bottom);
+        await AddStartOfCombatCards();
     }
 
     public override async Task BeforeSideTurnEnd(
@@ -108,10 +106,76 @@ public class CrystalBall : DivinerRelic
         return true;
     }
 
-    private static MegaCrit.Sts2.Core.Models.CardModel ChooseStartOfCombatCard()
+    public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        if (ReferenceEquals(cardPlay.Card.Owner, Owner))
+        {
+            DivinerCombatRuntime.ConsumeForcedFullOmen(Owner);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    protected virtual async Task AddStartOfCombatCards()
+    {
+        if (_lastCombatState == null)
+        {
+            return;
+        }
+
+        var createdCard = _lastCombatState.CreateCard(ChooseStartOfCombatCard(), Owner);
+        await CardPileCmd.AddGeneratedCardToCombat(createdCard, PileType.Hand, Owner, CardPilePosition.Bottom);
+    }
+
+    protected CardModel CreateStartOfCombatCard<TCard>(bool upgraded, bool freeThisTurn)
+        where TCard : CardModel
+    {
+        if (_lastCombatState == null)
+        {
+            throw new InvalidOperationException("Crystal Ball has no combat state for generated start-of-combat cards.");
+        }
+
+        var createdCard = _lastCombatState.CreateCard(ModelDb.Card<TCard>(), Owner);
+        if (upgraded)
+        {
+            createdCard.UpgradeInternal();
+        }
+
+        if (freeThisTurn)
+        {
+            createdCard.SetToFreeThisTurn();
+        }
+
+        return createdCard;
+    }
+
+    protected static MegaCrit.Sts2.Core.Models.CardModel ChooseStartOfCombatCard()
     {
         return DestinyService.IsBadOmen()
             ? ModelDb.Card<Misfortune>()
             : ModelDb.Card<Fortune>();
+    }
+}
+
+public class DestinedCrystalBall : CrystalBall
+{
+    public override List<(string, string)>? Localization => DivinerLoc.Relic(
+        "Destined Crystal Ball",
+        "Your divinations are recorded here. At the start of combat, add a Fortune+ and a Misfortune+ to your hand. They cost 0 this turn.",
+        "A clear lens: one blessing, one ruin, both already chosen.",
+        "既定水晶球",
+        "你的占卜记录于此。战斗开始时，将一张福运+和一张厄运+加入你的手牌。它们本回合费用为 0。",
+        "清澈的镜面：一份祝福，一场毁灭，皆已注定。"
+    );
+
+    protected override async Task AddStartOfCombatCards()
+    {
+        var fortune = CreateStartOfCombatCard<Fortune>(true, true);
+        var misfortune = CreateStartOfCombatCard<Misfortune>(true, true);
+        await CardPileCmd.AddGeneratedCardsToCombat(
+            [fortune, misfortune],
+            PileType.Hand,
+            Owner,
+            CardPilePosition.Bottom);
     }
 }

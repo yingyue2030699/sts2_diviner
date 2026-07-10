@@ -12,15 +12,16 @@ public class NarrowEscape : DivinerCard
     public NarrowEscape()
         : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
     {
-        WithBlock(7, 3);
+        WithBlock(9, 0);
         WithDivinerKeywordTips(DivinerKeywords.Dredge, DivinerKeywords.CountdownOfDestiny);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Narrow Escape",
-        "Gain !Block! Block. Doomed: gain 1 Countdown of Destiny.",
+        "Gain !Block! Block. Doomed: gain 2 Countdown of Destiny.",
         "险中脱身",
-        "获得 !Block! 点格挡。劫兆：获得 1 层命运倒计时。"
+        "获得 !Block! 点格挡。劫兆：获得 2 层命运倒计时。",
+        ("upgradedDesc", "Gain !Block! Block. Doomed: gain 3 Countdown of Destiny.", "获得 !Block! 点格挡。劫兆：获得 3 层命运倒计时。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -28,7 +29,7 @@ public class NarrowEscape : DivinerCard
         await CommonActions.CardBlock(this, cardPlay);
         if (DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
         {
-            await DivinerCombatRuntime.IncreaseDredgeCountdown(choiceContext, Owner, 1);
+            await DivinerCombatRuntime.IncreaseDredgeCountdown(choiceContext, Owner, IsUpgraded ? 3 : 2);
         }
     }
 

@@ -12,9 +12,8 @@ public class LineOfFate : DivinerCard
     public LineOfFate()
         : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
     {
-        WithDamage(6, 0);
+        WithDamage(11, 3);
         WithKeywords([CardKeyword.Exhaust]);
-        WithKeyword(CardKeyword.Retain, UpgradeType.Add);
         WithDivinerKeywordTips(DivinerKeywords.Divinate);
     }
 

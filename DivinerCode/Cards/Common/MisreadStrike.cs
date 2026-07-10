@@ -10,9 +10,9 @@ namespace Diviner.DivinerCode.Cards.Common;
 public class MisreadStrike : DivinerCard
 {
     public MisreadStrike()
-        : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
+        : base(0, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
-        WithDamage(20, 8);
+        WithDamage(25, 8);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
     }
 

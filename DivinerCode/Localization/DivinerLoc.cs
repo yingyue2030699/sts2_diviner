@@ -67,6 +67,21 @@ public static class DivinerLoc
         );
     }
 
+    public static List<(string, string)> Potion(
+        string englishName,
+        string englishDescription,
+        string chineseName,
+        string chineseDescription,
+        params (string Key, string English, string Chinese)[] extraLoc
+    )
+    {
+        return new PotionLoc(
+            IsSimplifiedChinese ? chineseName : englishName,
+            IsSimplifiedChinese ? chineseDescription : englishDescription,
+            LocalizeExtra(extraLoc)
+        );
+    }
+
     private static (string, string)[] LocalizeExtra((string Key, string English, string Chinese)[] extraLoc)
     {
         return extraLoc

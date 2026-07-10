@@ -19,7 +19,7 @@ public static class DestinyCombatHud
     private const string OmenName = "Omen";
     private const string DivinationName = "Divination";
     private const string DivinationListName = "DivinationList";
-    private const string HideInactiveName = "HideInactive";
+    private const string DisplayModeName = "DisplayMode";
     private const string CountdownName = "Countdown";
     private const string PipsName = "Pips";
 
@@ -33,7 +33,7 @@ public static class DestinyCombatHud
     private static readonly Color EmptyPipColor = new("34394a");
 
     private static bool _isOpen;
-    private static bool _hideInactive = true;
+    private static DivinationDisplayMode _displayMode = DivinationDisplayMode.Default;
     private static string _lastRenderedDivinationSignature = "";
 
     public static void Toggle()
@@ -115,10 +115,10 @@ public static class DestinyCombatHud
         var destinyValue = layer.GetNodeOrNull<Label>($"{PanelName}/Margin/Stack/Header/{DestinyValueName}");
         var omenLabel = layer.GetNodeOrNull<Label>($"{PanelName}/Margin/Stack/Header/{OmenName}");
         var divinationLabel = layer.GetNodeOrNull<Label>($"{PanelName}/Margin/Stack/{DivinationName}");
-        var hideInactive = layer.GetNodeOrNull<CheckBox>($"{PanelName}/Margin/Stack/{HideInactiveName}");
+        var displayMode = layer.GetNodeOrNull<OptionButton>($"{PanelName}/Margin/Stack/ModeRow/{DisplayModeName}");
         var divinationList = layer.GetNodeOrNull<VBoxContainer>($"{PanelName}/Margin/Stack/Scroll/{DivinationListName}");
         var countdownLabel = layer.GetNodeOrNull<Label>($"{PanelName}/Margin/Stack/{CountdownName}");
-        if (destinyValue is null || omenLabel is null || divinationLabel is null || hideInactive is null ||
+        if (destinyValue is null || omenLabel is null || divinationLabel is null || displayMode is null ||
             divinationList is null || countdownLabel is null)
         {
             return;
@@ -127,13 +127,13 @@ public static class DestinyCombatHud
         destinyValue.Text = snapshot.Destiny.ToString();
         omenLabel.Text = snapshot.OmenLabel;
         omenLabel.AddThemeColorOverride("font_color", GetOmenColor(snapshot.Destiny));
-        int visibleCount = DivinationService.GetVisibleRecords(_hideInactive).Count;
+        var records = GetDisplayedRecords();
+        int visibleCount = records.Count;
         divinationLabel.Text = DivinerLoc.Text(
             $"Divinations: {visibleCount}/{DivinationService.CurrentRecords.Count}",
             $"占卜：{visibleCount}/{DivinationService.CurrentRecords.Count}");
-        hideInactive.Text = DivinerLoc.Text("Hide inactive", "隐藏已失效");
-        hideInactive.ButtonPressed = _hideInactive;
-        RefreshDivinationList(divinationList);
+        RefreshDisplayModeLabels(displayMode);
+        RefreshDivinationList(divinationList, records);
         countdownLabel.Text = DivinerCombatRuntime.HasActiveDredgeCountdown
             ? DivinerLoc.Text(
                 $"Countdown of Destiny: {DivinerCombatRuntime.DredgeCountdown}",
@@ -251,22 +251,41 @@ public static class DestinyCombatHud
 
         stack.AddChild(CreateStatusLabel(DivinationName, DivinerLoc.Text("Divinations: 0", "占卜：0"), TextColor));
 
-        var hideInactive = new CheckBox
+        var modeRow = new HBoxContainer
         {
-            Name = HideInactiveName,
-            Text = DivinerLoc.Text("Hide inactive", "隐藏已失效"),
-            ButtonPressed = _hideInactive,
+            Name = "ModeRow",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        modeRow.AddThemeConstantOverride("separation", 8);
+        stack.AddChild(modeRow);
+
+        var modeLabel = new Label
+        {
+            Text = DivinerLoc.Text("Mode", "模式"),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        modeLabel.AddThemeColorOverride("font_color", TextColor);
+        modeLabel.AddThemeFontSizeOverride("font_size", 15);
+        modeRow.AddChild(modeLabel);
+
+        var displayMode = new OptionButton
+        {
+            Name = DisplayModeName,
+            Selected = (int)_displayMode,
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MouseFilter = Control.MouseFilterEnum.Stop
         };
-        hideInactive.Toggled += pressed =>
+        displayMode.AddThemeFontSizeOverride("font_size", 15);
+        displayMode.AddItem(DivinerLoc.Text("Default", "默认"), (int)DivinationDisplayMode.Default);
+        displayMode.AddItem(DivinerLoc.Text("List", "列表"), (int)DivinationDisplayMode.List);
+        displayMode.AddItem(DivinerLoc.Text("List all", "完整列表"), (int)DivinationDisplayMode.ListAll);
+        displayMode.ItemSelected += index =>
         {
-            _hideInactive = pressed;
+            _displayMode = (DivinationDisplayMode)(int)index;
             _lastRenderedDivinationSignature = "";
             RefreshIfMounted();
         };
-        hideInactive.AddThemeColorOverride("font_color", TextColor);
-        hideInactive.AddThemeFontSizeOverride("font_size", 15);
-        stack.AddChild(hideInactive);
+        modeRow.AddChild(displayMode);
 
         var scroll = new ScrollContainer
         {
@@ -331,9 +350,26 @@ public static class DestinyCombatHud
         }
     }
 
-    private static void RefreshDivinationList(VBoxContainer list)
+    private static IReadOnlyList<DivinationRecord> GetDisplayedRecords()
     {
-        var records = DivinationService.GetVisibleRecords(_hideInactive);
+        return _displayMode == DivinationDisplayMode.ListAll
+            ? DivinationService.GetVisibleRecords(false)
+            : DivinationService.GetVisibleRecords(true);
+    }
+
+    private static void RefreshDisplayModeLabels(OptionButton displayMode)
+    {
+        displayMode.SetItemText(0, DivinerLoc.Text("Default", "默认"));
+        displayMode.SetItemText(1, DivinerLoc.Text("List", "列表"));
+        displayMode.SetItemText(2, DivinerLoc.Text("List all", "完整列表"));
+        if (displayMode.Selected != (int)_displayMode)
+        {
+            displayMode.Selected = (int)_displayMode;
+        }
+    }
+
+    private static void RefreshDivinationList(VBoxContainer list, IReadOnlyList<DivinationRecord> records)
+    {
         var signature = BuildDivinationListSignature(records);
         if (signature == _lastRenderedDivinationSignature && list.GetChildCount() > 0)
         {
@@ -350,10 +386,16 @@ public static class DestinyCombatHud
         if (records.Count == 0)
         {
             list.AddChild(CreateRecordLabel(
-                _hideInactive
-                    ? DivinerLoc.Text("No active divinations recorded.", "没有有效的占卜记录。")
-                    : DivinerLoc.Text("No divinations recorded.", "没有占卜记录。"),
+                _displayMode == DivinationDisplayMode.ListAll
+                    ? DivinerLoc.Text("No divinations recorded.", "没有占卜记录。")
+                    : DivinerLoc.Text("No active divinations recorded.", "没有有效的占卜记录。"),
                 MutedTextColor));
+            return;
+        }
+
+        if (_displayMode == DivinationDisplayMode.Default)
+        {
+            AddGroupedDivinationRows(list, records);
             return;
         }
 
@@ -361,6 +403,117 @@ public static class DestinyCombatHud
         {
             list.AddChild(CreateRecordRow(record));
         }
+    }
+
+    private static void AddGroupedDivinationRows(VBoxContainer list, IReadOnlyList<DivinationRecord> records)
+    {
+        foreach (var group in records
+                     .GroupBy(record => GetUiGroup(record.Category), StringComparer.Ordinal)
+                     .OrderBy(group => GetUiGroupSortOrder(group.Key)))
+        {
+            list.AddChild(CreateGroupHeader(GetUiGroupLabel(group.Key)));
+            if (group.Key == "Relic")
+            {
+                AddGroupedRelicRows(list, group.ToList());
+                continue;
+            }
+
+            foreach (var record in group)
+            {
+                list.AddChild(CreateGroupedTextRow(record));
+            }
+        }
+    }
+
+    private static void AddGroupedRelicRows(VBoxContainer list, IReadOnlyList<DivinationRecord> records)
+    {
+        foreach (var group in records
+                     .GroupBy(record => record.Category, StringComparer.Ordinal)
+                     .OrderBy(group => GetRelicCategorySortOrder(group.Key)))
+        {
+            var relicIds = group.SelectMany(record => record.GetPreviewRelicIds()).Distinct().ToList();
+            if (relicIds.Count == 0)
+            {
+                foreach (var record in group)
+                {
+                    list.AddChild(CreateGroupedTextRow(record));
+                }
+
+                continue;
+            }
+
+            list.AddChild(CreateRelicArrayRow(group.Key, relicIds));
+        }
+    }
+
+    private static Control CreateGroupHeader(string text)
+    {
+        var label = CreateStatusLabel($"Group{Guid.NewGuid():N}", text, TextColor);
+        label.AddThemeFontSizeOverride("font_size", 17);
+        return label;
+    }
+
+    private static Control CreateGroupedTextRow(DivinationRecord record)
+    {
+        var relicIds = record.GetPreviewRelicIds().ToList();
+        var labelText = $"{GetCategoryShortLabel(record.Category)}: {ExtractForecastValue(record.Text)}";
+        if (relicIds.Count == 0)
+        {
+            return CreateRecordLabel(labelText, MutedTextColor);
+        }
+
+        var row = new HBoxContainer
+        {
+            Name = $"GroupedRecordRow{Guid.NewGuid():N}",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        row.AddThemeConstantOverride("separation", 6);
+
+        var label = CreateRecordLabel(labelText, MutedTextColor);
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(label);
+
+        foreach (var relicId in relicIds)
+        {
+            var relic = ModelDb.GetByIdOrNull<RelicModel>(relicId);
+            if (relic == null)
+            {
+                continue;
+            }
+
+            row.AddChild(CreateRelicPreview(relic));
+        }
+
+        return row;
+    }
+
+    private static Control CreateRelicArrayRow(string category, IReadOnlyList<ModelId> relicIds)
+    {
+        var row = new HBoxContainer
+        {
+            Name = $"RelicArrayRow{Guid.NewGuid():N}",
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        row.AddThemeConstantOverride("separation", 6);
+
+        var relics = relicIds
+            .Select(ModelDb.GetByIdOrNull<RelicModel>)
+            .Where(relic => relic != null)
+            .Cast<RelicModel>()
+            .ToList();
+        var names = relics.Count > 0
+            ? string.Join("  ", relics.Select(relic => BuildRelicDisplayName(relic)))
+            : DivinerLoc.Text("Unknown", "未知");
+        var label = CreateRecordLabel($"{GetRelicCategoryLabel(category)}: {names}", MutedTextColor);
+        label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        row.AddChild(label);
+
+        foreach (var relic in relics)
+        {
+            row.AddChild(CreateRelicPreview(relic));
+        }
+
+        return row;
     }
 
     private static Control CreateRecordRow(DivinationRecord record)
@@ -397,7 +550,7 @@ public static class DestinyCombatHud
         return string.Join(
             "|",
             records.Select(record =>
-                $"{_hideInactive}:{record.Category}:{record.Text}:{record.Floor}:{record.PreviewRelicIds}:{record.IsActive}"));
+                $"{_displayMode}:{record.Category}:{record.Text}:{record.Floor}:{record.PreviewRelicIds}:{record.IsActive}"));
     }
 
     private static Control CreateRelicPreview(RelicModel relic)
@@ -424,6 +577,11 @@ public static class DestinyCombatHud
     }
 
     private static string BuildRelicTooltipText(RelicModel relic)
+    {
+        return BuildRelicDisplayName(relic);
+    }
+
+    private static string BuildRelicDisplayName(RelicModel relic)
     {
         return SafeFormat(relic.Title) ?? DivinerLoc.Text("Relic", "遗物");
     }
@@ -485,6 +643,97 @@ public static class DestinyCombatHud
         };
     }
 
+    private static string GetUiGroup(string category)
+    {
+        var dotIndex = category.IndexOf('.', StringComparison.Ordinal);
+        return dotIndex > 0 ? category[..dotIndex] : category;
+    }
+
+    private static int GetUiGroupSortOrder(string group)
+    {
+        return group switch
+        {
+            "Boss" => 0,
+            "AncientReward" => 1,
+            "Relic" => 2,
+            "Event" => 3,
+            "Elite" => 4,
+            _ => 99
+        };
+    }
+
+    private static string GetUiGroupLabel(string group)
+    {
+        return group switch
+        {
+            "Boss" => DivinerLoc.Text("Boss", "首领"),
+            "AncientReward" => DivinerLoc.Text("Ancient", "远古奖励"),
+            "Relic" => DivinerLoc.Text("Relic", "遗物"),
+            "Event" => DivinerLoc.Text("Event", "事件"),
+            "Elite" => DivinerLoc.Text("Elite", "精英"),
+            _ => group
+        };
+    }
+
+    private static string GetCategoryShortLabel(string category)
+    {
+        return category switch
+        {
+            "Boss.Act2" => DivinerLoc.Text("Act 2", "第二幕"),
+            "Boss.Act3.Primary" => DivinerLoc.Text("Act 3", "第三幕"),
+            "Boss.Act3.Second" => DivinerLoc.Text("Act 3 second", "第三幕第二首领"),
+            "AncientReward.Act2" => DivinerLoc.Text("Act 2", "第二幕"),
+            "AncientReward.Act3" => DivinerLoc.Text("Act 3", "第三幕"),
+            "Event.Committed" => DivinerLoc.Text("Current", "当前"),
+            "Elite.CurrentAct" => DivinerLoc.Text("Current act", "当前幕"),
+            _ => category
+        };
+    }
+
+    private static int GetRelicCategorySortOrder(string category)
+    {
+        return category switch
+        {
+            "Relic.Common" => 0,
+            "Relic.Uncommon" => 1,
+            "Relic.Rare" => 2,
+            "Relic.Shop" => 3,
+            "Relic.ShopCommon" => 4,
+            "Relic.ShopUncommon" => 5,
+            "Relic.ShopRare" => 6,
+            _ => 99
+        };
+    }
+
+    private static string GetRelicCategoryLabel(string category)
+    {
+        return category switch
+        {
+            "Relic.Common" => DivinerLoc.Text("Common", "普通"),
+            "Relic.Uncommon" => DivinerLoc.Text("Uncommon", "罕见"),
+            "Relic.Rare" => DivinerLoc.Text("Rare", "稀有"),
+            "Relic.Shop" => DivinerLoc.Text("Shop", "商店"),
+            "Relic.ShopCommon" => DivinerLoc.Text("Shop Common", "商店普通"),
+            "Relic.ShopUncommon" => DivinerLoc.Text("Shop Uncommon", "商店罕见"),
+            "Relic.ShopRare" => DivinerLoc.Text("Shop Rare", "商店稀有"),
+            _ => category
+        };
+    }
+
+    private static string ExtractForecastValue(string text)
+    {
+        var colonIndex = text.IndexOf(':', StringComparison.Ordinal);
+        if (colonIndex < 0)
+        {
+            colonIndex = text.IndexOf('：');
+        }
+
+        var value = colonIndex >= 0 && colonIndex + 1 < text.Length
+            ? text[(colonIndex + 1)..]
+            : text;
+        return value.Trim().TrimEnd('.', '。');
+    }
+
     private static string? SafeFormat(MegaCrit.Sts2.Core.Localization.LocString? locString)
     {
         if (locString == null || locString.IsEmpty)
@@ -502,5 +751,12 @@ public static class DestinyCombatHud
             var fallback = locString.ToString();
             return string.IsNullOrWhiteSpace(fallback) ? null : fallback;
         }
+    }
+
+    private enum DivinationDisplayMode
+    {
+        Default = 0,
+        List = 1,
+        ListAll = 2
     }
 }

@@ -1,0 +1,2 @@
+- Strike and Defend in the starting deck are not correctly recongized as Stirke and Defend. i.e. they don't interact with relics that target Strike and Defend correctly. Such as relics that `upgrade Strike and Defend` does nothing.
+- Cards that has extra effect, such as Good Omen, Bad Omen, Doomed, or Revelation, or only playable in these circumstances, should glow when certain effects can be triggered, just like the other cards in the base game.

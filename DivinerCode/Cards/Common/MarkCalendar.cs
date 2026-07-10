@@ -17,10 +17,16 @@ public class MarkCalendar : DivinerCard
     private const string ForetellLabel = "Block";
     private static readonly Dictionary<Player, List<int>> PendingBlockByPlayer = [];
 
+    static MarkCalendar()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += PendingBlockByPlayer.Clear;
+        DivinerCombatRuntime.ImmediateForetellRequested += ResolveImmediateForetell;
+    }
+
     public MarkCalendar()
         : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
     {
-        WithBlock(12, 4);
+        WithBlock(14, 4);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
@@ -40,7 +46,7 @@ public class MarkCalendar : DivinerCard
             PendingBlockByPlayer[Owner] = pending;
         }
 
-        pending.Add((IsUpgraded ? 16 : 12) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus());
+        pending.Add((IsUpgraded ? 18 : 14) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus());
         DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
@@ -62,6 +68,25 @@ public class MarkCalendar : DivinerCard
                 await CreatureCmd.GainBlock(Owner.Creature, block, BlockProps.cardUnpowered, null, false);
             }
         }
+    }
+
+    private static async Task<int> ResolveImmediateForetell(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!PendingBlockByPlayer.Remove(player, out var pendingBlocks))
+        {
+            return 0;
+        }
+
+        int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingBlocks.Count);
+        for (int trigger = 0; trigger < triggerCount; trigger++)
+        {
+            foreach (int block in pendingBlocks)
+            {
+                await CreatureCmd.GainBlock(player.Creature, block, BlockProps.cardUnpowered, null, false);
+            }
+        }
+
+        return triggerCount * pendingBlocks.Count;
     }
 
     protected override void OnUpgrade()

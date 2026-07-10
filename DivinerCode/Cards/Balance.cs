@@ -1,72 +1,55 @@
 using BaseLib.Abstracts;
-using BaseLib.Utils;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
-using MegaCrit.Sts2.Core.Models;
 
 namespace Diviner.DivinerCode.Cards;
 
 public class Balance : DivinerCard
 {
     public Balance()
-        : base(1, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
+        : base(0, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
     {
-        WithCards(1);
+        WithCards(1, 1);
         WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.GoodOmen, DivinerKeywords.BadOmen, DivinerKeywords.Destiny, DivinerKeywords.Divinate);
-        WithCostUpgradeBy(-1);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
-        "Balance",
-        "Good Omen: lose 1 Destiny, Divinate, and draw !Cards! card. Bad Omen: this costs 2 extra Energy, then gain 1 Destiny.",
-        "平衡",
-        "吉兆：失去 1 点命运，占卜，并抽 !Cards! 张牌。凶兆：本牌多消耗 2 点能量，然后获得 1 点命运。"
+        "Temper Fate",
+        "Good Omen: lose 1 Destiny, draw !Cards! card, and Divinate. Bad Omen: add a Bend Future to your hand.",
+        "调律命运",
+        "吉兆：失去 1 点命运，抽 !Cards! 张牌，并占卜。凶兆：将一张扭转未来加入你的手牌。",
+        ("upgradedDesc", "Good Omen: lose 1 Destiny, draw !Cards! cards, and Divinate. Bad Omen: add a Bend Future+ to your hand.", "吉兆：失去 1 点命运，抽 !Cards! 张牌，并占卜。凶兆：将一张扭转未来+加入你的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         DestinyService.EnsureLoadedForRun(Owner.RunState);
 
-        if (DestinyService.IsGoodOmen())
+        bool goodOmen = DestinyService.IsGoodOmen();
+        bool badOmen = DestinyService.IsBadOmen();
+
+        if (goodOmen)
         {
             DestinyService.AddDestiny(-1);
             DestinyService.PersistCurrentState(Owner.RunState);
-            await DivinationService.RecordPlaceholder(choiceContext, Owner, "Balance");
-            await CardPileCmd.Draw(choiceContext, 1, Owner, false);
-            await DivinerStatusPowerSync.Sync(Owner, choiceContext);
-            return;
+            await CardPileCmd.Draw(choiceContext, IsUpgraded ? 2 : 1, Owner, false);
+            await DivinationService.RecordPlaceholder(choiceContext, Owner, "Temper Fate");
         }
 
-        DestinyService.AddDestiny(1);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        if (badOmen)
+        {
+            await DivinerCardActions.AddGeneratedToCombat<BendFuture>(
+                this,
+                PileType.Hand,
+                CardPilePosition.Bottom,
+                IsUpgraded);
+        }
+
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
-    }
-
-    public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
-    {
-        modifiedCost = originalCost;
-        if (!ReferenceEquals(card, this))
-        {
-            return false;
-        }
-
-        if (Owner?.RunState == null)
-        {
-            return false;
-        }
-
-        DestinyService.EnsureLoadedForRun(Owner.RunState);
-        if (!DestinyService.IsBadOmen())
-        {
-            return false;
-        }
-
-        modifiedCost = originalCost + 2;
-        return true;
     }
 
     protected override void OnUpgrade()

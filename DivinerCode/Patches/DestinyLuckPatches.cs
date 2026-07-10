@@ -1,4 +1,5 @@
 using Diviner.DivinerCode.Mechanics;
+using Diviner.DivinerCode.Relics;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -29,7 +30,8 @@ internal static class DestinyLuckPatches
             __result = DestinyRewardTuning.AdjustCardRarity(
                 __result,
                 DestinyService.CurrentDestiny,
-                chance => RollChance(player, chance)
+                chance => RollChance(player, chance),
+                DivinerRelicHooks.SuppressesPositiveRewardRarity(player)
             );
         }
     }
@@ -48,7 +50,8 @@ internal static class DestinyLuckPatches
             __result = DestinyRewardTuning.AdjustPotionRoll(
                 __result,
                 DestinyService.CurrentDestiny,
-                chance => RollChance(player, chance)
+                chance => RollChance(player, chance),
+                player
             );
         }
     }
@@ -67,7 +70,8 @@ internal static class DestinyLuckPatches
             __result = DestinyRewardTuning.AdjustRelicRarity(
                 __result,
                 DestinyService.CurrentDestiny,
-                chance => RollChance(player, chance)
+                chance => RollChance(player, chance),
+                DivinerRelicHooks.SuppressesPositiveRewardRarity(player)
             );
         }
     }

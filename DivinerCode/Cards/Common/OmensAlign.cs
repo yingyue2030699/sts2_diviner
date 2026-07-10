@@ -16,16 +16,17 @@ public class OmensAlign : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Omens Align",
-        "Put all Fortune and Misfortune cards into your hand.",
+        "Exhaust. Put all Fortune and Misfortune cards from anywhere into your hand.",
         "征兆相合",
-        "将所有福运和厄运牌加入你的手牌。",
-        ("upgradedDesc", "Put all Fortune and Misfortune cards into your hand.", "将所有福运和厄运牌加入你的手牌。")
+        "消耗。将所有位置的福运和厄运牌加入你的手牌。",
+        ("upgradedDesc", "Put all Fortune and Misfortune cards from anywhere into your hand.", "将所有位置的福运和厄运牌加入你的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         var generatedOmens = PileType.Draw.GetPile(Owner).Cards
             .Concat(PileType.Discard.GetPile(Owner).Cards)
+            .Concat(PileType.Exhaust.GetPile(Owner).Cards)
             .Where(card => card is Fortune or Misfortune)
             .ToList();
         if (generatedOmens.Count == 0)

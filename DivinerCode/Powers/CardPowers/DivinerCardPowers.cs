@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -31,6 +32,18 @@ public class PropheticTrancePower : DivinerCardPower
         "预言恍惚",
         "每当你占卜时，抽 2 张牌。",
         "每当你占卜时，抽 2 张牌。"
+    );
+}
+
+public class SmallRitualPower : DivinerCardPower
+{
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Small Ritual",
+        "Whenever you Divinate, gain Energy.",
+        "Whenever you Divinate, gain Energy.",
+        "小仪式",
+        "每当你占卜时，获得能量。",
+        "每当你占卜时，获得能量。"
     );
 }
 
@@ -60,76 +73,24 @@ public class TheWrittenHourPower : DivinerCardPower
     }
 }
 
-public class PatternRecognitionPower : DivinerCardPower
-{
-    private readonly Dictionary<Creature, int> _cardsPlayedThisTurn = [];
-
-    public override List<(string, string)>? Localization => DivinerLoc.Power(
-        "Pattern Recognition",
-        "Whenever you play the third card in a turn, Good Omen: gain Block. Bad Omen: deal damage to all enemies.",
-        "Whenever you play the third card in a turn, Good Omen: gain Block. Bad Omen: deal damage to all enemies.",
-        "模式识别",
-        "每回合每当你打出第三张牌时，吉兆：获得格挡。凶兆：对所有敌人造成伤害。",
-        "每回合每当你打出第三张牌时，吉兆：获得格挡。凶兆：对所有敌人造成伤害。"
-    );
-
-    public override Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
-    {
-        if (Owner != null && side == Owner.Side)
-        {
-            _cardsPlayedThisTurn[Owner] = 0;
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
-    {
-        if (Owner?.Player == null || cardPlay.Card.Owner != Owner.Player)
-        {
-            return;
-        }
-
-        int count = _cardsPlayedThisTurn.GetValueOrDefault(Owner) + 1;
-        _cardsPlayedThisTurn[Owner] = count;
-        if (count % 3 != 0)
-        {
-            return;
-        }
-
-        int amount = Math.Max(1, Amount);
-        if (DestinyService.IsGoodOmen())
-        {
-            await CreatureCmd.GainBlock(Owner, amount, BlockProps.cardUnpowered, null, false);
-            return;
-        }
-
-        var enemies = DivinerCombatRuntime.CombatState?.HittableEnemies
-            .Where(creature => creature.Side != Owner.Side)
-            .ToList() ?? [];
-        if (enemies.Count > 0)
-        {
-            await CreatureCmd.Damage(choiceContext, enemies, amount, DamageProps.nonCardUnpowered, Owner, null);
-        }
-    }
-}
-
 public class HaruspexMethodPower : DivinerCardPower
 {
     private const string ForetellLabel = "Haruspex";
-    private readonly Dictionary<Player, List<bool>> _pendingCopiesByPlayer = [];
+    private static readonly Dictionary<Player, List<bool>> PendingCopiesByPlayer = [];
+
+    static HaruspexMethodPower()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += PendingCopiesByPlayer.Clear;
+        DivinerCombatRuntime.ImmediateForetellRequested += ResolveImmediateForetell;
+    }
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
-        "Haruspex Method",
-        "The next time you Exhaust a card, Divinate and Foretell: add Haruspex Method to your hand.",
-        "The next time you Exhaust a card, Divinate and Foretell: add Haruspex Method to your hand.",
-        "肝占法",
-        "下次你消耗一张牌时，占卜，并预言：将一张肝占法加入手牌。",
-        "下次你消耗一张牌时，占卜，并预言：将一张肝占法加入手牌。"
+        "Haruspex",
+        "The next time you Exhaust a card, Divinate and Foretell: add Haruspex to your hand.",
+        "The next time you Exhaust a card, Divinate and Foretell: add Haruspex to your hand.",
+        "肝占",
+        "下次你消耗一张牌时，占卜，并预言：将一张肝占加入手牌。",
+        "下次你消耗一张牌时，占卜，并预言：将一张肝占加入手牌。"
     );
 
     public override async Task AfterCardExhausted(PlayerChoiceContext choiceContext, CardModel card, bool causedByEthereal)
@@ -139,12 +100,13 @@ public class HaruspexMethodPower : DivinerCardPower
             return;
         }
 
-        await DivinationService.RecordPlaceholder(choiceContext, player, "Haruspex Method");
-        await PowerCmd.ModifyAmount(choiceContext, this, -1, Owner, null!, true);
+        bool addUpgraded = Amount > 1;
+        await DivinationService.RecordPlaceholder(choiceContext, player, "Haruspex");
+        await PowerCmd.Remove(this);
 
-        var pending = _pendingCopiesByPlayer.GetValueOrDefault(player) ?? [];
-        _pendingCopiesByPlayer[player] = pending;
-        pending.Add(Amount > 1);
+        var pending = PendingCopiesByPlayer.GetValueOrDefault(player) ?? [];
+        PendingCopiesByPlayer[player] = pending;
+        pending.Add(addUpgraded);
         DivinerCombatRuntime.QueueForetell(player, ForetellLabel);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
     }
@@ -158,7 +120,7 @@ public class HaruspexMethodPower : DivinerCardPower
         if (Owner?.Player is not { } player ||
             side != Owner.Side ||
             !participants.Contains(Owner) ||
-            !_pendingCopiesByPlayer.Remove(player, out var pendingCopies))
+            !PendingCopiesByPlayer.Remove(player, out var pendingCopies))
         {
             return;
         }
@@ -169,9 +131,36 @@ public class HaruspexMethodPower : DivinerCardPower
         {
             foreach (bool upgraded in pendingCopies)
             {
-                await DivinerCardActions.AddGeneratedToCombat<HaruspexMethod>(player, PileType.Hand, CardPilePosition.Bottom);
+                await DivinerCardActions.AddGeneratedToCombat<HaruspexMethod>(
+                    player,
+                    PileType.Hand,
+                    CardPilePosition.Bottom,
+                    upgraded);
             }
         }
+    }
+
+    private static async Task<int> ResolveImmediateForetell(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!PendingCopiesByPlayer.Remove(player, out var pendingCopies))
+        {
+            return 0;
+        }
+
+        int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingCopies.Count);
+        for (int trigger = 0; trigger < triggerCount; trigger++)
+        {
+            foreach (bool upgraded in pendingCopies)
+            {
+                await DivinerCardActions.AddGeneratedToCombat<HaruspexMethod>(
+                    player,
+                    PileType.Hand,
+                    CardPilePosition.Bottom,
+                    upgraded);
+            }
+        }
+
+        return triggerCount * pendingCopies.Count;
     }
 }
 
@@ -221,34 +210,114 @@ public class ChosenLinePower : DivinerCardPower
     }
 }
 
+public class ResonationOfFatePower : DivinerCardPower
+{
+    private readonly Dictionary<CardModel, int> _originalReplayCounts = [];
+
+    public override PowerStackType StackType => PowerStackType.Single;
+
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Resonation of Fate",
+        "Fated cards are played an additional time. At start of turn, make random cards in your hand Fated.",
+        "Fated cards are played an additional time. At start of turn, make random cards in your hand Fated.",
+        "命运共鸣",
+        "注定牌额外打出一次。回合开始时，使你手牌中的随机牌变为注定。",
+        "注定牌额外打出一次。回合开始时，使你手牌中的随机牌变为注定。"
+    );
+
+    public override async Task BeforeSideTurnStart(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IReadOnlyList<Creature> participants,
+        ICombatState combatState)
+    {
+        if (Owner?.Player is not { } player || side != Owner.Side || !participants.Contains(Owner))
+        {
+            return;
+        }
+
+        var candidates = PileType.Hand.GetPile(player).Cards
+            .Where(card => !DivinerCombatRuntime.IsFatedThisTurn(card))
+            .OrderBy(_ => Random.Shared.Next())
+            .Take(Math.Max(1, Amount))
+            .ToList();
+        foreach (var card in candidates)
+        {
+            DivinerCardActions.MakeFated(card);
+        }
+
+        await Task.CompletedTask;
+    }
+
+    public override Task BeforeCardPlayed(CardPlay cardPlay)
+    {
+        if (Owner?.Player is not { } player ||
+            cardPlay.Card.Owner != player ||
+            !DivinerCombatRuntime.IsFatedThisTurn(cardPlay.Card) ||
+            _originalReplayCounts.ContainsKey(cardPlay.Card))
+        {
+            return Task.CompletedTask;
+        }
+
+        _originalReplayCounts[cardPlay.Card] = cardPlay.Card.BaseReplayCount;
+        cardPlay.Card.BaseReplayCount += 1;
+        return Task.CompletedTask;
+    }
+
+    public override Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        if (_originalReplayCounts.Remove(cardPlay.Card, out int originalReplayCount))
+        {
+            cardPlay.Card.BaseReplayCount = originalReplayCount;
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 public class DoomEnginePower : DivinerCardPower
 {
     public override PowerStackType StackType => PowerStackType.Single;
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Doom Engine",
-        "Misfortunes lose less HP and deal more damage.",
-        "Misfortunes lose less HP and deal more damage.",
+        "Misfortunes lose 2 less HP and deal 5 more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
+        "Misfortunes lose 2 less HP and deal 5 more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
         "厄运引擎",
-        "厄运失去更少生命并造成更多伤害。",
-        "厄运失去更少生命并造成更多伤害。"
+        "厄运少失去 2 点生命并额外造成 5 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。",
+        "厄运少失去 2 点生命并额外造成 5 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。"
     );
+
+    public override async Task BeforeSideTurnStart(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IReadOnlyList<Creature> participants,
+        ICombatState combatState)
+    {
+        if (Owner?.Player is not { } player ||
+            side != Owner.Side ||
+            !participants.Contains(Owner))
+        {
+            return;
+        }
+
+        var misfortune = PileType.Discard.GetPile(player).Cards.FirstOrDefault(card => card is Misfortune);
+        if (misfortune != null)
+        {
+            await CardPileCmd.Add(misfortune, PileType.Hand, CardPilePosition.Bottom, this, false);
+        }
+    }
 
     public static int GetHpLoss(Player player, int baseLoss = 3)
     {
         var power = player.Creature.GetPower<DoomEnginePower>();
-        return Math.Max(0, baseLoss - (power?.Amount ?? 0));
+        return power == null ? baseLoss : Math.Max(0, baseLoss - 2);
     }
 
     public static int GetDamageBonus(Player player)
     {
         var power = player.Creature.GetPower<DoomEnginePower>();
-        return power?.Amount switch
-        {
-            null or <= 0 => 0,
-            >= 2 => 13,
-            _ => 9
-        };
+        return power == null ? 0 : 5;
     }
 }
 
@@ -277,8 +346,112 @@ public class LedgerOfSignsPower : DivinerCardPower
         int fortunes = DivinerCombatRuntime.ConsumeLedgerFortunes(player);
         for (int i = 0; i < fortunes; i++)
         {
-            await DivinerCardActions.AddGeneratedToCombat<Fortune>(player, PileType.Hand, CardPilePosition.Bottom);
+            await DivinerCardActions.AddGeneratedToCombat<Fortune>(
+                player,
+                PileType.Hand,
+                CardPilePosition.Bottom,
+                Amount > 1);
         }
+    }
+}
+
+public class ForetoldFalterPower : DivinerCardPower
+{
+    public override PowerStackType StackType => PowerStackType.Single;
+
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Foretold Falter",
+        "Enemies with more than 10 Weak deal half damage to you.",
+        "Enemies with more than 10 Weak deal half damage to you.",
+        "预示踉跄",
+        "拥有超过 10 层虚弱的敌人对你造成的伤害减半。",
+        "拥有超过 10 层虚弱的敌人对你造成的伤害减半。"
+    );
+
+    public override decimal ModifyDamageMultiplicative(
+        Creature? target,
+        decimal amount,
+        ValueProp props,
+        Creature? dealer,
+        CardModel? cardSource)
+    {
+        if (Owner?.Player == null ||
+            target != Owner ||
+            dealer == null ||
+            !HasEnoughWeak(dealer))
+        {
+            return amount;
+        }
+
+        return amount / 2m;
+    }
+
+    private static bool HasEnoughWeak(Creature creature)
+    {
+        return creature.Powers.Any(power => power is WeakPower { Amount: > 10 });
+    }
+}
+
+public class WeaveTheAegisPower : DivinerCardPower
+{
+    private readonly Dictionary<Player, int> _lastDestinyByPlayer = [];
+
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Weave the Aegis",
+        "Whenever your Destiny changes, gain Block.",
+        "Whenever your Destiny changes, gain Block.",
+        "织成神盾",
+        "每当你的命运变化，获得格挡。",
+        "每当你的命运变化，获得格挡。"
+    );
+
+    public override async Task AfterCardPlayed(PlayerChoiceContext choiceContext, CardPlay cardPlay)
+    {
+        if (Owner?.Player is { } player && cardPlay.Card.Owner == player)
+        {
+            await CheckDestinyChange(choiceContext, player);
+        }
+    }
+
+    public override async Task BeforeSideTurnStart(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IReadOnlyList<Creature> participants,
+        ICombatState combatState)
+    {
+        if (Owner?.Player is { } player && side == Owner.Side && participants.Contains(Owner))
+        {
+            await CheckDestinyChange(choiceContext, player);
+        }
+    }
+
+    public override async Task BeforeSideTurnEnd(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IEnumerable<Creature> participants)
+    {
+        if (Owner?.Player is { } player && side == Owner.Side && participants.Contains(Owner))
+        {
+            await CheckDestinyChange(choiceContext, player);
+        }
+    }
+
+    private async Task CheckDestinyChange(PlayerChoiceContext choiceContext, Player player)
+    {
+        int current = DestinyService.CurrentDestiny;
+        if (!_lastDestinyByPlayer.TryGetValue(player, out int previous))
+        {
+            _lastDestinyByPlayer[player] = current;
+            return;
+        }
+
+        if (previous == current)
+        {
+            return;
+        }
+
+        _lastDestinyByPlayer[player] = current;
+        await CreatureCmd.GainBlock(player.Creature, Math.Max(1, Amount), BlockProps.cardUnpowered, null, false);
     }
 }
 
@@ -288,11 +461,11 @@ public class FixedPointPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Fixed Point",
-        "Destiny cannot decrease below 3 this combat. At the start of your turn, lose 1 HP.",
-        "Destiny cannot decrease below 3 this combat. At the start of your turn, lose 1 HP.",
+        "Destiny cannot change this combat.",
+        "Destiny cannot change this combat.",
         "定点",
-        "本场战斗中命运不会降至 3 以下。你的回合开始时，失去 1 点生命。",
-        "本场战斗中命运不会降至 3 以下。你的回合开始时，失去 1 点生命。"
+        "本场战斗中命运无法改变。",
+        "本场战斗中命运无法改变。"
     );
 
     public static bool IsActive()
@@ -300,18 +473,24 @@ public class FixedPointPower : DivinerCardPower
         return DivinerCombatRuntime.GetLastObservedPlayer()?.Creature.GetPower<FixedPointPower>() != null;
     }
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
-    {
-        if (Owner?.Player == null || side != Owner.Side || !participants.Contains(Owner))
-        {
-            return;
-        }
+}
 
-        await CreatureCmd.Damage(choiceContext, Owner, 1, DamageProps.nonCardHpLoss, Owner, null);
+public class DualityPower : DivinerCardPower
+{
+    public override PowerStackType StackType => PowerStackType.Single;
+
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Duality",
+        "Good Omen and Bad Omen extra effects always trigger.",
+        "Good Omen and Bad Omen extra effects always trigger.",
+        "二相",
+        "吉兆与凶兆的额外效果总是触发。",
+        "吉兆与凶兆的额外效果总是触发。"
+    );
+
+    public static bool IsActive()
+    {
+        return DivinerCombatRuntime.GetLastObservedPlayer()?.Creature.GetPower<DualityPower>() != null;
     }
 }
 
@@ -323,11 +502,11 @@ public class CheatTheEndingPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Cheat the Ending",
-        "The next time you would die this combat, stay at 13 HP and set Destiny to 0.",
-        "The next time you would die this combat, stay at 13 HP and set Destiny to 0.",
+        "The next time you would die this combat, heal to 13% of max HP and set Destiny to 0.",
+        "The next time you would die this combat, heal to 13% of max HP and set Destiny to 0.",
         "欺瞒终局",
-        "本场战斗中下次你将要死亡时，保留 13 点生命并将命运设为 0。",
-        "本场战斗中下次你将要死亡时，保留 13 点生命并将命运设为 0。"
+        "本场战斗中下次你将要死亡时，恢复至最大生命值的 13% 并将命运设为 0。",
+        "本场战斗中下次你将要死亡时，恢复至最大生命值的 13% 并将命运设为 0。"
     );
 
     public override decimal ModifyHpLostAfterOsty(Creature target, decimal amount, ValueProp props, Creature? dealer, CardModel? cardSource)
@@ -340,7 +519,8 @@ public class CheatTheEndingPower : DivinerCardPower
         _triggered = true;
         DestinyService.SetDestiny(DestinyConstants.DredgeDestiny);
         DestinyService.PersistCurrentState(Owner.Player?.RunState);
-        return Math.Max(0, Owner.CurrentHp - 13);
+        int targetHp = Math.Max(1, (int)Math.Ceiling(Owner.MaxHp * 0.13m));
+        return Math.Max(0, Owner.CurrentHp - targetHp);
     }
 
     public override async Task AfterDamageReceivedLate(
@@ -364,16 +544,16 @@ public class ManyFuturesPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Many Futures",
-        "Card rewards have 1 additional option. When you Scry, choose from 1 additional card.",
-        "Card rewards have 1 additional option. When you Scry, choose from 1 additional card.",
+        "Card rewards have 1 additional option. When you Scry, Scry 2 additional cards.",
+        "Card rewards have 1 additional option. When you Scry, Scry 2 additional cards.",
         "诸多未来",
-        "卡牌奖励多 1 个选项。每当你预见时，多查看 1 张牌。",
-        "卡牌奖励多 1 个选项。每当你预见时，多查看 1 张牌。"
+        "卡牌奖励多 1 个选项。每当你预见时，额外预见 2 张牌。",
+        "卡牌奖励多 1 个选项。每当你预见时，额外预见 2 张牌。"
     );
 
     public static int ExtraScryCards(Player player)
     {
-        return player.Creature.GetPower<ManyFuturesPower>() == null ? 0 : 1;
+        return Math.Max(0, player.Creature.GetPower<ManyFuturesPower>()?.Amount ?? 0);
     }
 
     public override bool TryModifyCardRewardOptions(
@@ -416,24 +596,34 @@ public class DoomSpiralPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Doom Spiral",
-        "At end of turn, if Bad Omen, add a Misfortune to your hand.",
-        "At end of turn, if Bad Omen, add a Misfortune to your hand.",
+        "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
+        "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
         "厄运螺旋",
-        "回合结束时，如果处于凶兆，将一张厄运加入你的手牌。",
-        "回合结束时，如果处于凶兆，将一张厄运加入你的手牌。"
+        "回合开始时，失去 1 点命运并将一张厄运加入你的手牌。",
+        "回合开始时，失去 1 点命运并将一张厄运加入你的手牌。"
     );
 
-    public override async Task BeforeSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+    public override async Task BeforeSideTurnStart(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IReadOnlyList<Creature> participants,
+        ICombatState combatState)
     {
         if (Owner?.Player is not { } player ||
             side != Owner.Side ||
-            !participants.Contains(Owner) ||
-            !DestinyService.IsBadOmen())
+            !participants.Contains(Owner))
         {
             return;
         }
 
-        await DivinerCardActions.AddGeneratedToCombat<Misfortune>(player, PileType.Hand, CardPilePosition.Bottom);
+        DestinyService.AddDestiny(-1);
+        DestinyService.PersistCurrentState(player.RunState);
+        await DivinerStatusPowerSync.Sync(player, choiceContext);
+        await DivinerCardActions.AddGeneratedToCombat<Misfortune>(
+            player,
+            PileType.Hand,
+            CardPilePosition.Bottom,
+            Amount > 1);
     }
 }
 
@@ -472,5 +662,10 @@ public class AscendedFormPower : DivinerCardPower
     public static int GetThresholdReduction(Player player)
     {
         return player.Creature.GetPower<AscendedFormPower>()?.Amount ?? 0;
+    }
+
+    public static bool PreventsRevelationDestinyLoss(Player player)
+    {
+        return player.Creature.GetPower<AscendedFormPower>() != null;
     }
 }

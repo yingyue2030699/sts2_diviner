@@ -12,20 +12,22 @@ public class Fortune : DivinerCard
     public Fortune()
         : base(0, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
     {
-        WithCards(2);
+        WithCards(1, 1);
         WithKeywords([CardKeyword.Retain, CardKeyword.Exhaust]);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Fortune",
-        "Draw !Cards! cards.",
+        "Gain 1 Energy. Draw !Cards! card.",
         "福运",
-        "抽 !Cards! 张牌。"
+        "获得 1 点能量。抽 !Cards! 张牌。",
+        ("upgradedDesc", "Gain 1 Energy. Draw !Cards! cards.", "获得 1 点能量。抽 !Cards! 张牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await CardPileCmd.Draw(choiceContext, 2, Owner, false);
+        await PlayerCmd.GainEnergy(1, Owner);
+        await CardPileCmd.Draw(choiceContext, IsUpgraded ? 2 : 1, Owner, false);
     }
 
     protected override void OnUpgrade()

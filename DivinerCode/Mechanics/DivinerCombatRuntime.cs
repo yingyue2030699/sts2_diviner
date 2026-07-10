@@ -1,6 +1,8 @@
 using Diviner.DivinerCode.Cards;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Powers.CardPowers;
+using Diviner.DivinerCode.Relics;
+using Diviner.DivinerCode.UI;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
@@ -19,7 +21,13 @@ public static class DivinerCombatRuntime
     private static readonly HashSet<CardModel> RetainThisTurnCards = [];
     private static readonly Dictionary<string, int> PendingForetellEffects = [];
     private static readonly Dictionary<Player, int> LedgerForetellCountsByPlayer = [];
+    private static readonly HashSet<Player> ForcedFullOmenForNextCard = [];
+    private static readonly HashSet<Player> ForcedRevelationEffectsThisCombat = [];
     private static WeakReference<Player>? _lastObservedPlayer;
+
+    public static event Action? CombatOnlyStateReset;
+
+    public static event Func<PlayerChoiceContext, Player, Task<int>>? ImmediateForetellRequested;
 
     public static CombatState? CombatState { get; private set; }
 
@@ -126,7 +134,7 @@ public static class DivinerCombatRuntime
             await BeginDredgeStartOfCombat(player);
         }
 
-        if (DestinyConstants.IsEnlightenmentDestiny(destiny))
+        if (HasEnlightenmentEffect(player))
         {
             await BeginEnlightenmentStartOfCombat(choiceContext, player, source);
         }
@@ -143,13 +151,15 @@ public static class DivinerCombatRuntime
             return;
         }
 
-        DredgeCountdown = DestinyConstants.DredgeStartingCountdown;
+        DredgeCountdown = DivinerRelicHooks.DredgeStartingCountdown(player);
         EscapeCostTax = 0;
 
         var escapeCards = Enumerable
             .Range(0, DestinyConstants.DredgeEscapeCardCount)
             .Select(_ => CombatState.CreateCard(ModelDb.Card<EscapeFromDestiny>(), player))
             .ToList();
+
+        await StartOfCombatDestinyEffect.PlayDoomedEscapeShuffle(escapeCards.Count);
 
         await CardPileCmd.AddGeneratedCardsToCombat(
             escapeCards,
@@ -175,6 +185,8 @@ public static class DivinerCombatRuntime
         }
 
         int maxCards = Math.Min(DestinyConstants.EnlightenmentCardCount, drawPileCards.Count);
+        await StartOfCombatDestinyEffect.PlayRevelation(maxCards);
+
         CardSelectorPrefs prefs = new(
             new LocString("cards", "DIVINER-ENLIGHTENMENT.selectPrompt"),
             0,
@@ -275,9 +287,50 @@ public static class DivinerCombatRuntime
 
     public static bool HasEnlightenmentEffect(Player player)
     {
-        int thresholdReduction = AscendedFormPower.GetThresholdReduction(player);
+        if (ForcedRevelationEffectsThisCombat.Contains(player))
+        {
+            return true;
+        }
+
+        if (IsNextCardForcedFullOmen(player))
+        {
+            return true;
+        }
+
+        int thresholdReduction = AscendedFormPower.GetThresholdReduction(player) +
+                                 DivinerRelicHooks.EnlightenmentThresholdReduction(player);
         int threshold = Math.Max(DestinyConstants.MinDestiny, DestinyConstants.EnlightenmentDestiny - thresholdReduction);
         return DestinyService.CurrentDestiny >= threshold;
+    }
+
+    public static bool CanTriggerRevelationEffect(Player? player)
+    {
+        return player != null && HasEnlightenmentEffect(player);
+    }
+
+    public static IReadOnlyList<Creature> HittableEnemiesFor(Player player)
+    {
+        return CombatState?.HittableEnemies
+            .Where(creature => creature.Side != player.Creature.Side)
+            .ToList() ?? [];
+    }
+
+    public static async Task<bool> TryConsumeRevelationEffect(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!HasEnlightenmentEffect(player))
+        {
+            return false;
+        }
+
+        DivinerEffectCue.Revelation(player.Creature);
+        if (!IsNextCardForcedFullOmen(player) && !AscendedFormPower.PreventsRevelationDestinyLoss(player))
+        {
+            DestinyService.AddDestiny(-1);
+            DestinyService.PersistCurrentState(player.RunState);
+            await DivinerStatusPowerSync.Sync(player, choiceContext);
+        }
+
+        return true;
     }
 
     public static void ResolveForetell(string label, int count = 1)
@@ -304,6 +357,24 @@ public static class DivinerCombatRuntime
     {
         ResolveForetell(label, count);
         return EchoedOmenPower.GetTriggerCount(player);
+    }
+
+    public static async Task<int> TriggerAllForetellNow(PlayerChoiceContext choiceContext, Player player)
+    {
+        var handlers = ImmediateForetellRequested?.GetInvocationList();
+        if (handlers == null || handlers.Length == 0)
+        {
+            return 0;
+        }
+
+        int resolvedTriggers = 0;
+        foreach (var handler in handlers.Cast<Func<PlayerChoiceContext, Player, Task<int>>>())
+        {
+            resolvedTriggers += await handler(choiceContext, player);
+        }
+
+        await DivinerStatusPowerSync.Sync(player, choiceContext);
+        return resolvedTriggers;
     }
 
     public static async Task TickDredgeCountdownAtTurnEnd(
@@ -343,6 +414,11 @@ public static class DivinerCombatRuntime
         return FreeThisTurnCards.Contains(card);
     }
 
+    public static bool IsFatedThisTurn(CardModel card)
+    {
+        return FreeThisTurnCards.Contains(card);
+    }
+
     public static void ClearFreeThisTurnCards()
     {
         FreeThisTurnCards.Clear();
@@ -370,9 +446,46 @@ public static class DivinerCombatRuntime
 
     public static int ConsumeNextForetellDamageOrBlockBonus()
     {
+        return ConsumeNextForetellDamageOrBlockBonus(GetLastObservedPlayer());
+    }
+
+    public static int ConsumeNextForetellDamageOrBlockBonus(Player? player)
+    {
         int bonus = NextForetellDamageOrBlockBonus;
         NextForetellDamageOrBlockBonus = 0;
-        return bonus;
+        return bonus + DivinerRelicHooks.ForetellDamageOrBlockBonus(player);
+    }
+
+    public static void ForceNextCardFullOmen(Player player)
+    {
+        ForcedFullOmenForNextCard.Add(player);
+        TrackPlayer(player);
+        DestinyService.NotifyChanged();
+    }
+
+    public static void ForceRevelationEffectsThisCombat(Player player)
+    {
+        ForcedRevelationEffectsThisCombat.Add(player);
+        TrackPlayer(player);
+        DestinyService.NotifyChanged();
+    }
+
+    public static bool IsNextCardForcedFullOmen(Player? player)
+    {
+        return player != null && ForcedFullOmenForNextCard.Contains(player);
+    }
+
+    public static void ConsumeForcedFullOmen(Player? player)
+    {
+        if (player == null)
+        {
+            return;
+        }
+
+        if (ForcedFullOmenForNextCard.Remove(player))
+        {
+            DestinyService.NotifyChanged();
+        }
     }
 
     public static void AddNextDivinationEnergyBonus(int amount)
@@ -399,6 +512,9 @@ public static class DivinerCombatRuntime
         CombatDivinationCount = 0;
         PendingForetellEffects.Clear();
         LedgerForetellCountsByPlayer.Clear();
+        ForcedFullOmenForNextCard.Clear();
+        ForcedRevelationEffectsThisCombat.Clear();
+        CombatOnlyStateReset?.Invoke();
     }
 
     private static string FormatForetellDetail(string label, int count)
@@ -418,29 +534,35 @@ public static class DivinerCombatRuntime
                 "Unavoidable End: damage all enemies.",
                 "无可避免的结局：对所有敌人造成伤害。"),
             "Falling damage" => DivinerLoc.Text(
-                "Destiny's Fall: damage the same enemy.",
-                "命运坠落：对同一敌人造成伤害。"),
+                "Foretold Strike: damage the same enemy.",
+                "预兆打击：对同一敌人造成伤害。"),
             "Divinate" => DivinerLoc.Text(
                 "Omen of Insight: Divinate.",
                 "洞见征兆：占卜。"),
             "Block" => DivinerLoc.Text(
                 "Omen of Shelter: gain Block.",
                 "庇护征兆：获得格挡。"),
+            "Energy" => DivinerLoc.Text(
+                "Omen of Vigor: gain Energy.",
+                "活力征兆：获得能量。"),
             "Haruspex" => DivinerLoc.Text(
-                "Haruspex Method: add Haruspex Method to your hand.",
-                "观兆法：将观兆法加入你的手牌。"),
+                "Haruspex: add Haruspex to your hand.",
+                "肝占：将肝占加入你的手牌。"),
             "Vulnerable" => DivinerLoc.Text(
                 "Doomscript: apply Vulnerable to all enemies.",
                 "灾厄手稿：给予所有敌人易伤。"),
-            "Wound" => DivinerLoc.Text(
-                "Backdated Wound: deal damage.",
-                "倒填伤口：造成伤害。"),
+            "Pestilence" => DivinerLoc.Text(
+                "Omen of Pestilence: apply Weak and Poison to all enemies.",
+                "疫病征兆：给予所有敌人虚弱和中毒。"),
+            "Perishment" => DivinerLoc.Text(
+                "Omen of Perishment: damage, Weak, and Vulnerable to all enemies.",
+                "殒灭征兆：对所有敌人造成伤害，给予虚弱和易伤。"),
             "Fated draw" => DivinerLoc.Text(
                 "Predestined Path: put chosen cards into your hand; they are Fated.",
                 "既定路径：将选择的牌加入手牌；它们为注定。"),
             "Ashes draw" => DivinerLoc.Text(
-                "Read the Ashes: draw a card.",
-                "读灰：抽一张牌。"),
+                "Read the Ashes: draw cards.",
+                "读灰：抽牌。"),
             "Ashes energy" => DivinerLoc.Text(
                 "Read the Ashes: gain Energy.",
                 "读灰：获得能量。"),

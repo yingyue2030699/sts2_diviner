@@ -1,6 +1,7 @@
 using BaseLib.Abstracts;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
+using Diviner.DivinerCode.Relics;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
@@ -35,6 +36,12 @@ public class EscapeFromDestiny : DivinerCard
         if (card is not EscapeFromDestiny)
         {
             return false;
+        }
+
+        if (DivinerRelicHooks.IsFirstEscapeFree(card.Owner))
+        {
+            modifiedCost = 0;
+            return originalCost != 0;
         }
 
         modifiedCost = originalCost + DivinerCombatRuntime.EscapeCostTax;

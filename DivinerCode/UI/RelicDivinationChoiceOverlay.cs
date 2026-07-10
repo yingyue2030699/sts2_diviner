@@ -14,7 +14,7 @@ public static class RelicDivinationChoiceOverlay
     private static readonly Color BorderColor = new("c7b7ffcc");
     private static readonly Color TextColor = new("f2f0ff");
 
-    public static Task<ModelId?> ChooseRelic(IReadOnlyList<ModelId> relicIds)
+    public static Task<ModelId?> ChooseRelic(IReadOnlyList<ModelId> relicIds, bool allowSkip = true)
     {
         if (relicIds.Count == 0 || Engine.GetMainLoop() is not SceneTree tree)
         {
@@ -81,15 +81,18 @@ public static class RelicDivinationChoiceOverlay
             relicRow.AddChild(CreateRelicButton(relic, relicId, Complete));
         }
 
-        var skip = new Button
+        if (allowSkip)
         {
-            Text = DivinerLoc.Text("Skip", "跳过"),
-            CustomMinimumSize = new Vector2(120, 44),
-            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
-            MouseFilter = Control.MouseFilterEnum.Stop
-        };
-        skip.Pressed += () => Complete(null);
-        stack.AddChild(skip);
+            var skip = new Button
+            {
+                Text = DivinerLoc.Text("Skip", "跳过"),
+                CustomMinimumSize = new Vector2(120, 44),
+                SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+                MouseFilter = Control.MouseFilterEnum.Stop
+            };
+            skip.Pressed += () => Complete(null);
+            stack.AddChild(skip);
+        }
 
         tree.Root.AddChild(layer);
         return completion.Task;

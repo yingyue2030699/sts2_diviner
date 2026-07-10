@@ -16,16 +16,16 @@ public class ReadTheRoom : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Read the Room",
-        "Scry 3.",
+        "Scry 6.",
         "察言观势",
-        "预见 3。",
-        ("upgradedDesc", "Scry 5.", "预见 5。"),
+        "预见 6。",
+        ("upgradedDesc", "Scry 9.", "预见 9。"),
         ("selectPrompt", "Choose cards to discard.", "选择要丢弃的牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await DivinerCardActions.Scry(this, choiceContext, IsUpgraded ? 5 : 3);
+        await DivinerCardActions.Scry(this, choiceContext, IsUpgraded ? 9 : 6);
     }
 
     protected override void OnUpgrade()

@@ -1,10 +1,12 @@
 using BaseLib.Abstracts;
+using BaseLib.Utils.NodeFactories;
 using Diviner.DivinerCode.Cards;
 using Diviner.DivinerCode.Extensions;
 using Diviner.DivinerCode.Mechanics;
 using Diviner.DivinerCode.Relics;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Characters;
+using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
@@ -21,6 +23,8 @@ public class Diviner : PlaceholderCharacterModel
     public static readonly Color Color = new("c8b8ff");
 
     public override string PlaceholderID => "defect";
+
+    public override bool HideFromVanillaCharacterSelect => true;
 
     public override List<(string, string)>? Localization => new CharacterLoc(
         "The Diviner",
@@ -47,9 +51,19 @@ public class Diviner : PlaceholderCharacterModel
 
     public override int BaseOrbSlotCount => 0;
 
+    public override string CustomCharacterSelectIconPath => "char_select_diviner.png".CharacterUiPath();
+
+    public override string CustomCharacterSelectLockedIconPath => "char_select_diviner_locked.png".CharacterUiPath();
+
     public override string CustomIconTexturePath => "character_icon_diviner.png".ImagePath();
 
+    public override string CustomIconOutlineTexturePath => "character_icon_diviner.png".ImagePath();
+
     public override string CustomMapMarkerPath => "map_marker_diviner.png".ImagePath();
+
+    public override NCreatureVisuals CreateCustomVisuals() =>
+        NodeFactory<NCreatureVisuals>.CreateFromResource(
+            ResourceLoader.Load<Texture2D>("diviner_combat_idle.png".CharacterImagePath()));
 
     public override IEnumerable<CardModel> StartingDeck =>
     [

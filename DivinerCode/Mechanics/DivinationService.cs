@@ -2,11 +2,13 @@ using System.Text.Json;
 using BaseLib.Utils;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Powers.CardPowers;
+using Diviner.DivinerCode.Relics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Entities.Relics;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Models;
@@ -59,8 +61,29 @@ public static class DivinationService
     {
         DivinerCombatRuntime.TrackPlayer(player);
         var record = RecordPlaceholderInternal(player.RunState, player, source);
+        await ApplyPostDivinationEffects(choiceContext, player);
+        return record;
+    }
+
+    public static async Task<DivinationRecord> RecordRelicDivination(
+        PlayerChoiceContext? choiceContext,
+        Player player,
+        string source)
+    {
+        DivinerCombatRuntime.TrackPlayer(player);
+        var record = RecordRelicDivinationInternal(player.RunState, player, source);
+        await ApplyPostDivinationEffects(choiceContext, player);
+        return record;
+    }
+
+    private static async Task ApplyPostDivinationEffects(PlayerChoiceContext? choiceContext, Player player)
+    {
         DivinerCombatRuntime.RecordCombatDivination();
-        int energyBonus = DivinerCombatRuntime.ConsumeNextDivinationEnergyBonus();
+        DivinerEffectCue.Divinate(player.Creature);
+        await DivinerRelicHooks.AfterDivination(choiceContext, player, DivinerCombatRuntime.CombatDivinationCount);
+
+        int energyBonus = DivinerCombatRuntime.ConsumeNextDivinationEnergyBonus() +
+                          Math.Max(0, player.Creature.GetPower<SmallRitualPower>()?.Amount ?? 0);
         if (energyBonus > 0)
         {
             await PlayerCmd.GainEnergy(energyBonus, player);
@@ -72,7 +95,6 @@ public static class DivinationService
         }
 
         await DivinerStatusPowerSync.Sync(player, choiceContext);
-        return record;
     }
 
     public static void RefreshActivity(IRunState? runState, Player? player)
@@ -152,6 +174,18 @@ public static class DivinationService
         return record;
     }
 
+    private static DivinationRecord RecordRelicDivinationInternal(IRunState? runState, Player? player, string source)
+    {
+        _activeRunState = runState ?? _activeRunState;
+        var record = CreateRelicDivination(_activeRunState, player, source);
+
+        Records.Add(record);
+        PersistCurrentRecords(_activeRunState);
+        RecordsChanged?.Invoke();
+        MainFile.Logger.Info($"Diviner recorded relic divination: {record.Text}");
+        return record;
+    }
+
     public static void LoadForRun(IRunState? runState)
     {
         _activeRunState = runState;
@@ -188,6 +222,38 @@ public static class DivinationService
         RecordsChanged?.Invoke();
     }
 
+    public static bool TryConsumeRecords(int count, IRunState? runState = null)
+    {
+        if (count <= 0)
+        {
+            return true;
+        }
+
+        if (Records.Count < count)
+        {
+            return false;
+        }
+
+        _activeRunState = runState ?? _activeRunState;
+        var indexesToRemove = Records
+            .Select((record, index) => new { record, index })
+            .OrderBy(entry => entry.record.IsActive ? 1 : 0)
+            .ThenBy(entry => entry.index)
+            .Take(count)
+            .Select(entry => entry.index)
+            .OrderByDescending(index => index)
+            .ToList();
+
+        foreach (int index in indexesToRemove)
+        {
+            Records.RemoveAt(index);
+        }
+
+        PersistCurrentRecords(_activeRunState);
+        RecordsChanged?.Invoke();
+        return true;
+    }
+
     private static void PersistCurrentRecords(IRunState? runState)
     {
         if (TryGetSavedRun(runState) is { } savedRun)
@@ -217,11 +283,39 @@ public static class DivinationService
 
         List<ForecastCandidate> candidates = [];
         AddBossCandidates(candidates, runState);
-        AddAncientCandidates(candidates, runState);
+        AddAncientCandidates(candidates, runState, player);
         AddRelicCandidates(candidates, runState, player);
         AddEliteCandidates(candidates, runState);
         AddEventCandidates(candidates, runState);
 
+        if (candidates.Count == 0)
+        {
+            return FallbackRecord(source, "No committed future is currently readable.");
+        }
+
+        var freshCandidates = candidates.Where(candidate => !candidate.IsDuplicate).ToList();
+        var selectionPool = freshCandidates.Count > 0 ? freshCandidates : candidates;
+        var selected = PickWeightedByCategory(selectionPool);
+        return new DivinationRecord(
+            selected.Category,
+            selected.Text,
+            TryGetFloor(runState),
+            selected.PreviewRelicIds is { Count: > 0 } previewIds
+                ? DivinationRecord.EncodeRelicIds(previewIds)
+                : null);
+    }
+
+    private static DivinationRecord CreateRelicDivination(IRunState? runState, Player? player, string source)
+    {
+        if (runState == null)
+        {
+            return FallbackRecord(source, "No active run state is available to read.");
+        }
+
+        RefreshActivity(runState, player);
+
+        List<ForecastCandidate> candidates = [];
+        AddRelicCandidates(candidates, runState, player);
         if (candidates.Count == 0)
         {
             return FallbackRecord(source, "No committed future is currently readable.");
@@ -293,22 +387,23 @@ public static class DivinationService
             DivinerLoc.Text($"{label}: {bossName}.", $"{chineseLabel}：{bossName}。")));
     }
 
-    private static void AddAncientCandidates(List<ForecastCandidate> candidates, IRunState runState)
+    private static void AddAncientCandidates(List<ForecastCandidate> candidates, IRunState runState, Player? player)
     {
         if (runState.CurrentActIndex <= 0)
         {
-            AddAncientCandidate(candidates, runState, 1, "Act 2");
+            AddAncientCandidate(candidates, runState, player, 1, "Act 2");
         }
 
         if (runState.CurrentActIndex <= 1)
         {
-            AddAncientCandidate(candidates, runState, 2, "Act 3");
+            AddAncientCandidate(candidates, runState, player, 2, "Act 3");
         }
     }
 
     private static void AddAncientCandidate(
         List<ForecastCandidate> candidates,
         IRunState runState,
+        Player? player,
         int actIndex,
         string label)
     {
@@ -324,15 +419,19 @@ public static class DivinationService
             return;
         }
 
-        var option = TryDescribeGeneratedAncientOption(ancient, category);
+        var option = TryDescribeAncientOption(ancient, runState, player, category);
         if (option == null)
         {
             return;
         }
 
+        var englishPrefix = option.IsProjected ? $"Projected {label}" : label;
+        var chinesePrefix = option.IsProjected
+            ? $"预计{TranslateActLabel(label)}"
+            : TranslateActLabel(label);
         string text = DivinerLoc.Text(
-            $"{label} Ancient option: {option.Text} ({FormatModelName(ancient)}).",
-            $"{TranslateActLabel(label)}远古奖励选项：{option.Text}（{FormatModelName(ancient)}）。");
+            $"{englishPrefix} Ancient option: {option.Text} ({FormatModelName(ancient)}).",
+            $"{chinesePrefix}远古奖励选项：{option.Text}（{FormatModelName(ancient)}）。");
 
         candidates.Add(new ForecastCandidate(
             category,
@@ -360,10 +459,37 @@ public static class DivinationService
             return;
         }
 
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Common, 1, "common relic", false);
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Uncommon, 1, "uncommon relic", false);
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Rare, 1, "rare relic", false);
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Shop, 1, "shop relic", true);
+        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Common, 1, "common relic", "普通遗物", false);
+        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Uncommon, 1, "uncommon relic", "罕见遗物", false);
+        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Rare, 1, "rare relic", "稀有遗物", false);
+        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Shop, 1, "shop relic", "商店遗物", true);
+        AddRelicCandidate(
+            candidates,
+            relicIdLists,
+            RelicRarity.Common,
+            1,
+            "shop common relic",
+            "商店普通遗物",
+            true,
+            "Relic.ShopCommon");
+        AddRelicCandidate(
+            candidates,
+            relicIdLists,
+            RelicRarity.Uncommon,
+            1,
+            "shop uncommon relic",
+            "商店罕见遗物",
+            true,
+            "Relic.ShopUncommon");
+        AddRelicCandidate(
+            candidates,
+            relicIdLists,
+            RelicRarity.Rare,
+            1,
+            "shop rare relic",
+            "商店稀有遗物",
+            true,
+            "Relic.ShopRare");
     }
 
     private static void AddRelicCandidate(
@@ -372,7 +498,9 @@ public static class DivinationService
         RelicRarity rarity,
         int count,
         string label,
-        bool fromBack)
+        string chineseLabel,
+        bool fromBack,
+        string? categoryOverride = null)
     {
         if (!relicIdLists.TryGetValue(rarity, out var ids) || ids.Count == 0)
         {
@@ -382,7 +510,7 @@ public static class DivinationService
         var orderedIds = fromBack
             ? ids.AsEnumerable().Reverse().ToList()
             : ids.ToList();
-        var category = $"Relic.{rarity}";
+        var category = categoryOverride ?? $"Relic.{rarity}";
         var activeForecastIds = GetActiveQueuedRelicForecastIds(category, orderedIds);
         var selectedIds = SelectNextRelicForecastIds(category, orderedIds, count, activeForecastIds);
         if (selectedIds.Count == 0)
@@ -395,10 +523,10 @@ public static class DivinationService
         var text = activeForecastIds.Count > 0
             ? DivinerLoc.Text(
                 $"Next {label} after current forecasts: {englishNames}.",
-                $"当前预示之后的下一件{TranslateRelicLabel(rarity)}：{chineseNames}。")
+                $"当前预示之后的下一件{chineseLabel}：{chineseNames}。")
             : DivinerLoc.Text(
                 $"Next {label}: {englishNames}.",
-                $"下一件{TranslateRelicLabel(rarity)}：{chineseNames}。");
+                $"下一件{chineseLabel}：{chineseNames}。");
         bool isDuplicate = selectedIds.All(id => activeForecastIds.Any(activeId => activeId.Equals(id)));
 
         candidates.Add(new ForecastCandidate(
@@ -545,79 +673,194 @@ public static class DivinationService
         }
     }
 
+    private static AncientOptionForecast? TryDescribeAncientOption(
+        AncientEventModel ancient,
+        IRunState runState,
+        Player? player,
+        string category)
+    {
+        return TryDescribeGeneratedAncientOption(ancient, category) ??
+               TryDescribeProjectedAncientOption(ancient, runState, player, category);
+    }
+
     private static AncientOptionForecast? TryDescribeGeneratedAncientOption(AncientEventModel ancient, string category)
+    {
+        var options = TryGetGeneratedAncientOptions(ancient);
+        return options == null ? null : SelectAncientOptionForecast(options, category, false);
+    }
+
+    private static AncientOptionForecast? TryDescribeProjectedAncientOption(
+        AncientEventModel ancient,
+        IRunState runState,
+        Player? player,
+        string category)
+    {
+        var simulationPlayer = TryGetAncientSimulationPlayer(runState, player);
+        if (simulationPlayer == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var simulatedAncient = ancient.ToMutable() as AncientEventModel;
+            if (simulatedAncient == null)
+            {
+                return null;
+            }
+
+            SetEventOwnerAndRng(simulatedAncient, runState, simulationPlayer);
+            var options = InvokeGenerateInitialOptions(simulatedAncient);
+            return options == null ? null : SelectAncientOptionForecast(options, category, true);
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Info($"Diviner ancient divination could not simulate options: {ex}");
+            return null;
+        }
+    }
+
+    private static IEnumerable<EventOption>? TryGetGeneratedAncientOptions(AncientEventModel ancient)
     {
         try
         {
-            var options = ancient
+            return ancient
                 .GetType()
                 .GetProperty("GeneratedOptions", System.Reflection.BindingFlags.Instance |
                                                 System.Reflection.BindingFlags.Public |
                                                 System.Reflection.BindingFlags.NonPublic)
                 ?.GetValue(ancient) as IEnumerable<EventOption>;
-            var optionList = options?.ToList();
-            if (optionList == null || optionList.Count == 0)
-            {
-                return null;
-            }
-
-            var forecasts = optionList
-                .Where(option => !option.IsLocked)
-                .Select(TryBuildAncientOptionForecast)
-                .Where(forecast => forecast != null)
-                .Cast<AncientOptionForecast>()
-                .ToList();
-            if (forecasts.Count == 0)
-            {
-                forecasts = optionList
-                    .Select(TryBuildAncientOptionForecast)
-                    .Where(forecast => forecast != null)
-                    .Cast<AncientOptionForecast>()
-                    .ToList();
-            }
-
-            if (forecasts.Count == 0)
-            {
-                return null;
-            }
-
-            var seenRelics = Records
-                .Where(record => record.Category == category)
-                .SelectMany(record => record.GetPreviewRelicIds())
-                .ToList();
-            return forecasts.FirstOrDefault(forecast =>
-                    forecast.PreviewRelicId is { } relicId &&
-                    seenRelics.All(seenId => !seenId.Equals(relicId))) ??
-                forecasts.FirstOrDefault(forecast =>
-                    Records.Where(record => record.Category == category)
-                        .All(record => !record.Text.Contains(forecast.Text, StringComparison.Ordinal))) ??
-                forecasts[0];
         }
         catch (Exception ex)
         {
-            MainFile.Logger.Info($"Diviner ancient divination could not inspect options: {ex}");
+            MainFile.Logger.Info($"Diviner ancient divination could not inspect generated options: {ex}");
             return null;
         }
     }
 
-    private static AncientOptionForecast? TryBuildAncientOptionForecast(EventOption option)
+    private static AncientOptionForecast? SelectAncientOptionForecast(
+        IEnumerable<EventOption> options,
+        string category,
+        bool isProjected)
+    {
+        var optionList = options.ToList();
+        if (optionList.Count == 0)
+        {
+            return null;
+        }
+
+        var forecasts = optionList
+            .Where(option => !option.IsLocked)
+            .Select(option => TryBuildAncientOptionForecast(option, isProjected))
+            .Where(forecast => forecast != null)
+            .Cast<AncientOptionForecast>()
+            .ToList();
+        if (forecasts.Count == 0)
+        {
+            forecasts = optionList
+                .Select(option => TryBuildAncientOptionForecast(option, isProjected))
+                .Where(forecast => forecast != null)
+                .Cast<AncientOptionForecast>()
+                .ToList();
+        }
+
+        if (forecasts.Count == 0)
+        {
+            return null;
+        }
+
+        var seenRelics = Records
+            .Where(record => record.Category == category)
+            .SelectMany(record => record.GetPreviewRelicIds())
+            .ToList();
+        return forecasts.FirstOrDefault(forecast =>
+                forecast.PreviewRelicId is { } relicId &&
+                seenRelics.All(seenId => !seenId.Equals(relicId))) ??
+            forecasts.FirstOrDefault(forecast =>
+                Records.Where(record => record.Category == category)
+                    .All(record => !record.Text.Contains(forecast.Text, StringComparison.Ordinal))) ??
+            forecasts[0];
+    }
+
+    private static Player? TryGetAncientSimulationPlayer(IRunState runState, Player? player)
+    {
+        if (player != null)
+        {
+            return player;
+        }
+
+        return runState is IPlayerCollection playerCollection
+            ? playerCollection.Players.FirstOrDefault()
+            : null;
+    }
+
+    private static void SetEventOwnerAndRng(AncientEventModel ancient, IRunState runState, Player player)
+    {
+        var eventType = typeof(EventModel);
+        eventType
+            .GetProperty("Owner", System.Reflection.BindingFlags.Instance |
+                                  System.Reflection.BindingFlags.Public |
+                                  System.Reflection.BindingFlags.NonPublic)
+            ?.SetValue(ancient, player);
+        eventType
+            .GetProperty("Rng", System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.Public |
+                                System.Reflection.BindingFlags.NonPublic)
+            ?.SetValue(ancient, CreateEventRng(ancient, runState, player));
+    }
+
+    private static MegaCrit.Sts2.Core.Random.Rng CreateEventRng(EventModel eventModel, IRunState runState, Player player)
+    {
+        var playerSlotOffset = !eventModel.IsShared && runState is IPlayerCollection playerCollection
+            ? playerCollection.GetPlayerSlotIndex(player)
+            : 0;
+        var modelHash = StringHelper.GetDeterministicHashCode(eventModel.Id.Entry);
+        var eventSeed = unchecked(runState.Rng.Seed + (uint)playerSlotOffset + (uint)modelHash);
+        return new MegaCrit.Sts2.Core.Random.Rng(eventSeed, 0);
+    }
+
+    private static IEnumerable<EventOption>? InvokeGenerateInitialOptions(AncientEventModel ancient)
+    {
+        try
+        {
+            var result = typeof(AncientEventModel)
+                .GetMethod("GenerateInitialOptionsWrapper", System.Reflection.BindingFlags.Instance |
+                                                            System.Reflection.BindingFlags.Public |
+                                                            System.Reflection.BindingFlags.NonPublic)
+                ?.Invoke(ancient, null);
+            if (result is IEnumerable<EventOption> options)
+            {
+                return options;
+            }
+
+            return TryGetGeneratedAncientOptions(ancient);
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Info($"Diviner ancient divination could not invoke option generation: {ex}");
+            return null;
+        }
+    }
+
+    private static AncientOptionForecast? TryBuildAncientOptionForecast(EventOption option, bool isProjected)
     {
         if (option.Relic != null)
         {
             return new AncientOptionForecast(
                 DivinerLoc.Text($"relic {FormatModelName(option.Relic)}", $"遗物 {FormatModelName(option.Relic)}"),
-                option.Relic.Id);
+                option.Relic.Id,
+                isProjected);
         }
 
         var title = SafeFormat(option.Title);
         var description = SafeFormat(option.Description);
         if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(description))
         {
-            return new AncientOptionForecast($"{title}: {description}", null);
+            return new AncientOptionForecast($"{title}: {description}", null, isProjected);
         }
 
         var text = !string.IsNullOrWhiteSpace(title) ? title : description;
-        return string.IsNullOrWhiteSpace(text) ? null : new AncientOptionForecast(text, null);
+        return string.IsNullOrWhiteSpace(text) ? null : new AncientOptionForecast(text, null, isProjected);
     }
 
     private static bool IsRecordStillActive(DivinationRecord record, IRunState runState, Player? player)
@@ -683,18 +926,6 @@ public static class DivinationService
         }
     }
 
-    private static string TranslateRelicLabel(RelicRarity rarity)
-    {
-        return rarity switch
-        {
-            RelicRarity.Common => "普通遗物",
-            RelicRarity.Uncommon => "罕见遗物",
-            RelicRarity.Rare => "稀有遗物",
-            RelicRarity.Shop => "商店遗物",
-            _ => "遗物"
-        };
-    }
-
     private static string TranslateActLabel(string label)
     {
         return label switch
@@ -707,17 +938,17 @@ public static class DivinationService
 
     private static ForecastCandidate PickWeightedByCategory(IReadOnlyList<ForecastCandidate> candidates)
     {
-        var recentGroups = Records
+        var recentCategories = Records
             .TakeLast(2)
-            .Select(record => GetCategoryGroup(record.Category))
+            .Select(record => record.Category)
             .ToHashSet(StringComparer.Ordinal);
 
         var groups = candidates
-            .GroupBy(candidate => candidate.Group, StringComparer.Ordinal)
+            .GroupBy(candidate => candidate.Category, StringComparer.Ordinal)
             .Select(group => new ForecastGroup(
                 group.Key,
                 group.ToList(),
-                recentGroups.Contains(group.Key) ? 12 : 100))
+                recentCategories.Contains(group.Key) ? 12 : 100))
             .ToList();
         int totalGroupWeight = groups.Sum(group => group.Weight);
         int groupRoll = Random.Shared.Next(Math.Max(1, totalGroupWeight));
@@ -754,6 +985,11 @@ public static class DivinationService
 
     private static string GetCategoryGroup(string category)
     {
+        if (category.StartsWith("AncientReward.", StringComparison.Ordinal))
+        {
+            return "Ancient";
+        }
+
         var dotIndex = category.IndexOf('.', StringComparison.Ordinal);
         return dotIndex > 0 ? category[..dotIndex] : category;
     }
@@ -873,5 +1109,5 @@ public static class DivinationService
         IReadOnlyList<ForecastCandidate> Candidates,
         int Weight);
 
-    private sealed record AncientOptionForecast(string Text, ModelId? PreviewRelicId);
+    private sealed record AncientOptionForecast(string Text, ModelId? PreviewRelicId, bool IsProjected);
 }

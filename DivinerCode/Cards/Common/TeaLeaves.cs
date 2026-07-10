@@ -15,6 +15,12 @@ public class TeaLeaves : DivinerCard
     private const string ForetellLabel = "Divinate";
     private static readonly Dictionary<Player, int> PendingDivinationsByPlayer = [];
 
+    static TeaLeaves()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += PendingDivinationsByPlayer.Clear;
+        DivinerCombatRuntime.ImmediateForetellRequested += ResolveImmediateForetell;
+    }
+
     public TeaLeaves()
         : base(2, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
@@ -54,6 +60,25 @@ public class TeaLeaves : DivinerCard
                 await DivinationService.RecordPlaceholder(choiceContext, Owner, "Omen of Insight");
             }
         }
+    }
+
+    private static async Task<int> ResolveImmediateForetell(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!PendingDivinationsByPlayer.Remove(player, out var count))
+        {
+            return 0;
+        }
+
+        int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, count);
+        for (int trigger = 0; trigger < triggerCount; trigger++)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                await DivinationService.RecordPlaceholder(choiceContext, player, "Omen of Insight");
+            }
+        }
+
+        return triggerCount * count;
     }
 
     protected override void OnUpgrade()

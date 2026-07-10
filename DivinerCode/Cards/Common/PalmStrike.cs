@@ -13,28 +13,35 @@ public class PalmStrike : DivinerCard
     public PalmStrike()
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
-        WithDamage(9, 3);
-        WithCards(3);
-        WithDivinerKeywordTips(DivinerKeywords.GoodOmen);
+        WithDamage(10, 3);
+        WithCards(1);
+        WithDivinerKeywordTips(DivinerKeywords.GoodOmen, DivinerKeywords.BadOmen);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Palm Strike",
-        "Deal !Damage! damage. Good Omen: draw !Cards! cards.",
+        "Deal !Damage! damage. Bad Omen: damage +6. Good Omen: draw !Cards! card.",
         "掌击",
-        "造成 !Damage! 点伤害。吉兆：抽 !Cards! 张牌。"
+        "造成 !Damage! 点伤害。凶兆：伤害 +6。吉兆：抽 !Cards! 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-
-        if (!DestinyService.IsGoodOmen())
+        int damage = IsUpgraded ? 13 : 10;
+        if (DestinyService.IsBadOmen())
         {
-            return;
+            damage += 6;
         }
 
-        await CardPileCmd.Draw(choiceContext, 3, Owner, false);
+        if (cardPlay.Target != null)
+        {
+            await CommonActions.CardAttack(this, cardPlay.Target, damage).Execute(choiceContext);
+        }
+
+        if (DestinyService.IsGoodOmen())
+        {
+            await CardPileCmd.Draw(choiceContext, 1, Owner, false);
+        }
     }
 
     protected override void OnUpgrade()

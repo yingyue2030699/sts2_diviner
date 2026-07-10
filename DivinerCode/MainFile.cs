@@ -2,10 +2,14 @@ using Godot;
 using HarmonyLib;
 using BaseLib.Patches.Localization;
 using Diviner.DivinerCode.Cards;
+using Diviner.DivinerCode.Character;
+using Diviner.DivinerCode.Extensions;
+using Diviner.DivinerCode.Localization;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Modding;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Diviner.DivinerCode;
@@ -19,6 +23,8 @@ public partial class MainFile : Node
     private static readonly Regex GoldMarkerRegex = new(@"\*([^*]+)\*", RegexOptions.CultureInvariant);
     private static readonly Regex SimpleDynamicVarRegex = new(@"!([A-Za-z][A-Za-z0-9_]*)!", RegexOptions.CultureInvariant);
     private static readonly Regex ProcessedDynamicVarRegex = new(@"\{([A-Za-z][A-Za-z0-9_]*):diff\(\)\}", RegexOptions.CultureInvariant);
+    private static readonly Dictionary<string, Dictionary<string, string>> RawCardLocalizationCache = [];
+    private static DivinerCharacterSelectEntry? _characterSelectEntry;
 
     public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
         new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
@@ -31,9 +37,15 @@ public partial class MainFile : Node
 
         SimpleLoc.EnableSimpleLoc(ModId);
         RegisterDescriptionOverrides();
+        RegisterCharacterSelectEntry();
 
         Harmony harmony = new(ModId);
         harmony.PatchAll();
+    }
+
+    private static void RegisterCharacterSelectEntry()
+    {
+        _characterSelectEntry ??= new DivinerCharacterSelectEntry();
     }
 
     private static void RegisterDescriptionOverrides()
@@ -75,7 +87,54 @@ public partial class MainFile : Node
         var upgradedDescriptionKey = $"{card.Id.Entry}.upgradedDesc";
         if (LocString.Exists("cards", upgradedDescriptionKey))
         {
-            description = new LocString("cards", upgradedDescriptionKey).GetFormattedText();
+            var rawDescription = TryGetRawCardLocalization(upgradedDescriptionKey);
+            if (!string.IsNullOrEmpty(rawDescription))
+            {
+                description = rawDescription;
+                return;
+            }
+
+            try
+            {
+                description = new LocString("cards", upgradedDescriptionKey).GetFormattedText();
+            }
+            catch (Exception ex)
+            {
+                Logger.Info($"Unable to format upgraded description for {card.Id}: {ex.Message}");
+            }
+        }
+    }
+
+    private static string? TryGetRawCardLocalization(string key)
+    {
+        var language = DivinerLoc.IsSimplifiedChinese ? "zhs" : "eng";
+        if (!RawCardLocalizationCache.TryGetValue(language, out var table))
+        {
+            table = LoadRawCardLocalization(language);
+            RawCardLocalizationCache[language] = table;
+        }
+
+        return table.GetValueOrDefault(key);
+    }
+
+    private static Dictionary<string, string> LoadRawCardLocalization(string language)
+    {
+        var path = $"localization/{language}/cards.json".ContentPath();
+        using var file = Godot.FileAccess.Open(path, Godot.FileAccess.ModeFlags.Read);
+        if (file == null)
+        {
+            Logger.Info($"Unable to open card localization table at {path}.");
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(file.GetAsText()) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Logger.Info($"Unable to parse card localization table at {path}: {ex.Message}");
+            return [];
         }
     }
 

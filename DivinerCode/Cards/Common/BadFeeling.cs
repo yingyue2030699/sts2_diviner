@@ -18,10 +18,10 @@ public class BadFeeling : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Bad Feeling",
-        "Apply 1 Weak. Bad Omen: apply 1 Weak and 1 Vulnerable instead.",
+        "Apply 2 Weak. Bad Omen: apply 2 Vulnerable.",
         "不祥预感",
-        "给予 1 层虚弱。凶兆：改为给予 1 层虚弱和 1 层易伤。",
-        ("upgradedDesc", "Bad Omen: apply 1 Weak and 1 Vulnerable to all enemies instead.", "凶兆：改为对所有敌人给予 1 层虚弱和 1 层易伤。")
+        "给予 2 层虚弱。凶兆：给予 2 层易伤。",
+        ("upgradedDesc", "Apply 2 Weak to all enemies. Bad Omen: apply 2 Vulnerable to all enemies.", "对所有敌人给予 2 层虚弱。凶兆：对所有敌人给予 2 层易伤。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -33,19 +33,19 @@ public class BadFeeling : DivinerCard
             var enemies = CombatState?.HittableEnemies.Where(creature => creature.Side != Owner.Creature.Side).ToList() ?? [];
             foreach (var enemy in enemies)
             {
-                await PowerCmd.Apply<WeakPower>(choiceContext, enemy, 1, Owner.Creature, this, false);
+                await PowerCmd.Apply<WeakPower>(choiceContext, enemy, 2, Owner.Creature, this, false);
                 if (shouldApplyVulnerable)
                 {
-                    await PowerCmd.Apply<VulnerablePower>(choiceContext, enemy, 1, Owner.Creature, this, false);
+                    await PowerCmd.Apply<VulnerablePower>(choiceContext, enemy, 2, Owner.Creature, this, false);
                 }
             }
         }
         else if (cardPlay.Target != null)
         {
-            await PowerCmd.Apply<WeakPower>(choiceContext, cardPlay.Target, 1, Owner.Creature, this, false);
+            await PowerCmd.Apply<WeakPower>(choiceContext, cardPlay.Target, 2, Owner.Creature, this, false);
             if (shouldApplyVulnerable)
             {
-                await PowerCmd.Apply<VulnerablePower>(choiceContext, cardPlay.Target, 1, Owner.Creature, this, false);
+                await PowerCmd.Apply<VulnerablePower>(choiceContext, cardPlay.Target, 2, Owner.Creature, this, false);
             }
         }
     }

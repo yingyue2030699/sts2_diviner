@@ -17,10 +17,16 @@ public class DivinationOfWoes : DivinerCard
     private const string ForetellLabel = "Woes";
     private static readonly Dictionary<Player, List<int>> PendingDamageByPlayer = [];
 
+    static DivinationOfWoes()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += PendingDamageByPlayer.Clear;
+        DivinerCombatRuntime.ImmediateForetellRequested += ResolveImmediateForetell;
+    }
+
     public DivinationOfWoes()
         : base(1, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
     {
-        WithDamage(9, 4);
+        WithDamage(10, 3);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
@@ -40,7 +46,7 @@ public class DivinationOfWoes : DivinerCard
             PendingDamageByPlayer[Owner] = pending;
         }
 
-        pending.Add((IsUpgraded ? 13 : 9) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus());
+        pending.Add((IsUpgraded ? 13 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus());
         DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
@@ -71,7 +77,7 @@ public class DivinationOfWoes : DivinerCard
                     continue;
                 }
 
-                await CreatureCmd.Damage(choiceContext, enemies, damage, DamageProps.nonCardUnpowered, Owner.Creature, this);
+                await CreatureCmd.Damage(choiceContext, enemies, damage, DamageProps.nonCardUnpowered, Owner.Creature);
 
                 foreach (var enemy in enemies)
                 {
@@ -80,6 +86,36 @@ public class DivinationOfWoes : DivinerCard
                 }
             }
         }
+    }
+
+    private static async Task<int> ResolveImmediateForetell(PlayerChoiceContext choiceContext, Player player)
+    {
+        if (!PendingDamageByPlayer.Remove(player, out var pendingDamage))
+        {
+            return 0;
+        }
+
+        int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingDamage.Count);
+        foreach (int damage in pendingDamage)
+        {
+            for (int trigger = 0; trigger < triggerCount; trigger++)
+            {
+                var enemies = DivinerCombatRuntime.HittableEnemiesFor(player);
+                if (enemies.Count == 0)
+                {
+                    continue;
+                }
+
+                await CreatureCmd.Damage(choiceContext, enemies, damage, DamageProps.nonCardUnpowered, player.Creature);
+                foreach (var enemy in enemies)
+                {
+                    await PowerCmd.Apply<WeakPower>(choiceContext, enemy, 1, player.Creature, null!, false);
+                    await PowerCmd.Apply<VulnerablePower>(choiceContext, enemy, 1, player.Creature, null!, false);
+                }
+            }
+        }
+
+        return triggerCount * pendingDamage.Count;
     }
 
     protected override void OnUpgrade()

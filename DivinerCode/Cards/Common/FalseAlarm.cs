@@ -10,9 +10,9 @@ namespace Diviner.DivinerCode.Cards.Common;
 public class FalseAlarm : DivinerCard
 {
     public FalseAlarm()
-        : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
+        : base(0, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
     {
-        WithBlock(14, 4);
+        WithBlock(16, 4);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
     }
 

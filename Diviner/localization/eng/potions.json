@@ -1,0 +1,19 @@
+{
+  "DIVINER-BOTTLED_OMEN.title": "Bottled Omen",
+  "DIVINER-BOTTLED_OMEN.description": "The next card is played with Good Omen, Bad Omen, and Revelation effects regardless of Destiny.",
+  "DIVINER-BITTER_TEA.title": "Bitter Tea",
+  "DIVINER-BITTER_TEA.description": "Divinate. Draw 1 card.",
+  "DIVINER-TAR_OF_DREAD.title": "Tar of Dread",
+  "DIVINER-TAR_OF_DREAD.description": "Add 3 Misfortune to your hand.",
+  "DIVINER-BREW_OF_BREW.title": "Brew of Brew",
+  "DIVINER-BREW_OF_BREW.description": "Heal 5 HP and discard all other potions. Gain 1 Destiny and heal 5 extra HP for each potion discarded.",
+  "DIVINER-MERCURY_MIRROR.title": "Mercury Mirror",
+  "DIVINER-MERCURY_MIRROR.description": "Look at 2 random cards from your draw pile. Put 1 into your hand; it is Fated this turn. Put the other on the bottom of your draw pile.",
+  "DIVINER-MERCURY_MIRROR.selectPrompt": "Choose a card to put into your hand.",
+  "DIVINER-CONDENSED_MISFORTUNE.title": "Condensed Misfortune",
+  "DIVINER-CONDENSED_MISFORTUNE.description": "Add a Misfortune to your hand. It costs 0 this combat.",
+  "DIVINER-STARLESS_DRAUGHT.title": "Starless Draught",
+  "DIVINER-STARLESS_DRAUGHT.description": "Gain 2 Destiny. If this enters Revelation, gain 2 Energy.",
+  "DIVINER-BLOOD_OF_THE_MARTYR.title": "Blood of the Martyr",
+  "DIVINER-BLOOD_OF_THE_MARTYR.description": "Heal to full HP. Lose 5 Destiny."
+}

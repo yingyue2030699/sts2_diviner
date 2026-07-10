@@ -12,6 +12,7 @@ public class StrikeDiviner : DivinerCard
         : base(1, CardType.Attack, CardRarity.Basic, TargetType.AnyEnemy)
     {
         WithDamage(6, 3);
+        WithTags(CardTag.Strike);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
