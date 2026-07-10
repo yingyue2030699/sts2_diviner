@@ -577,18 +577,15 @@ public class ManyFuturesPower : DivinerCardPower
                 return false;
             }
 
-            var existingIds = cardRewardOptions
-                .Select(option => option.Card.Id)
-                .ToHashSet();
             int rewardOptions = RewardOptionBonus(Math.Max(1, Amount));
-            var extraCards = creationOptions
-                .GetPossibleCards(player)
-                .Where(card => !existingIds.Contains(card.Id))
-                .Take(rewardOptions)
-                .ToList();
+            var extraOptions = CardRewardOptionHelper.CreateExtraOptionsFromCurrentReward(
+                player,
+                cardRewardOptions,
+                creationOptions,
+                rewardOptions);
 
-            cardRewardOptions.AddRange(extraCards.Select(card => new CardCreationResult(card)));
-            return extraCards.Count > 0;
+            cardRewardOptions.AddRange(extraOptions);
+            return extraOptions.Count > 0;
         }
         catch (Exception ex)
         {

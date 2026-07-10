@@ -251,16 +251,17 @@ public class MarkedDeck : DivinerRelic
                 return false;
             }
 
-            var existingIds = cardRewardOptions.Select(option => option.Card.Id).ToHashSet();
-            var extraCard = creationOptions
-                .GetPossibleCards(player)
-                .FirstOrDefault(card => !existingIds.Contains(card.Id));
-            if (extraCard == null)
+            var extraOptions = CardRewardOptionHelper.CreateExtraOptionsFromCurrentReward(
+                player,
+                cardRewardOptions,
+                creationOptions,
+                1);
+            if (extraOptions.Count == 0)
             {
                 return false;
             }
 
-            cardRewardOptions.Add(new CardCreationResult(extraCard));
+            cardRewardOptions.AddRange(extraOptions);
             return true;
         }
         catch (Exception ex)
