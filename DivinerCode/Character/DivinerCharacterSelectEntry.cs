@@ -1,5 +1,6 @@
 using BaseLib.Abstracts;
 using Diviner.DivinerCode.Extensions;
+using Diviner.DivinerCode.Localization;
 using Godot;
 using MegaCrit.Sts2.Core.Models;
 
@@ -11,10 +12,12 @@ public class DivinerCharacterSelectEntry : CustomCharacterSelectEntry
 
     public override string ButtonIconPath => "char_select_diviner.png".CharacterUiPath();
 
-    public override string EntryTitle => "The Diviner";
+    public override string EntryTitle => DivinerLoc.Text("The Diviner", "占卜师");
 
     public override string EntryDescription =>
-        "A seer who bargains with fortune, misfortune, and the shape of tomorrow.";
+        DivinerLoc.Text(
+            "A seer who bargains with fortune, misfortune, and the shape of tomorrow.",
+            "与福运、厄运，以及明日轮廓交易的预言者。");
 
     public override int SortOrder => 40;
 

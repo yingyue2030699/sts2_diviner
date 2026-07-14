@@ -2,6 +2,7 @@ using BaseLib.Abstracts;
 using BaseLib.Utils.NodeFactories;
 using Diviner.DivinerCode.Cards;
 using Diviner.DivinerCode.Extensions;
+using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using Diviner.DivinerCode.Relics;
 using Godot;
@@ -27,20 +28,26 @@ public class Diviner : PlaceholderCharacterModel
     public override bool HideFromVanillaCharacterSelect => true;
 
     public override List<(string, string)>? Localization => new CharacterLoc(
-        "The Diviner",
-        "The Diviner",
-        "A seer who bargains with fortune, misfortune, and the shape of tomorrow.",
-        "them",
-        "they",
-        "theirs",
-        "their",
-        "Destiny",
-        "The omen is clear.",
-        "The thread is cut.",
-        "The Diviner reads the line between victory and ruin.",
-        "Every future has a price.",
-        "Diviner Cards",
-        "Destiny, divinations, delayed woes, and generated fortunes."
+        DivinerLoc.Text("The Diviner", "占卜师"),
+        DivinerLoc.Text("The Diviner", "占卜师"),
+        DivinerLoc.Text(
+            "A seer who bargains with fortune, misfortune, and the shape of tomorrow.",
+            "与福运、厄运，以及明日轮廓交易的预言者。"),
+        DivinerLoc.Text("them", "其"),
+        DivinerLoc.Text("they", "其"),
+        DivinerLoc.Text("theirs", "其"),
+        DivinerLoc.Text("their", "其"),
+        DivinerLoc.Text("Destiny", "命运"),
+        DivinerLoc.Text("The omen is clear.", "预兆已明。"),
+        DivinerLoc.Text("The thread is cut.", "命线已断。"),
+        DivinerLoc.Text(
+            "The Diviner reads the line between victory and ruin.",
+            "占卜师读出胜利与毁灭之间的细线。"),
+        DivinerLoc.Text("Every future has a price.", "每一种未来都有代价。"),
+        DivinerLoc.Text("Diviner Cards", "占卜师牌"),
+        DivinerLoc.Text(
+            "Destiny, divinations, delayed woes, and generated fortunes.",
+            "命运、占卜、延迟的灾厄与生成的福运。")
     );
 
     public override Color NameColor => Color;
