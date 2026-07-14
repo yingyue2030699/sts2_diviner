@@ -13,6 +13,11 @@ public static class RelicDivinationChoiceOverlay
     private static readonly Color PanelColor = new("111522f2");
     private static readonly Color BorderColor = new("c7b7ffcc");
     private static readonly Color TextColor = new("f2f0ff");
+    private const float RelicButtonWidth = 86f;
+    private const float RelicButtonHeight = 78f;
+    private const float RelicSeparation = 12f;
+    private const float HorizontalScreenPadding = 80f;
+    private const float VerticalScreenPadding = 80f;
 
     public static Task<ModelId?> ChooseRelic(IReadOnlyList<ModelId> relicIds, bool allowSkip = true)
     {
@@ -22,6 +27,18 @@ public static class RelicDivinationChoiceOverlay
         }
 
         tree.Root.GetNodeOrNull<CanvasLayer>(OverlayName)?.QueueFree();
+
+        var relics = relicIds
+            .Select(relicId => (Relic: ModelDb.GetByIdOrNull<RelicModel>(relicId), Id: relicId))
+            .Where(entry => entry.Relic != null)
+            .ToList();
+        if (relics.Count == 0)
+        {
+            return Task.FromResult<ModelId?>(null);
+        }
+
+        var viewportSize = tree.Root.GetVisibleRect().Size;
+        var layout = CalculateLayout(viewportSize, relics.Count, allowSkip);
 
         var completion = new TaskCompletionSource<ModelId?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var layer = new CanvasLayer
@@ -35,9 +52,9 @@ public static class RelicDivinationChoiceOverlay
         {
             MouseFilter = Control.MouseFilterEnum.Stop,
             TopLevel = true,
-            Size = new Vector2(560, 280),
-            Position = new Vector2(360, 210),
-            CustomMinimumSize = new Vector2(560, 280)
+            Size = layout.PanelSize,
+            Position = layout.PanelPosition,
+            CustomMinimumSize = layout.PanelSize
         };
         panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
         layer.AddChild(panel);
@@ -62,23 +79,29 @@ public static class RelicDivinationChoiceOverlay
         title.AddThemeFontSizeOverride("font_size", 20);
         stack.AddChild(title);
 
-        var relicRow = new HBoxContainer
+        var relicScroll = new ScrollContainer
         {
-            Alignment = BoxContainer.AlignmentMode.Center,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            CustomMinimumSize = new Vector2(layout.GridWidth, layout.GridVisibleHeight),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = layout.GridVisibleHeight < layout.GridHeight
+                ? ScrollContainer.ScrollMode.Auto
+                : ScrollContainer.ScrollMode.Disabled
         };
-        relicRow.AddThemeConstantOverride("separation", 12);
-        stack.AddChild(relicRow);
+        stack.AddChild(relicScroll);
 
-        foreach (var relicId in relicIds)
+        var relicGrid = new GridContainer
         {
-            var relic = ModelDb.GetByIdOrNull<RelicModel>(relicId);
-            if (relic == null)
-            {
-                continue;
-            }
+            Columns = layout.Columns,
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
+        };
+        relicGrid.AddThemeConstantOverride("h_separation", (int)RelicSeparation);
+        relicGrid.AddThemeConstantOverride("v_separation", (int)RelicSeparation);
+        relicScroll.AddChild(relicGrid);
 
-            relicRow.AddChild(CreateRelicButton(relic, relicId, Complete));
+        foreach (var (relic, relicId) in relics)
+        {
+            relicGrid.AddChild(CreateRelicButton(relic!, relicId, Complete));
         }
 
         if (allowSkip)
@@ -111,12 +134,47 @@ public static class RelicDivinationChoiceOverlay
         }
     }
 
+    private static (
+        Vector2 PanelSize,
+        Vector2 PanelPosition,
+        int Columns,
+        float GridWidth,
+        float GridHeight,
+        float GridVisibleHeight) CalculateLayout(
+        Vector2 viewportSize,
+        int relicCount,
+        bool allowSkip)
+    {
+        var safeViewportWidth = viewportSize.X > 0f ? viewportSize.X : 1280f;
+        var safeViewportHeight = viewportSize.Y > 0f ? viewportSize.Y : 720f;
+        var maxPanelWidth = Math.Max(360f, safeViewportWidth - HorizontalScreenPadding);
+        var maxGridWidth = Math.Max(RelicButtonWidth, maxPanelWidth - 36f);
+        var columns = Math.Max(
+            1,
+            Math.Min(
+                relicCount,
+                (int)Math.Floor((maxGridWidth + RelicSeparation) / (RelicButtonWidth + RelicSeparation))));
+        var rows = Math.Max(1, (int)Math.Ceiling(relicCount / (float)columns));
+        var gridWidth = columns * RelicButtonWidth + (columns - 1) * RelicSeparation;
+        var gridHeight = rows * RelicButtonHeight + (rows - 1) * RelicSeparation;
+        var panelWidth = Math.Max(360f, Math.Min(maxPanelWidth, gridWidth + 36f));
+        var nonGridHeight = 14f + 28f + 12f + (allowSkip ? 12f + 44f : 0f) + 14f;
+        var maxPanelHeight = Math.Max(240f, safeViewportHeight - VerticalScreenPadding);
+        var gridVisibleHeight = Math.Min(gridHeight, Math.Max(RelicButtonHeight, maxPanelHeight - nonGridHeight));
+        var panelHeight = Math.Min(maxPanelHeight, nonGridHeight + gridVisibleHeight);
+        var panelPosition = new Vector2(
+            Math.Max(20f, (safeViewportWidth - panelWidth) / 2f),
+            Math.Max(20f, (safeViewportHeight - panelHeight) / 2f));
+
+        return (new Vector2(panelWidth, panelHeight), panelPosition, columns, gridWidth, gridHeight, gridVisibleHeight);
+    }
+
     private static Control CreateRelicButton(RelicModel relic, ModelId relicId, Action<ModelId?> complete)
     {
         var button = new Button
         {
             TooltipText = relic.Title.GetFormattedText(),
-            CustomMinimumSize = new Vector2(86, 78),
+            CustomMinimumSize = new Vector2(RelicButtonWidth, RelicButtonHeight),
             MouseFilter = Control.MouseFilterEnum.Stop
         };
         button.Pressed += () => complete(relicId);
