@@ -25,6 +25,13 @@ public static class DivinerEffectCue
         Play(creature, VfxCmd.lightningPath, "lightning.mp3");
     }
 
+    public static void DoomedCountdownBell()
+    {
+        Safe(() => SfxCmd.Play("bell.mp3", 1f));
+        Safe(() => SfxCmd.Play("bell.mp3", 0.82f));
+        Safe(() => SfxCmd.Play("debuff.mp3", 0.55f));
+    }
+
     public static void BombardmentImpact(IEnumerable<Creature> targets)
     {
         var targetList = targets.ToList();

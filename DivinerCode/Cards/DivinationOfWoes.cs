@@ -46,8 +46,14 @@ public class DivinationOfWoes : DivinerCard
             PendingDamageByPlayer[Owner] = pending;
         }
 
-        pending.Add((IsUpgraded ? 13 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus());
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        int damage = (IsUpgraded ? 13 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus();
+        pending.Add(damage);
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Omen of Woes: deal {damage} damage and apply 1 Weak and 1 Vulnerable to all enemies.",
+                $"灾厄征兆：对所有敌人造成 {damage} 点伤害，并给予 1 层虚弱和 1 层易伤。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

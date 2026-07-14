@@ -113,7 +113,9 @@ public static class DestinyRewardTuning
 
         if (clamped <= 0)
         {
-            lines.Add(DivinerLoc.Text("Doomed: start combat with Countdown of Destiny.", "劫兆：战斗开始时获得命运倒计时。"));
+            lines.Add(DivinerLoc.Text(
+                "Doomed: the first time Destiny reaches 0 each combat, start Countdown of Destiny.",
+                "劫兆：每场战斗中第一次命运降至 0 时，开始命运倒计时。"));
         }
 
         if (clamped <= 1)
@@ -138,7 +140,7 @@ public static class DestinyRewardTuning
 
         if (clamped >= 5)
         {
-            lines.Add(DivinerLoc.Text("Revelation: search 3 cards at combat start and make them Fated.", "启示：战斗开始时搜寻 3 张牌并使其注定。"));
+            lines.Add(DivinerLoc.Text("Revelation: search 3 cards at combat start, then lose 1 Destiny.", "启示：战斗开始时搜寻 3 张牌，然后失去 1 点命运。"));
         }
 
         return string.Join("\n", lines);

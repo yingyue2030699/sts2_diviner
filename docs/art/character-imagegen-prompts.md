@@ -44,6 +44,35 @@ Target size: 512x512.
 Square portrait of the Diviner from chest up, transparent background or very soft dark vignette. Hooded faceless mask with two cyan glowing eyes, cyan trim tracing the hood edge and collar, one hand partly visible holding a floating cyan crystal ball near the lower right of the portrait. The star-tipped staff appears as a slim diagonal shape in the background. Calm mysterious expression through posture only, dark navy-purple robes, crisp icon-like silhouette, polished 2D fantasy portrait, no text, no UI.
 ```
 
+## Future Non-Combat Character Hooks
+
+The game/BaseLib hooks for these surfaces are animation-resource paths on the character model:
+
+- Shop character: `CustomMerchantAnimPath`, consumed by `NMerchantCharacter`.
+- Rest-site character: `CustomRestSiteAnimPath`, consumed by `NRestSiteCharacter`.
+
+Vanilla rest-site characters use Spine-style animation resources with source art split into body-part atlases. The prompts below are for the source character art or source sprite-sheet art to build those animation resources. Use transparent backgrounds and preserve separated, readable body/prop shapes if the output will be cut into an atlas.
+
+### `Diviner/images/character/diviner_merchant.png`
+
+Target surface: shop/merchant room character art for `CustomMerchantAnimPath`.
+
+Recommended source size: 1024x1024 or larger, transparent background. If producing an animation atlas, keep major pieces separable: hood/head, torso, cloak, left arm, right arm, hands, crystal ball, staff, shadow, small glow effects.
+
+```text
+Shop/merchant-room character art for the Diviner, using the attached base design as strict reference. The Diviner stands in a calm bargaining pose, three-quarter view facing slightly toward the player, hooded faceless mask with two cyan glowing eyes. One hand presents a floating cyan crystal ball as if offering a forecast for sale; the other hand rests on or lightly holds the slender staff with a muted gold star tip. The robe should feel like a mysterious shop visitor: dark navy-purple layered cloak, cyan glowing trim, a few small fortune-telling trinkets or sealed omen tags hanging from the belt, but no readable text. Transparent background, full body, strong silhouette, soft cyan underlighting from the crystal ball, subtle gold accent from the staff star. Leave the lower body and cloak simple enough to animate or cut into body parts. No merchant NPC, no counter, no coins, no card UI, no text, no frame.
+```
+
+### `Diviner/images/character/diviner_rest_site.png`
+
+Target surface: rest-site character art for `CustomRestSiteAnimPath`.
+
+Recommended source size: 1024x1024 or larger, transparent background. If producing an animation atlas, keep major pieces separable: hood/head, torso, cloak, seated legs, left arm, right arm, hands, crystal ball, staff, shadow, fire/crystal glow overlays.
+
+```text
+Rest-site character art for the Diviner, using the attached base design as strict reference. The Diviner sits quietly beside an implied campfire, three-quarter view, cloak pooled around them in angular navy-purple folds. Their hooded faceless mask tilts down toward a floating cyan crystal ball hovering between both hands, with faint fate-line geometry inside the orb. The star-tipped staff rests diagonally beside them or is planted in the ground just behind the shoulder, its muted gold star catching a small warm fire highlight. Mood is peaceful, watchful, and prophetic: cyan crystal glow mixed with soft orange campfire rim light, relaxed posture, no combat aggression. Transparent background, full seated body, readable silhouette, simple broad shapes suitable for rest-site animation. No actual campfire background unless requested, no UI, no text, no card frame, no extra characters.
+```
+
 ## Required Character UI Assets
 
 ### `Diviner/images/charui/char_select_diviner.png`

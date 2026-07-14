@@ -140,19 +140,45 @@ public partial class MainFile : Node
 
     private static string ResolveDynamicValueMarkers(CardModel card, string description)
     {
-        description = SimpleDynamicVarRegex.Replace(description, match => ResolveDynamicValueMarker(card, match));
-        return ProcessedDynamicVarRegex.Replace(description, match => ResolveDynamicValueMarker(card, match));
+        description = SimpleDynamicVarRegex.Replace(description, match => ResolveDynamicValueMarker(card, match, description));
+        return ProcessedDynamicVarRegex.Replace(description, match => ResolveDynamicValueMarker(card, match, description));
     }
 
-    private static string ResolveDynamicValueMarker(CardModel card, Match match)
+    private static string ResolveDynamicValueMarker(CardModel card, Match match, string description)
     {
         var varName = match.Groups[1].Value;
+        if (string.Equals(varName, "Damage", StringComparison.Ordinal) &&
+            TryResolveUnmodifiedForetellDamage(card, description, out var fixedDamage))
+        {
+            return fixedDamage.ToString();
+        }
+
         if (!card.DynamicVars.TryGetValue(varName, out var dynamicVar))
         {
             return match.Value;
         }
 
         return dynamicVar.ToHighlightedString(false);
+    }
+
+    private static bool TryResolveUnmodifiedForetellDamage(CardModel card, string description, out int damage)
+    {
+        damage = 0;
+        if (!description.Contains("Foretell", StringComparison.Ordinal) &&
+            !description.Contains("预言", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        damage = card.GetType().Name switch
+        {
+            "DivinationOfWoes" => card.IsUpgraded ? 13 : 10,
+            "FallenSky" => card.IsUpgraded ? 25 : 20,
+            "OmenOfPerishment" => card.IsUpgraded ? 33 : 22,
+            _ => 0
+        };
+
+        return damage > 0;
     }
 
     private static string HighlightKeywordTerms(string description)

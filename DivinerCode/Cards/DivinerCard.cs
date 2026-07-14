@@ -28,9 +28,19 @@ public abstract class DivinerCard(int cost, CardType type, CardRarity rarity, Ta
         WithKeywords(keywords);
     }
 
+    protected void WithEnergyCostX()
+    {
+        MockSetEnergyCost(new CardEnergyCost(this, 0, true));
+    }
+
     public virtual bool ShouldGlowForDivinerCondition()
     {
         if (Owner == null)
+        {
+            return false;
+        }
+
+        if (!DestinyService.CanUseDestiny(Owner))
         {
             return false;
         }

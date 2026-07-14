@@ -52,7 +52,7 @@ public class MomentOfReckoning : DivinerCard
 public class RelicBanishing : DivinerCard
 {
     public RelicBanishing()
-        : base(1, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(2, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Divinate);

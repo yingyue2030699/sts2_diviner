@@ -1,5 +1,6 @@
 using BaseLib.Utils;
 using Diviner.DivinerCode.Powers.CardPowers;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace Diviner.DivinerCode.Mechanics;
@@ -37,6 +38,15 @@ public static class DestinyService
         CurrentOmen,
         IsActive,
         IsLoaded);
+
+    public static bool HasTrackedDivinerPlayer =>
+        DivinerCombatRuntime.GetLastObservedPlayer() is { } player &&
+        DivinerPlayerDetection.IsDivinerPlayer(player);
+
+    public static bool CanUseDestiny(Player? player)
+    {
+        return player != null && DivinerPlayerDetection.IsDivinerPlayer(player);
+    }
 
     public static void EnsureLoadedForRun(IRunState? runState)
     {
@@ -90,6 +100,11 @@ public static class DestinyService
 
     public static int SetDestiny(int destiny)
     {
+        if (!HasTrackedDivinerPlayer)
+        {
+            return _destiny;
+        }
+
         int clamped = DestinyConstants.Clamp(destiny);
         if (FixedPointPower.IsActive())
         {
@@ -113,6 +128,7 @@ public static class DestinyService
             DivinerEffectCue.DestinyDecrease(player?.Creature);
         }
 
+        DivinerCombatRuntime.HandleDestinyChanged(previous, _destiny);
         NotifyChanged();
         return _destiny;
     }
@@ -125,6 +141,11 @@ public static class DestinyService
     public static bool IsGoodOmen()
     {
         var player = DivinerCombatRuntime.GetLastObservedPlayer();
+        if (!CanUseDestiny(player))
+        {
+            return false;
+        }
+
         int thresholdReduction = player == null ? 0 : AscendedFormPower.GetThresholdReduction(player);
         int threshold = Math.Max(DestinyConstants.MinDestiny, DestinyConstants.GoodOmenMinDestiny - thresholdReduction);
         return _destiny >= threshold ||
@@ -135,6 +156,11 @@ public static class DestinyService
     public static bool IsBadOmen()
     {
         var player = DivinerCombatRuntime.GetLastObservedPlayer();
+        if (!CanUseDestiny(player))
+        {
+            return false;
+        }
+
         return DestinyConstants.IsBadOmen(_destiny) ||
                DivinerCombatRuntime.IsNextCardForcedFullOmen(player) ||
                DualityPower.IsActive();

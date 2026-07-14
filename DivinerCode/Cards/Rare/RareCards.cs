@@ -22,15 +22,16 @@ public class Clairvoyance : DivinerCard
         : base(2, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithCostUpgradeBy(-1);
+        WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Fated);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Clairvoyance",
-        "Search anywhere for 1 card. Put it into your hand; it is Fated.",
+        "Search anywhere for 1 card. Put it into your hand; it is Fated. Exhaust.",
         "千里眼",
-        "从任意位置选择 1 张牌加入手牌；它为注定。",
-        ("upgradedDesc", "Search anywhere for 1 card. Put it into your hand; it is Fated.", "从任意位置选择 1 张牌加入手牌；它为注定。"),
+        "从任意位置选择 1 张牌加入手牌；它为注定。消耗。",
+        ("upgradedDesc", "Search anywhere for 1 card. Put it into your hand; it is Fated. Exhaust.", "从任意位置选择 1 张牌加入手牌；它为注定。消耗。"),
         ("selectPrompt", "Choose a card to put into your hand.", "选择一张牌加入你的手牌。")
     );
 
@@ -67,16 +68,16 @@ public class Apocalypse : DivinerCard
     public Apocalypse()
         : base(1, CardType.Attack, CardRarity.Rare, TargetType.AllEnemies)
     {
-        WithDamage(8, 1);
+        WithDamage(9, 1);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Apocalypse",
-        "Deal !Damage! damage to a random enemy 8 times. Add Destiny to the cost of this card.",
+        "Deal !Damage! damage to a random enemy 9 times. Add Destiny to the cost of this card.",
         "天启",
-        "随机对敌人造成 !Damage! 点伤害 8 次。本牌费用增加等同于命运的数值。",
-        ("upgradedDesc", "Deal !Damage! damage to a random enemy 9 times. Add Destiny to the cost of this card.", "随机对敌人造成 !Damage! 点伤害 9 次。本牌费用增加等同于命运的数值。")
+        "随机对敌人造成 !Damage! 点伤害 9 次。本牌费用增加等同于命运的数值。",
+        ("upgradedDesc", "Deal !Damage! damage to a random enemy 10 times. Add Destiny to the cost of this card.", "随机对敌人造成 !Damage! 点伤害 10 次。本牌费用增加等同于命运的数值。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -87,20 +88,20 @@ public class Apocalypse : DivinerCard
             return;
         }
 
-        int hits = IsUpgraded ? 9 : 8;
-        int damage = IsUpgraded ? 9 : 8;
+        int hits = IsUpgraded ? 10 : 9;
+        int damage = IsUpgraded ? 10 : 9;
         for (int i = 0; i < hits; i++)
         {
             var target = enemies[Random.Shared.Next(enemies.Count)];
             DivinerEffectCue.BombardmentImpact([target]);
-            await CommonActions.CardAttack(this, target, damage).Execute(choiceContext);
+            await CreatureCmd.Damage(choiceContext, target, damage, DamageProps.card, Owner.Creature, this);
         }
     }
 
     public override bool TryModifyEnergyCostInCombat(MegaCrit.Sts2.Core.Models.CardModel card, decimal originalCost, out decimal modifiedCost)
     {
         modifiedCost = originalCost;
-        if (!ReferenceEquals(card, this))
+        if (!ReferenceEquals(card, this) || !DestinyService.CanUseDestiny(Owner))
         {
             return false;
         }
@@ -126,25 +127,33 @@ public class FallenSky : DivinerCard
     }
 
     public FallenSky()
-        : base(3, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(0, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
-        WithDamage(60, 15);
+        WithEnergyCostX();
+        WithDamage(20, 5);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Omen of Fallen Sky",
-        "Foretell: deal !Damage! damage to all enemies.",
+        "Foretell: Deal !Damage! times X damage to all enemies.",
         "坠天征兆",
-        "预言：对所有敌人造成 !Damage! 点伤害。"
+        "预言：对所有敌人造成 !Damage! 乘以 X 点伤害。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         var pending = PendingDamageByPlayer.GetValueOrDefault(Owner) ?? [];
         PendingDamageByPlayer[Owner] = pending;
-        pending.Add((IsUpgraded ? 75 : 60) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner));
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        int x = Math.Max(0, cardPlay.Resources.EnergySpent);
+        int damage = ((IsUpgraded ? 25 : 20) * x) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
+        pending.Add(damage);
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Omen of Fallen Sky: deal {damage} damage to all enemies.",
+                $"天坠预言：对所有敌人造成 {damage} 点伤害。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
@@ -246,16 +255,16 @@ public class TheLastWord : DivinerCard
     public TheLastWord()
         : base(2, CardType.Attack, CardRarity.Rare, TargetType.AnyEnemy)
     {
-        WithDamage(25, 8);
+        WithDamage(20, 8);
         WithKeywords([CardKeyword.Retain, CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "The Last Word",
-        "Retain. Deal !Damage! damage. If Fatal, gain 1 Destiny. Exhaust.",
+        "Deal !Damage! damage. If Fatal, gain 1 Destiny.",
         "终言",
-        "保留。造成 !Damage! 点伤害。如果致命，获得 1 点命运。消耗。"
+        "造成 !Damage! 点伤害。如果致命，获得 1 点命运。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -306,8 +315,14 @@ public class UnavoidableEnd : DivinerCard
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
         var pending = PendingDamageByPlayer.GetValueOrDefault(Owner) ?? [];
         PendingDamageByPlayer[Owner] = pending;
-        pending.Add(damage * 3 + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner));
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        int foretellDamage = damage * 3 + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
+        pending.Add(foretellDamage);
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Unavoidable End: deal {foretellDamage} damage to all enemies.",
+                $"无可避免的结局：对所有敌人造成 {foretellDamage} 点伤害。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
@@ -439,9 +454,9 @@ public class OraclesBargain : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Oracle's Bargain",
-        "Gain 1 Destiny and shuffle 3 Misfortunes into your draw pile.",
+        "Gain 1 Destiny. Shuffle 3 Misfortunes into your draw pile. Exhaust.",
         "神谕交易",
-        "获得 1 点命运，并将 3 张厄运洗入抽牌堆。"
+        "获得 1 点命运。将 3 张厄运洗入抽牌堆。消耗。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -469,9 +484,9 @@ public class PerfectForecast : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Perfect Forecast",
-        "Exhaust. Divinate. Gain 1 Energy for each unique category ever recorded.",
+        "Divinate. Gain 1 Energy for each unique category ever recorded.",
         "完美预测",
-        "消耗。占卜。每有一种已记录过的独特类别，获得 1 点能量。"
+        "占卜。每有一种已记录过的独特类别，获得 1 点能量。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -645,10 +660,10 @@ public class CheatTheEnding : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Cheat the Ending",
-        "Retain. Exhaust. The next time you would die this combat, heal to 13% of max HP and set Destiny to 0.",
+        "The next time you would die this combat, heal to 13% of max HP and set Destiny to 0.",
         "欺瞒终局",
-        "保留。消耗。本场战斗中下次你将要死亡时，恢复至最大生命值的 13% 并将命运设为 0。",
-        ("upgradedDesc", "Retain. Exhaust. The next time you would die this combat, heal to 13% of max HP and set Destiny to 0.", "保留。消耗。本场战斗中下次你将要死亡时，恢复至最大生命值的 13% 并将命运设为 0。")
+        "本场战斗中下次你将要死亡时，恢复至最大生命值的 13% 并将命运设为 0。",
+        ("upgradedDesc", "The next time you would die this combat, heal to 13% of max HP and set Destiny to 0.", "本场战斗中下次你将要死亡时，恢复至最大生命值的 13% 并将命运设为 0。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -664,7 +679,7 @@ public class CheatTheEnding : DivinerCard
 public class FixedPoint : DivinerCard
 {
     public FixedPoint()
-        : base(1, CardType.Power, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(2, CardType.Power, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithCostUpgradeBy(-1);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
@@ -679,6 +694,11 @@ public class FixedPoint : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        if (!DestinyService.CanUseDestiny(Owner))
+        {
+            return;
+        }
+
         await PowerCmd.Apply<FixedPointPower>(choiceContext, Owner.Creature, 1, Owner.Creature, this, false);
     }
 

@@ -75,8 +75,14 @@ public class OmenOfPerishment : DivinerCard
     {
         var pending = PendingPerishmentByPlayer.GetValueOrDefault(Owner) ?? [];
         PendingPerishmentByPlayer[Owner] = pending;
-        pending.Add(new PendingPerishment(IsUpgraded ? 33 : 22, IsUpgraded ? 5 : 3));
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        var effect = new PendingPerishment(IsUpgraded ? 33 : 22, IsUpgraded ? 5 : 3);
+        pending.Add(effect);
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Omen of Perishment: deal {effect.Damage} damage and apply {effect.Amount} Weak and {effect.Amount} Vulnerable to all enemies.",
+                $"殒灭征兆：对所有敌人造成 {effect.Damage} 点伤害，并给予 {effect.Amount} 层虚弱和 {effect.Amount} 层易伤。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

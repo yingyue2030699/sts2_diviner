@@ -12,7 +12,7 @@ public class BendFuture : DivinerCard
     public BendFuture()
         : base(1, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
     {
-        WithKeywords([CardKeyword.Exhaust]);
+        WithKeywords([CardKeyword.Retain, CardKeyword.Exhaust]);
         WithCostUpgradeBy(-1);
         WithDivinerKeywordTips(DivinerKeywords.Destiny, DivinerKeywords.Divinate);
     }

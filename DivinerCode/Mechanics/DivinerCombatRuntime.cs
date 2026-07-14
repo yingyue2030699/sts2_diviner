@@ -20,7 +20,8 @@ public static class DivinerCombatRuntime
     private static readonly HashSet<CardModel> FreeThisTurnCards = [];
     private static readonly HashSet<CardModel> RetainThisTurnCards = [];
     private static readonly Dictionary<string, int> PendingForetellEffects = [];
-    private static readonly Dictionary<Player, int> LedgerForetellCountsByPlayer = [];
+    private static readonly List<string> PendingForetellDetails = [];
+    private static readonly Dictionary<Player, int> PendingLedgerBlockByPlayer = [];
     private static readonly HashSet<Player> ForcedFullOmenForNextCard = [];
     private static readonly HashSet<Player> ForcedRevelationEffectsThisCombat = [];
     private static WeakReference<Player>? _lastObservedPlayer;
@@ -33,9 +34,13 @@ public static class DivinerCombatRuntime
 
     public static bool StartOfCombatDestinyEffectsApplied { get; private set; }
 
+    public static bool DoomedTriggeredThisCombat { get; private set; }
+
     public static int? DredgeCountdown { get; private set; }
 
-    public static int EscapeCostTax { get; private set; }
+    private static readonly Dictionary<CardModel, int> EscapeCostIncreases = [];
+
+    public static int EscapeCardsPlayedThisCombat { get; private set; }
 
     public static int NextForetellDamageOrBlockBonus { get; private set; }
 
@@ -55,7 +60,9 @@ public static class DivinerCombatRuntime
 
     public static string ForetellDetailSummary => PendingForetellEffects.Count == 0
         ? DivinerLoc.Text("None.", "无。")
-        : string.Join("\n", PendingForetellEffects.Select(entry => FormatForetellDetail(entry.Key, entry.Value)));
+        : PendingForetellDetails.Count > 0
+            ? string.Join("\n", PendingForetellDetails)
+            : string.Join("\n", PendingForetellEffects.Select(entry => FormatForetellDetail(entry.Key, entry.Value)));
 
     public static void TrackCombatState(CombatState combatState)
     {
@@ -68,6 +75,13 @@ public static class DivinerCombatRuntime
         CombatState = combatState;
         DestinyService.EnsureLoadedForRun(combatState.RunState);
         var player = combatState.Players.FirstOrDefault(DivinerPlayerDetection.IsDivinerPlayer);
+        if (player == null)
+        {
+            _lastObservedPlayer = null;
+            DestinyService.NotifyChanged();
+            return;
+        }
+
         TrackPlayer(player);
     }
 
@@ -90,6 +104,8 @@ public static class DivinerCombatRuntime
     {
         if (player == null)
         {
+            _lastObservedPlayer = null;
+            DestinyService.NotifyChanged();
             return;
         }
 
@@ -131,7 +147,7 @@ public static class DivinerCombatRuntime
         int destiny = DestinyService.CurrentDestiny;
         if (DestinyConstants.IsDredgeDestiny(destiny))
         {
-            await BeginDredgeStartOfCombat(player);
+            await TryTriggerDoomed(player);
         }
 
         if (HasEnlightenmentEffect(player))
@@ -143,7 +159,45 @@ public static class DivinerCombatRuntime
         return true;
     }
 
-    public static async Task BeginDredgeStartOfCombat(Player player)
+    public static void HandleDestinyChanged(int previous, int current)
+    {
+        if (previous == current ||
+            previous == DestinyConstants.DredgeDestiny ||
+            current != DestinyConstants.DredgeDestiny)
+        {
+            return;
+        }
+
+        var player = GetLastObservedPlayer();
+        if (player == null)
+        {
+            return;
+        }
+
+        _ = TryTriggerDoomed(player);
+    }
+
+    public static async Task<bool> TryTriggerDoomed(Player player)
+    {
+        if (DoomedTriggeredThisCombat)
+        {
+            return false;
+        }
+
+        DoomedTriggeredThisCombat = true;
+        try
+        {
+            await BeginDoomedCountdown(player);
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Info($"Diviner Doomed countdown trigger failed: {ex}");
+        }
+
+        return true;
+    }
+
+    private static async Task BeginDoomedCountdown(Player player)
     {
         if (CombatState == null)
         {
@@ -151,8 +205,9 @@ public static class DivinerCombatRuntime
             return;
         }
 
-        DredgeCountdown = DivinerRelicHooks.DredgeStartingCountdown(player);
-        EscapeCostTax = 0;
+        SetDredgeCountdown(DivinerRelicHooks.DredgeStartingCountdown(player));
+        EscapeCardsPlayedThisCombat = 0;
+        EscapeCostIncreases.Clear();
 
         var escapeCards = Enumerable
             .Range(0, DestinyConstants.DredgeEscapeCardCount)
@@ -165,9 +220,9 @@ public static class DivinerCombatRuntime
             escapeCards,
             PileType.Draw,
             player,
-            CardPilePosition.Bottom
+            CardPilePosition.Random
         );
-        MainFile.Logger.Info("Diviner Dredge start-of-combat applied.");
+        MainFile.Logger.Info("Diviner Doomed countdown applied.");
     }
 
     public static async Task BeginEnlightenmentStartOfCombat(
@@ -210,13 +265,10 @@ public static class DivinerCombatRuntime
             selectedCards = drawPileCards.Take(maxCards).ToList();
         }
 
-        foreach (var card in selectedCards)
-        {
-            card.EnergyCost.SetThisTurnOrUntilPlayed(0, false);
-            MarkCardFreeThisTurn(card);
-        }
-
         await CardPileCmd.Add(selectedCards, PileType.Hand, CardPilePosition.Bottom, source, false);
+        DestinyService.AddDestiny(-1);
+        DestinyService.PersistCurrentState(player.RunState);
+        await DivinerStatusPowerSync.Sync(player, choiceContext);
         MainFile.Logger.Info("Diviner Enlightenment start-of-combat applied.");
     }
 
@@ -227,8 +279,7 @@ public static class DivinerCombatRuntime
             DredgeCountdown = 0;
         }
 
-        DredgeCountdown = Math.Max(0, DredgeCountdown.Value + amount);
-        DestinyService.NotifyChanged();
+        SetDredgeCountdown(DredgeCountdown.Value + amount);
     }
 
     public static Task IncreaseDredgeCountdown(
@@ -240,13 +291,19 @@ public static class DivinerCombatRuntime
         return Task.CompletedTask;
     }
 
-    public static void IncreaseEscapeCostTax()
+    public static void IncreaseEscapeCost(CardModel card)
     {
-        EscapeCostTax += 1;
+        EscapeCostIncreases[card] = EscapeCostIncreases.GetValueOrDefault(card) + 1;
+        EscapeCardsPlayedThisCombat += 1;
         DestinyService.NotifyChanged();
     }
 
-    public static void QueueForetell(string label, int count = 1)
+    public static int EscapeCostIncreaseFor(CardModel card)
+    {
+        return EscapeCostIncreases.GetValueOrDefault(card);
+    }
+
+    public static void QueueForetell(string label, int count = 1, string? detail = null)
     {
         if (count <= 0)
         {
@@ -254,39 +311,46 @@ public static class DivinerCombatRuntime
         }
 
         PendingForetellEffects[label] = PendingForetellEffects.GetValueOrDefault(label) + count;
+        if (!string.IsNullOrWhiteSpace(detail))
+        {
+            for (int i = 0; i < count; i++)
+            {
+                PendingForetellDetails.Add(detail);
+            }
+        }
+
         DestinyService.NotifyChanged();
     }
 
-    public static void QueueForetell(Player player, string label, int count = 1)
+    public static void QueueForetell(Player player, string label, int count = 1, string? detail = null)
     {
-        QueueForetell(label, count);
+        QueueForetell(label, count, detail);
         if (count <= 0)
         {
             return;
         }
 
-        LedgerForetellCountsByPlayer[player] = LedgerForetellCountsByPlayer.GetValueOrDefault(player) + count;
+        int ledgerBlock = LedgerOfSignsPower.GetBlock(player);
+        if (ledgerBlock > 0)
+        {
+            PendingLedgerBlockByPlayer[player] = PendingLedgerBlockByPlayer.GetValueOrDefault(player) + ledgerBlock * count;
+        }
     }
 
-    public static int ConsumeLedgerFortunes(Player player)
+    public static int ConsumePendingLedgerBlock(Player player)
     {
-        int currentCount = LedgerForetellCountsByPlayer.GetValueOrDefault(player);
-        int fortunes = currentCount / 3;
-        int remaining = currentCount % 3;
-        if (remaining == 0)
-        {
-            LedgerForetellCountsByPlayer.Remove(player);
-        }
-        else
-        {
-            LedgerForetellCountsByPlayer[player] = remaining;
-        }
-
-        return fortunes;
+        int block = PendingLedgerBlockByPlayer.GetValueOrDefault(player);
+        PendingLedgerBlockByPlayer.Remove(player);
+        return block;
     }
 
     public static bool HasEnlightenmentEffect(Player player)
     {
+        if (!DestinyService.CanUseDestiny(player))
+        {
+            return false;
+        }
+
         if (ForcedRevelationEffectsThisCombat.Contains(player))
         {
             return true;
@@ -350,6 +414,7 @@ public static class DivinerCombatRuntime
             PendingForetellEffects[label] = updated;
         }
 
+        RemoveForetellDetails(count);
         DestinyService.NotifyChanged();
     }
 
@@ -392,8 +457,7 @@ public static class DivinerCombatRuntime
             return;
         }
 
-        DredgeCountdown = Math.Max(0, DredgeCountdown!.Value - 1);
-        DestinyService.NotifyChanged();
+        SetDredgeCountdown(DredgeCountdown!.Value - 1);
 
         if (DredgeCountdown > 0)
         {
@@ -402,6 +466,17 @@ public static class DivinerCombatRuntime
 
         MainFile.Logger.Info("Countdown of Destiny reached 0. Defeating Diviner.");
         await CreatureCmd.Kill(playerCreature, true);
+    }
+
+    public static void PlayCriticalDoomedWarningIfNeeded()
+    {
+        if (DredgeCountdown != 1 || CriticalDoomedWarningPlayed)
+        {
+            return;
+        }
+
+        CriticalDoomedWarningPlayed = true;
+        DivinerEffectCue.DoomedCountdownBell();
     }
 
     public static void MarkCardFreeThisTurn(CardModel card)
@@ -503,18 +578,43 @@ public static class DivinerCombatRuntime
     private static void ResetCombatOnlyState()
     {
         StartOfCombatDestinyEffectsApplied = false;
+        DoomedTriggeredThisCombat = false;
         DredgeCountdown = null;
-        EscapeCostTax = 0;
+        EscapeCardsPlayedThisCombat = 0;
+        EscapeCostIncreases.Clear();
+        CriticalDoomedWarningPlayed = false;
         FreeThisTurnCards.Clear();
         RetainThisTurnCards.Clear();
         NextForetellDamageOrBlockBonus = 0;
         NextDivinationEnergyBonus = 0;
         CombatDivinationCount = 0;
         PendingForetellEffects.Clear();
-        LedgerForetellCountsByPlayer.Clear();
+        PendingForetellDetails.Clear();
+        PendingLedgerBlockByPlayer.Clear();
         ForcedFullOmenForNextCard.Clear();
         ForcedRevelationEffectsThisCombat.Clear();
+        DoomedCountdownOverlay.CloseAndDispose();
         CombatOnlyStateReset?.Invoke();
+    }
+
+    private static bool CriticalDoomedWarningPlayed { get; set; }
+
+    private static void SetDredgeCountdown(int amount)
+    {
+        int? previous = DredgeCountdown;
+        DredgeCountdown = Math.Max(0, amount);
+        if (DredgeCountdown != 1)
+        {
+            CriticalDoomedWarningPlayed = false;
+        }
+        else if (previous != 1)
+        {
+            CriticalDoomedWarningPlayed = false;
+        }
+
+        DoomedCountdownOverlay.EnsureMounted();
+        DoomedCountdownOverlay.RefreshIfMounted();
+        DestinyService.NotifyChanged();
     }
 
     private static string FormatForetellDetail(string label, int count)
@@ -547,7 +647,7 @@ public static class DivinerCombatRuntime
                 "活力征兆：获得能量。"),
             "Haruspex" => DivinerLoc.Text(
                 "Haruspex: add Haruspex to your hand.",
-                "肝占：将肝占加入你的手牌。"),
+                "脏卜术：将脏卜术加入你的手牌。"),
             "Vulnerable" => DivinerLoc.Text(
                 "Doomscript: apply Vulnerable to all enemies.",
                 "灾厄手稿：给予所有敌人易伤。"),
@@ -575,5 +675,16 @@ public static class DivinerCombatRuntime
         return count > 1
             ? DivinerLoc.Text($"{detail} x{count}", $"{detail} x{count}")
             : detail;
+    }
+
+    private static void RemoveForetellDetails(int count)
+    {
+        int toRemove = Math.Min(count, PendingForetellDetails.Count);
+        if (toRemove <= 0)
+        {
+            return;
+        }
+
+        PendingForetellDetails.RemoveRange(0, toRemove);
     }
 }

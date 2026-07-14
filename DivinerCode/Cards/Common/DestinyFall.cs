@@ -27,6 +27,7 @@ public class DestinyFall : DivinerCard
         : base(1, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
         WithDamage(8, 2);
+        WithTags(CardTag.Strike);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
@@ -54,11 +55,14 @@ public class DestinyFall : DivinerCard
             PendingHitsByPlayer[Owner] = pending;
         }
 
-        pending.Add(new PendingHit(
-            cardPlay.Target,
-            (IsUpgraded ? 12 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus()
-        ));
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        int foretellDamage = (IsUpgraded ? 12 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus();
+        pending.Add(new PendingHit(cardPlay.Target, foretellDamage));
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Foretold Strike: deal {foretellDamage} damage to the same enemy.",
+                $"预兆打击：对同一敌人造成 {foretellDamage} 点伤害。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

@@ -13,9 +13,9 @@ namespace Diviner.DivinerCode.Cards.Common;
 public class WardSign : DivinerCard
 {
     public WardSign()
-        : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
+        : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
-        WithBlock(8, 3);
+        WithBlock(9, 3);
         WithDivinerKeywordTips(DivinerKeywords.GoodOmen);
     }
 

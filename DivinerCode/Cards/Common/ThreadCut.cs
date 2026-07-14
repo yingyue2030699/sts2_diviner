@@ -18,10 +18,10 @@ public class ThreadCut : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Thread Cut",
-        "Deal !Damage! damage. If the target has Weak, deal 10 more.",
+        "Deal !Damage! damage. If the target has Weak, then deal 10 damage.",
         "断线",
-        "造成 !Damage! 点伤害。如果目标有虚弱，额外造成 10 点伤害。",
-        ("upgradedDesc", "Deal !Damage! damage. If the target has Weak, deal 14 more.", "造成 !Damage! 点伤害。如果目标有虚弱，额外造成 14 点伤害。")
+        "造成 !Damage! 点伤害。如果目标有虚弱，再造成 10 点伤害。",
+        ("upgradedDesc", "Deal !Damage! damage. If the target has Weak, then deal 14 damage.", "造成 !Damage! 点伤害。如果目标有虚弱，再造成 14 点伤害。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

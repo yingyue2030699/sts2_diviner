@@ -87,7 +87,7 @@ public static class StartOfCombatDestinyEffect
             var title = CreateTitleBlock(
                 viewportSize,
                 DivinerLoc.Text("REVELATION", "启示"),
-                DivinerLoc.Text("The future opens. Chosen cards become Fated.", "未来开启。选择的牌成为注定。"),
+                DivinerLoc.Text("The future opens. Search for three cards, then lose 1 Destiny.", "未来开启。搜寻三张牌，然后失去 1 点命运。"),
                 RevelationTextColor,
                 RevelationMutedTextColor,
                 -175);
@@ -414,7 +414,7 @@ public static class StartOfCombatDestinyEffect
 
         var label = new Label
         {
-            Text = DivinerLoc.Text("Fated", "注定"),
+            Text = DivinerLoc.Text("Chosen", "选择"),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };

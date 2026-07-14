@@ -69,6 +69,10 @@ public class Diviner : PlaceholderCharacterModel
 
     public override string CustomMapMarkerPath => "map_marker_diviner.png".ImagePath();
 
+    public override string CustomMerchantAnimPath => "diviner_merchant.png".CharacterImagePath();
+
+    public override string CustomRestSiteAnimPath => "diviner_rest_site.png".CharacterImagePath();
+
     public override NCreatureVisuals CreateCustomVisuals() =>
         NodeFactory<NCreatureVisuals>.CreateFromResource(
             ResourceLoader.Load<Texture2D>("diviner_combat_idle.png".CharacterImagePath()));

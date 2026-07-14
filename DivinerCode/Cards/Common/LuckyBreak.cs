@@ -13,7 +13,7 @@ public class LuckyBreak : DivinerCard
     public LuckyBreak()
         : base(0, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
-        WithBlock(3, 2);
+        WithBlock(5, 2);
         WithCards(1);
         WithDivinerKeywordTips(DivinerKeywords.GoodOmen);
     }

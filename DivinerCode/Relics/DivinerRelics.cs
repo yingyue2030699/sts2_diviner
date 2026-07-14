@@ -87,7 +87,7 @@ public static class DivinerRelicHooks
 
     public static bool IsFirstEscapeFree(Player? player)
     {
-        return HasRelic<HourglassOfMercy>(player) && DivinerCombatRuntime.EscapeCostTax == 0;
+        return HasRelic<HourglassOfMercy>(player) && DivinerCombatRuntime.EscapeCardsPlayedThisCombat == 0;
     }
 
     public static int EnlightenmentThresholdReduction(Player? player)

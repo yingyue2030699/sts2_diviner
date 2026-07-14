@@ -22,7 +22,7 @@ public class TeaLeaves : DivinerCard
     }
 
     public TeaLeaves()
-        : base(2, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
+        : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
         WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Foretell, DivinerKeywords.Divinate);

@@ -36,7 +36,7 @@ public class PropheticTrancePower : DivinerCardPower
         "Prophetic Trance",
         "Whenever you Divinate, draw {Cards} cards.",
         "Whenever you Divinate, draw {Cards} cards.",
-        "预言恍惚",
+        "占卜恍惚",
         "每当你占卜时，抽 {Cards} 张牌。",
         "每当你占卜时，抽 {Cards} 张牌。"
     );
@@ -74,6 +74,7 @@ public class TheWrittenHourPower : DivinerCardPower
     public override async Task AfterPlayerTurnStart(PlayerChoiceContext choiceContext, Player player)
     {
         if (!ReferenceEquals(player, Owner?.Player) ||
+            !DestinyService.CanUseDestiny(player) ||
             DestinyService.CurrentDestiny != DestinyConstants.DefaultDestiny)
         {
             return;
@@ -100,9 +101,9 @@ public class HaruspexMethodPower : DivinerCardPower
         "Haruspex",
         "The next time you Exhaust a card, Divinate and Foretell: add Haruspex to your hand.",
         "The next time you Exhaust a card, Divinate and Foretell: add Haruspex to your hand.",
-        "肝占",
-        "下次你消耗一张牌时，占卜，并预言：将一张肝占加入手牌。",
-        "下次你消耗一张牌时，占卜，并预言：将一张肝占加入手牌。"
+        "脏卜术",
+        "下次你消耗一张牌时，占卜，并预言：将一张脏卜术加入手牌。",
+        "下次你消耗一张牌时，占卜，并预言：将一张脏卜术加入手牌。"
     );
 
     public override async Task AfterCardExhausted(PlayerChoiceContext choiceContext, CardModel card, bool causedByEthereal)
@@ -277,52 +278,50 @@ public class ResonationOfFatePower : DivinerCardPower
 
 public class DoomEnginePower : DivinerCardPower
 {
+    private static readonly Dictionary<Player, int> EngineStacksByPlayer = [];
+
+    static DoomEnginePower()
+    {
+        DivinerCombatRuntime.CombatOnlyStateReset += EngineStacksByPlayer.Clear;
+    }
+
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Doom Engine",
-        "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
-        "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage. At start of turn, return a Misfortune from your discard pile to your hand.",
+        "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage.",
+        "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage.",
         "厄运引擎",
-        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。",
-        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。回合开始时，将弃牌堆中的一张厄运返回手牌。"
+        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。",
+        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。"
     );
 
     public override void AddDumbVariablesToPowerDescription(LocString description)
     {
         base.AddDumbVariablesToPowerDescription(description);
-        description.Add("HpLossReduction", (Math.Max(1, Amount) * 2).ToString());
-        description.Add("DamageBonus", (Math.Max(1, Amount) * 5).ToString());
+        int stacks = Owner?.Player is { } player ? GetEngineStacks(player) : 1;
+        description.Add("HpLossReduction", (Math.Max(1, stacks) * 2).ToString());
+        description.Add("DamageBonus", Math.Max(1, Amount).ToString());
     }
 
-    public override async Task BeforeSideTurnStart(
-        PlayerChoiceContext choiceContext,
-        CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
+    public static void RecordEngine(Player player)
     {
-        if (Owner?.Player is not { } player ||
-            side != Owner.Side ||
-            !participants.Contains(Owner))
-        {
-            return;
-        }
-
-        var misfortune = PileType.Discard.GetPile(player).Cards.FirstOrDefault(card => card is Misfortune);
-        if (misfortune != null)
-        {
-            await CardPileCmd.Add(misfortune, PileType.Hand, CardPilePosition.Bottom, this, false);
-        }
+        EngineStacksByPlayer[player] = GetEngineStacks(player) + 1;
     }
 
     public static int GetHpLoss(Player player, int baseLoss = 3)
     {
         var power = player.Creature.GetPower<DoomEnginePower>();
-        return power == null ? baseLoss : Math.Max(0, baseLoss - 2 * Math.Max(1, power.Amount));
+        return power == null ? baseLoss : Math.Max(0, baseLoss - 2 * GetEngineStacks(player));
     }
 
     public static int GetDamageBonus(Player player)
     {
         var power = player.Creature.GetPower<DoomEnginePower>();
-        return power == null ? 0 : 5 * Math.Max(1, power.Amount);
+        return power == null ? 0 : Math.Max(1, power.Amount);
+    }
+
+    private static int GetEngineStacks(Player player)
+    {
+        return EngineStacksByPlayer.GetValueOrDefault(player);
     }
 }
 
@@ -330,33 +329,58 @@ public class LedgerOfSignsPower : DivinerCardPower
 {
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Ledger of Signs",
-        "Every 3 times you Foretell, add a Fortune to your hand.",
-        "Every 3 times you Foretell, add a Fortune to your hand.",
+        "Whenever you queue a Foretell, gain {Amount} Block.",
+        "Whenever you queue a Foretell, gain {Amount} Block.",
         "征兆账簿",
-        "每当你预言 3 次，将一张福运加入你的手牌。",
-        "每当你预言 3 次，将一张福运加入你的手牌。"
+        "每当你排入一个预言，获得 {Amount} 点格挡。",
+        "每当你排入一个预言，获得 {Amount} 点格挡。"
     );
 
-    public override async Task BeforeSideTurnStart(
+    public static int GetBlock(Player player)
+    {
+        var power = player.Creature.GetPower<LedgerOfSignsPower>();
+        return power == null ? 0 : Math.Max(1, power.Amount);
+    }
+}
+
+public class SmokeAndMirrorsPower : DivinerCardPower
+{
+    public override PowerStackType StackType => PowerStackType.Single;
+
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Smoke and Mirrors",
+        "The next Foretell effect you play this combat resolves with {Amount} more damage or Block.",
+        "The next Foretell effect you play this combat resolves with {Amount} more damage or Block.",
+        "烟幕幻镜",
+        "你本场战斗中打出的下一个预言效果结算时，伤害或格挡增加 {Amount} 点。",
+        "你本场战斗中打出的下一个预言效果结算时，伤害或格挡增加 {Amount} 点。"
+    );
+}
+
+public class InsurancePower : DivinerCardPower
+{
+    public override PowerStackType StackType => PowerStackType.Single;
+
+    public override List<(string, string)>? Localization => DivinerLoc.Power(
+        "Insurance",
+        "You do not lose HP from Misfortune at the end of this turn.",
+        "You do not lose HP from Misfortune at the end of this turn.",
+        "预留后路",
+        "本回合结束时，你不会因厄运失去生命。",
+        "本回合结束时，你不会因厄运失去生命。"
+    );
+
+    public override async Task BeforeSideTurnEnd(
         PlayerChoiceContext choiceContext,
         CombatSide side,
-        IReadOnlyList<Creature> participants,
-        ICombatState combatState)
+        IEnumerable<Creature> participants)
     {
-        if (Owner?.Player is not { } player || side != Owner.Side || !participants.Contains(Owner))
+        if (Owner == null || side != Owner.Side || !participants.Contains(Owner))
         {
             return;
         }
 
-        int fortunes = DivinerCombatRuntime.ConsumeLedgerFortunes(player);
-        for (int i = 0; i < fortunes; i++)
-        {
-            await DivinerCardActions.AddGeneratedToCombat<Fortune>(
-                player,
-                PileType.Hand,
-                CardPilePosition.Bottom,
-                Amount > 1);
-        }
+        await PowerCmd.Remove<InsurancePower>(Owner);
     }
 }
 
@@ -385,10 +409,10 @@ public class ForetoldFalterPower : DivinerCardPower
             dealer == null ||
             !HasEnoughWeak(dealer))
         {
-            return amount;
+            return 1m;
         }
 
-        return amount / 2m;
+        return 0.5m;
     }
 
     private static bool HasEnoughWeak(Creature creature)
@@ -443,6 +467,11 @@ public class WeaveTheAegisPower : DivinerCardPower
 
     private async Task CheckDestinyChange(PlayerChoiceContext choiceContext, Player player)
     {
+        if (!DestinyService.CanUseDestiny(player))
+        {
+            return;
+        }
+
         int current = DestinyService.CurrentDestiny;
         if (!_lastDestinyByPlayer.TryGetValue(player, out int previous))
         {
@@ -621,7 +650,8 @@ public class DoomSpiralPower : DivinerCardPower
     {
         if (Owner?.Player is not { } player ||
             side != Owner.Side ||
-            !participants.Contains(Owner))
+            !participants.Contains(Owner) ||
+            !DestinyService.CanUseDestiny(player))
         {
             return;
         }

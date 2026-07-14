@@ -36,6 +36,7 @@ public class Misfortune : DivinerCard
     protected override async Task OnTurnEndInHand(PlayerChoiceContext choiceContext)
     {
         await ResolveMisfortune(choiceContext, true);
+        await CardCmd.Exhaust(choiceContext, this, false, false);
     }
 
     protected override void OnUpgrade()
@@ -56,7 +57,7 @@ public class Misfortune : DivinerCard
         var enemies = CombatState?.HittableEnemies.Where(creature => creature.Side != Owner.Creature.Side).ToList() ?? [];
         if (enemies.Count > 0)
         {
-            await CreatureCmd.Damage(choiceContext, enemies, 25 + DoomEnginePower.GetDamageBonus(Owner), DamageProps.nonCardUnpowered, Owner.Creature, this);
+            await CreatureCmd.Damage(choiceContext, enemies, 25 + DoomEnginePower.GetDamageBonus(Owner), DamageProps.card, Owner.Creature, this);
         }
     }
 }

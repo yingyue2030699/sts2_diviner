@@ -15,7 +15,7 @@ public class WaxSeal : DivinerCard
     public WaxSeal()
         : base(1, CardType.Attack, CardRarity.Uncommon, TargetType.AnyEnemy)
     {
-        WithDamage(4, 3);
+        WithDamage(9, 3);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(

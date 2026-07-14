@@ -55,6 +55,7 @@ public class CrystalBall : DivinerRelic
         }
 
         DivinerCombatRuntime.ClearTemporaryRetainCards();
+        DivinerCombatRuntime.PlayCriticalDoomedWarningIfNeeded();
 
         if (!_appliedStartOfCombatEffects)
         {

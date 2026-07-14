@@ -20,10 +20,10 @@ public class CrossedLines : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Crossed Lines",
-        "Deal !Damage! damage. If you have Divinated this combat, apply 2 Weak.",
+        "Deal !Damage! damage. If you have Divinated this combat, apply 3 Weak.",
         "交错命线",
-        "造成 !Damage! 点伤害。如果你在本场战斗中占卜过，给予 2 层虚弱。",
-        ("upgradedDesc", "Deal !Damage! damage. If you have Divinated this combat, apply 3 Weak.", "造成 !Damage! 点伤害。如果你在本场战斗中占卜过，给予 3 层虚弱。")
+        "造成 !Damage! 点伤害。如果你在本场战斗中占卜过，给予 3 层虚弱。",
+        ("upgradedDesc", "Deal !Damage! damage. If you have Divinated this combat, apply 4 Weak.", "造成 !Damage! 点伤害。如果你在本场战斗中占卜过，给予 4 层虚弱。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -32,7 +32,7 @@ public class CrossedLines : DivinerCard
 
         if (DivinerCombatRuntime.HasDivinatedThisCombat && cardPlay.Target != null)
         {
-            await PowerCmd.Apply<WeakPower>(choiceContext, cardPlay.Target, IsUpgraded ? 3 : 2, Owner.Creature, this, false);
+            await PowerCmd.Apply<WeakPower>(choiceContext, cardPlay.Target, IsUpgraded ? 4 : 3, Owner.Creature, this, false);
         }
     }
 

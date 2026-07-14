@@ -9,7 +9,7 @@ namespace Diviner.DivinerCode.Cards.Common;
 public class OmensAlign : DivinerCard
 {
     public OmensAlign()
-        : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
+        : base(0, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
     {
         WithKeywords([CardKeyword.Exhaust]);
     }

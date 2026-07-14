@@ -13,13 +13,13 @@ public class Divulge : DivinerCard
     public Divulge()
         : base(0, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
     {
-        WithCards(1, 1);
+        WithCards(2, 1);
         WithDivinerKeywordTips(DivinerKeywords.Divinate, DivinerKeywords.Destiny);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Divulge",
-        "If not Doomed, Divinate and draw !Cards! card. Lose 1 Destiny.",
+        "If not Doomed, Divinate and draw !Cards! cards. Lose 1 Destiny.",
         "泄示",
         "如果不是劫兆，占卜并抽 !Cards! 张牌。失去 1 点命运。",
         ("upgradedDesc", "If not Doomed, Divinate and draw !Cards! cards. Lose 1 Destiny.", "如果不是劫兆，占卜并抽 !Cards! 张牌。失去 1 点命运。")
@@ -27,10 +27,15 @@ public class Divulge : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        if (!DestinyService.CanUseDestiny(Owner))
+        {
+            return;
+        }
+
         if (!DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
         {
             await DivinationService.RecordPlaceholder(choiceContext, Owner, "Divulge");
-            await CardPileCmd.Draw(choiceContext, IsUpgraded ? 2 : 1, Owner, false);
+            await CardPileCmd.Draw(choiceContext, IsUpgraded ? 3 : 2, Owner, false);
         }
 
         DestinyService.AddDestiny(-1);

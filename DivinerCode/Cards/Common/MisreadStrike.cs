@@ -13,6 +13,7 @@ public class MisreadStrike : DivinerCard
         : base(0, CardType.Attack, CardRarity.Common, TargetType.AnyEnemy)
     {
         WithDamage(25, 8);
+        WithTags(CardTag.Strike);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
     }
 

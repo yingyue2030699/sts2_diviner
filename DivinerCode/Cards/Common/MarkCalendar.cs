@@ -46,8 +46,14 @@ public class MarkCalendar : DivinerCard
             PendingBlockByPlayer[Owner] = pending;
         }
 
-        pending.Add((IsUpgraded ? 18 : 14) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus());
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        int block = (IsUpgraded ? 18 : 14) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus();
+        pending.Add(block);
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Omen of Shelter: gain {block} Block.",
+                $"庇护征兆：获得 {block} 点格挡。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

@@ -5,6 +5,7 @@ using Diviner.DivinerCode.Mechanics;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.ValueProps;
 
 namespace Diviner.DivinerCode.Cards.Common;
 
@@ -15,6 +16,7 @@ public class PalmStrike : DivinerCard
     {
         WithDamage(10, 3);
         WithCards(1);
+        WithTags(CardTag.Strike);
         WithDivinerKeywordTips(DivinerKeywords.GoodOmen, DivinerKeywords.BadOmen);
     }
 
@@ -35,7 +37,7 @@ public class PalmStrike : DivinerCard
 
         if (cardPlay.Target != null)
         {
-            await CommonActions.CardAttack(this, cardPlay.Target, damage).Execute(choiceContext);
+            await CreatureCmd.Damage(choiceContext, cardPlay.Target, damage, DamageProps.card, Owner.Creature, this);
         }
 
         if (DestinyService.IsGoodOmen())
