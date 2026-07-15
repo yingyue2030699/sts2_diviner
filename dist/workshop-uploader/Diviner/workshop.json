@@ -1,0 +1,15 @@
+{
+  "title": "Diviner",
+  "description": "A Slay the Spire 2 character mod built around Destiny, Divination, Foretell, Doom, and Revelation.",
+  "visibility": "private",
+  "changeNote": "Initial Diviner workshop upload.",
+  "tags": [
+    "Character",
+    "Gameplay"
+  ],
+  "dependencies": [
+    3737335127
+  ],
+  "minBranch": "public",
+  "maxBranch": "public"
+}
