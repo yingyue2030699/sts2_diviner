@@ -122,8 +122,8 @@ public class BrewOfBrew : DivinerPotion
         }
 
         await CreatureCmd.Heal(player.Creature, 5 + otherPotions.Count * 5, true);
-        DestinyService.AddDestiny(1);
-        DestinyService.PersistCurrentState(player.RunState);
+        DestinyService.AddDestiny(player, 1);
+        DestinyService.PersistCurrentState(player);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
     }
 }
@@ -156,8 +156,8 @@ public class MercuryMirror : DivinerPotion
             return;
         }
 
+        player.RunState.Rng.CombatCardSelection.Shuffle(drawCards);
         var candidates = drawCards
-            .OrderBy(_ => Random.Shared.Next())
             .Take(Math.Min(2, drawCards.Count))
             .ToList();
 
@@ -237,8 +237,8 @@ public class StarlessDraught : DivinerPotion
         }
 
         bool wasEnlightened = DivinerCombatRuntime.HasEnlightenmentEffect(player);
-        DestinyService.AddDestiny(2);
-        DestinyService.PersistCurrentState(player.RunState);
+        DestinyService.AddDestiny(player, 2);
+        DestinyService.PersistCurrentState(player);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
 
         if (!wasEnlightened && DivinerCombatRuntime.HasEnlightenmentEffect(player))
@@ -277,8 +277,8 @@ public class BloodOfTheMartyr : DivinerPotion
             await CreatureCmd.Heal(player.Creature, missingHp, true);
         }
 
-        DestinyService.AddDestiny(-5);
-        DestinyService.PersistCurrentState(player.RunState);
+        DestinyService.AddDestiny(player, -5);
+        DestinyService.PersistCurrentState(player);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
     }
 }

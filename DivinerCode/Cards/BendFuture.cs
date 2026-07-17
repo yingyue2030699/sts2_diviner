@@ -26,12 +26,12 @@ public class BendFuture : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DestinyService.AddDestiny(1);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, 1);
+        DestinyService.PersistCurrentState(Owner);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
 
         DivinationService.RefreshActivity(Owner.RunState, Owner);
-        var activeRelics = DivinationService.ActiveRelicDivinationIds;
+        var activeRelics = DivinationService.GetActiveRelicDivinationIds(Owner);
         if (activeRelics.Count == 0)
         {
             return;

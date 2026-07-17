@@ -27,15 +27,15 @@ public class Balance : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DestinyService.EnsureLoadedForRun(Owner.RunState);
+        DestinyService.EnsureLoadedForPlayer(Owner);
 
-        bool goodOmen = DestinyService.IsGoodOmen();
-        bool badOmen = DestinyService.IsBadOmen();
+        bool goodOmen = DestinyService.IsGoodOmen(Owner);
+        bool badOmen = DestinyService.IsBadOmen(Owner);
 
         if (goodOmen)
         {
-            DestinyService.AddDestiny(-1);
-            DestinyService.PersistCurrentState(Owner.RunState);
+            DestinyService.AddDestiny(Owner, -1);
+            DestinyService.PersistCurrentState(Owner);
             await CardPileCmd.Draw(choiceContext, IsUpgraded ? 2 : 1, Owner, false);
             await DivinationService.RecordPlaceholder(choiceContext, Owner, "Temper Fate");
         }

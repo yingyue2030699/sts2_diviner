@@ -92,7 +92,7 @@ public class Apocalypse : DivinerCard
         int damage = IsUpgraded ? 10 : 9;
         for (int i = 0; i < hits; i++)
         {
-            var target = enemies[Random.Shared.Next(enemies.Count)];
+            var target = enemies[Owner.RunState.Rng.CombatTargets.NextInt(enemies.Count)];
             DivinerEffectCue.BombardmentImpact([target]);
             await CreatureCmd.Damage(choiceContext, target, damage, DamageProps.card, Owner.Creature, this);
         }
@@ -106,7 +106,7 @@ public class Apocalypse : DivinerCard
             return false;
         }
 
-        modifiedCost = originalCost + DestinyService.CurrentDestiny;
+        modifiedCost = originalCost + DestinyService.GetDestiny(Owner);
         return modifiedCost != originalCost;
     }
 
@@ -273,8 +273,8 @@ public class TheLastWord : DivinerCard
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
         if (target != null && !target.IsAlive)
         {
-            DestinyService.AddDestiny(1);
-            DestinyService.PersistCurrentState(Owner.RunState);
+            DestinyService.AddDestiny(Owner, 1);
+            DestinyService.PersistCurrentState(Owner);
             await DivinerStatusPowerSync.Sync(Owner, choiceContext);
         }
     }
@@ -432,8 +432,8 @@ public class Reversal : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DestinyService.SetDestiny(DestinyConstants.MaxDestiny - DestinyService.CurrentDestiny);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.SetDestiny(Owner, DestinyConstants.MaxDestiny - DestinyService.GetDestiny(Owner));
+        DestinyService.PersistCurrentState(Owner);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
@@ -461,8 +461,8 @@ public class OraclesBargain : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DestinyService.AddDestiny(1);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, 1);
+        DestinyService.PersistCurrentState(Owner);
         await DivinerCardActions.AddGeneratedToCombat<Misfortune>(this, 3, PileType.Draw, CardPilePosition.Random);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
@@ -492,7 +492,7 @@ public class PerfectForecast : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await DivinationService.RecordPlaceholder(choiceContext, Owner, "Perfect Forecast");
-        int uniqueCategories = DivinationService.CurrentRecords
+        int uniqueCategories = DivinationService.GetRecords(Owner)
             .Select(record => record.Category)
             .Distinct()
             .Count();
@@ -610,7 +610,7 @@ public class Veil : DivinerCard
     {
         await CreatureCmd.GainBlock(
             Owner.Creature,
-            DivinationService.CurrentRecords.Count,
+            DivinationService.GetRecords(Owner).Count,
             BlockProps.cardUnpowered,
             cardPlay,
             false);

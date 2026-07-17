@@ -17,13 +17,8 @@ namespace Diviner.DivinerCode.Mechanics;
 
 public static class DivinerCombatRuntime
 {
-    private static readonly HashSet<CardModel> FreeThisTurnCards = [];
-    private static readonly HashSet<CardModel> RetainThisTurnCards = [];
-    private static readonly Dictionary<string, int> PendingForetellEffects = [];
-    private static readonly List<string> PendingForetellDetails = [];
-    private static readonly Dictionary<Player, int> PendingLedgerBlockByPlayer = [];
-    private static readonly HashSet<Player> ForcedFullOmenForNextCard = [];
-    private static readonly HashSet<Player> ForcedRevelationEffectsThisCombat = [];
+    private static readonly Dictionary<Player, PlayerCombatRuntimeState> PlayerStates = [];
+    private static readonly PlayerCombatRuntimeState FallbackState = new();
     private static WeakReference<Player>? _lastObservedPlayer;
 
     public static event Action? CombatOnlyStateReset;
@@ -32,37 +27,71 @@ public static class DivinerCombatRuntime
 
     public static CombatState? CombatState { get; private set; }
 
-    public static bool StartOfCombatDestinyEffectsApplied { get; private set; }
+    public static bool StartOfCombatDestinyEffectsApplied => CurrentState.StartOfCombatDestinyEffectsApplied;
 
-    public static bool DoomedTriggeredThisCombat { get; private set; }
+    public static bool DoomedTriggeredThisCombat => CurrentState.DoomedTriggeredThisCombat;
 
-    public static int? DredgeCountdown { get; private set; }
+    public static int? DredgeCountdown => CurrentState.DredgeCountdown;
 
-    private static readonly Dictionary<CardModel, int> EscapeCostIncreases = [];
+    public static int? DredgeCountdownFor(Player? player) => StateFor(player).DredgeCountdown;
 
-    public static int EscapeCardsPlayedThisCombat { get; private set; }
+    public static int EscapeCardsPlayedThisCombat => CurrentState.EscapeCardsPlayedThisCombat;
 
-    public static int NextForetellDamageOrBlockBonus { get; private set; }
+    public static int EscapeCardsPlayedThisCombatFor(Player? player)
+    {
+        return StateFor(player).EscapeCardsPlayedThisCombat;
+    }
 
-    public static int NextDivinationEnergyBonus { get; private set; }
+    public static int NextForetellDamageOrBlockBonus => CurrentState.NextForetellDamageOrBlockBonus;
 
-    public static IReadOnlyCollection<CardModel> EnlightenmentFreeThisTurnCards => FreeThisTurnCards;
+    public static int NextForetellDamageOrBlockBonusFor(Player? player)
+    {
+        return StateFor(player).NextForetellDamageOrBlockBonus;
+    }
 
-    public static bool HasActiveDredgeCountdown => DredgeCountdown > 0;
+    public static int NextDivinationEnergyBonus => CurrentState.NextDivinationEnergyBonus;
 
-    public static int CombatDivinationCount { get; private set; }
+    public static IReadOnlyCollection<CardModel> EnlightenmentFreeThisTurnCards => CurrentState.FreeThisTurnCards;
 
-    public static int QueuedForetellCount => PendingForetellEffects.Values.Sum();
+    public static bool HasActiveDredgeCountdown => CurrentState.DredgeCountdown > 0;
 
-    public static string ForetellSummary => PendingForetellEffects.Count == 0
-        ? "none"
-        : string.Join(", ", PendingForetellEffects.Select(entry => $"{entry.Key} x{entry.Value}"));
+    public static bool HasActiveDredgeCountdownFor(Player? player) => StateFor(player).DredgeCountdown > 0;
 
-    public static string ForetellDetailSummary => PendingForetellEffects.Count == 0
+    public static int CombatDivinationCount => CurrentState.CombatDivinationCount;
+
+    public static int CombatDivinationCountFor(Player? player)
+    {
+        return StateFor(player).CombatDivinationCount;
+    }
+
+    public static int QueuedForetellCount => QueuedForetellCountFor(GetLastObservedPlayer());
+
+    public static string ForetellSummary => ForetellSummaryFor(GetLastObservedPlayer());
+
+    public static string ForetellDetailSummary => ForetellDetailSummaryFor(GetLastObservedPlayer());
+
+    public static int QueuedForetellCountFor(Player? player)
+    {
+        return StateFor(player).PendingForetellEffects.Values.Sum();
+    }
+
+    public static string ForetellSummaryFor(Player? player)
+    {
+        var state = StateFor(player);
+        return state.PendingForetellEffects.Count == 0
+            ? "none"
+            : string.Join(", ", state.PendingForetellEffects.Select(entry => $"{entry.Key} x{entry.Value}"));
+    }
+
+    public static string ForetellDetailSummaryFor(Player? player)
+    {
+        var state = StateFor(player);
+        return state.PendingForetellEffects.Count == 0
         ? DivinerLoc.Text("None.", "无。")
-        : PendingForetellDetails.Count > 0
-            ? string.Join("\n", PendingForetellDetails)
-            : string.Join("\n", PendingForetellEffects.Select(entry => FormatForetellDetail(entry.Key, entry.Value)));
+        : state.PendingForetellDetails.Count > 0
+            ? string.Join("\n", state.PendingForetellDetails)
+            : string.Join("\n", state.PendingForetellEffects.Select(entry => FormatForetellDetail(entry.Key, entry.Value)));
+    }
 
     public static void TrackCombatState(CombatState combatState)
     {
@@ -73,10 +102,10 @@ public static class DivinerCombatRuntime
 
         ResetCombatOnlyState();
         CombatState = combatState;
-        DestinyService.EnsureLoadedForRun(combatState.RunState);
         var player = combatState.Players.FirstOrDefault(DivinerPlayerDetection.IsDivinerPlayer);
         if (player == null)
         {
+            DestinyService.EnsureLoadedForRun(combatState.RunState);
             _lastObservedPlayer = null;
             DestinyService.NotifyChanged();
             return;
@@ -110,7 +139,7 @@ public static class DivinerCombatRuntime
         }
 
         _lastObservedPlayer = new WeakReference<Player>(player);
-        DestinyService.EnsureLoadedForRun(player.RunState);
+        DestinyService.EnsureLoadedForPlayer(player);
     }
 
     public static Player? GetLastObservedPlayer()
@@ -125,11 +154,21 @@ public static class DivinerCombatRuntime
 
     public static void RecordCombatDivination()
     {
-        CombatDivinationCount += 1;
+        RecordCombatDivination(GetLastObservedPlayer());
+    }
+
+    public static void RecordCombatDivination(Player? player)
+    {
+        StateFor(player).CombatDivinationCount += 1;
         DestinyService.NotifyChanged();
     }
 
-    public static bool HasDivinatedThisCombat => CombatDivinationCount > 0;
+    public static bool HasDivinatedThisCombat => CurrentState.CombatDivinationCount > 0;
+
+    public static bool HasDivinatedThisCombatFor(Player? player)
+    {
+        return StateFor(player).CombatDivinationCount > 0;
+    }
 
     public static async Task<bool> TryBeginStartOfCombatDestinyEffects(
         PlayerChoiceContext choiceContext,
@@ -137,14 +176,15 @@ public static class DivinerCombatRuntime
         AbstractModel source
     )
     {
-        if (CombatState is null || StartOfCombatDestinyEffectsApplied)
+        var state = StateFor(player);
+        if (CombatState is null || state.StartOfCombatDestinyEffectsApplied)
         {
             return false;
         }
 
-        StartOfCombatDestinyEffectsApplied = true;
+        state.StartOfCombatDestinyEffectsApplied = true;
 
-        int destiny = DestinyService.CurrentDestiny;
+        int destiny = DestinyService.GetDestiny(player);
         if (DestinyConstants.IsDredgeDestiny(destiny))
         {
             await TryTriggerDoomed(player);
@@ -177,14 +217,27 @@ public static class DivinerCombatRuntime
         _ = TryTriggerDoomed(player);
     }
 
+    public static void HandleDestinyChanged(Player player, int previous, int current)
+    {
+        if (previous == current ||
+            previous == DestinyConstants.DredgeDestiny ||
+            current != DestinyConstants.DredgeDestiny)
+        {
+            return;
+        }
+
+        _ = TryTriggerDoomed(player);
+    }
+
     public static async Task<bool> TryTriggerDoomed(Player player)
     {
-        if (DoomedTriggeredThisCombat)
+        var state = StateFor(player);
+        if (state.DoomedTriggeredThisCombat)
         {
             return false;
         }
 
-        DoomedTriggeredThisCombat = true;
+        state.DoomedTriggeredThisCombat = true;
         try
         {
             await BeginDoomedCountdown(player);
@@ -205,9 +258,10 @@ public static class DivinerCombatRuntime
             return;
         }
 
-        SetDredgeCountdown(DivinerRelicHooks.DredgeStartingCountdown(player));
-        EscapeCardsPlayedThisCombat = 0;
-        EscapeCostIncreases.Clear();
+        var state = StateFor(player);
+        SetDredgeCountdown(player, DivinerRelicHooks.DredgeStartingCountdown(player));
+        state.EscapeCardsPlayedThisCombat = 0;
+        state.EscapeCostIncreases.Clear();
 
         var escapeCards = Enumerable
             .Range(0, DestinyConstants.DredgeEscapeCardCount)
@@ -231,7 +285,7 @@ public static class DivinerCombatRuntime
         AbstractModel source
     )
     {
-        FreeThisTurnCards.Clear();
+        StateFor(player).FreeThisTurnCards.Clear();
 
         var drawPileCards = PileType.Draw.GetPile(player).Cards.ToList();
         if (drawPileCards.Count == 0)
@@ -266,20 +320,26 @@ public static class DivinerCombatRuntime
         }
 
         await CardPileCmd.Add(selectedCards, PileType.Hand, CardPilePosition.Bottom, source, false);
-        DestinyService.AddDestiny(-1);
-        DestinyService.PersistCurrentState(player.RunState);
+        DestinyService.AddDestiny(player, -1);
+        DestinyService.PersistCurrentState(player);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
         MainFile.Logger.Info("Diviner Enlightenment start-of-combat applied.");
     }
 
     public static void IncreaseDredgeCountdown(int amount)
     {
-        if (DredgeCountdown is null)
+        IncreaseDredgeCountdown(GetLastObservedPlayer(), amount);
+    }
+
+    public static void IncreaseDredgeCountdown(Player? player, int amount)
+    {
+        var state = StateFor(player);
+        if (state.DredgeCountdown is null)
         {
-            DredgeCountdown = 0;
+            state.DredgeCountdown = 0;
         }
 
-        SetDredgeCountdown(DredgeCountdown.Value + amount);
+        SetDredgeCountdown(player, state.DredgeCountdown.Value + amount);
     }
 
     public static Task IncreaseDredgeCountdown(
@@ -287,35 +347,42 @@ public static class DivinerCombatRuntime
         Player player,
         int amount)
     {
-        IncreaseDredgeCountdown(amount);
+        IncreaseDredgeCountdown(player, amount);
         return Task.CompletedTask;
     }
 
     public static void IncreaseEscapeCost(CardModel card)
     {
-        EscapeCostIncreases[card] = EscapeCostIncreases.GetValueOrDefault(card) + 1;
-        EscapeCardsPlayedThisCombat += 1;
+        var state = StateFor(card.Owner);
+        state.EscapeCostIncreases[card] = state.EscapeCostIncreases.GetValueOrDefault(card) + 1;
+        state.EscapeCardsPlayedThisCombat += 1;
         DestinyService.NotifyChanged();
     }
 
     public static int EscapeCostIncreaseFor(CardModel card)
     {
-        return EscapeCostIncreases.GetValueOrDefault(card);
+        return StateFor(card.Owner).EscapeCostIncreases.GetValueOrDefault(card);
     }
 
     public static void QueueForetell(string label, int count = 1, string? detail = null)
+    {
+        QueueForetellFor(GetLastObservedPlayer(), label, count, detail);
+    }
+
+    private static void QueueForetellFor(Player? player, string label, int count = 1, string? detail = null)
     {
         if (count <= 0)
         {
             return;
         }
 
-        PendingForetellEffects[label] = PendingForetellEffects.GetValueOrDefault(label) + count;
+        var state = StateFor(player);
+        state.PendingForetellEffects[label] = state.PendingForetellEffects.GetValueOrDefault(label) + count;
         if (!string.IsNullOrWhiteSpace(detail))
         {
             for (int i = 0; i < count; i++)
             {
-                PendingForetellDetails.Add(detail);
+                state.PendingForetellDetails.Add(detail);
             }
         }
 
@@ -324,7 +391,7 @@ public static class DivinerCombatRuntime
 
     public static void QueueForetell(Player player, string label, int count = 1, string? detail = null)
     {
-        QueueForetell(label, count, detail);
+        QueueForetellFor(player, label, count, detail);
         if (count <= 0)
         {
             return;
@@ -333,14 +400,16 @@ public static class DivinerCombatRuntime
         int ledgerBlock = LedgerOfSignsPower.GetBlock(player);
         if (ledgerBlock > 0)
         {
-            PendingLedgerBlockByPlayer[player] = PendingLedgerBlockByPlayer.GetValueOrDefault(player) + ledgerBlock * count;
+            var state = StateFor(player);
+            state.PendingLedgerBlock += ledgerBlock * count;
         }
     }
 
     public static int ConsumePendingLedgerBlock(Player player)
     {
-        int block = PendingLedgerBlockByPlayer.GetValueOrDefault(player);
-        PendingLedgerBlockByPlayer.Remove(player);
+        var state = StateFor(player);
+        int block = state.PendingLedgerBlock;
+        state.PendingLedgerBlock = 0;
         return block;
     }
 
@@ -351,7 +420,7 @@ public static class DivinerCombatRuntime
             return false;
         }
 
-        if (ForcedRevelationEffectsThisCombat.Contains(player))
+        if (StateFor(player).ForcedRevelationEffectsThisCombat)
         {
             return true;
         }
@@ -364,7 +433,7 @@ public static class DivinerCombatRuntime
         int thresholdReduction = AscendedFormPower.GetThresholdReduction(player) +
                                  DivinerRelicHooks.EnlightenmentThresholdReduction(player);
         int threshold = Math.Max(DestinyConstants.MinDestiny, DestinyConstants.EnlightenmentDestiny - thresholdReduction);
-        return DestinyService.CurrentDestiny >= threshold;
+        return DestinyService.GetDestiny(player) >= threshold;
     }
 
     public static bool CanTriggerRevelationEffect(Player? player)
@@ -389,8 +458,8 @@ public static class DivinerCombatRuntime
         DivinerEffectCue.Revelation(player.Creature);
         if (!IsNextCardForcedFullOmen(player) && !AscendedFormPower.PreventsRevelationDestinyLoss(player))
         {
-            DestinyService.AddDestiny(-1);
-            DestinyService.PersistCurrentState(player.RunState);
+            DestinyService.AddDestiny(player, -1);
+            DestinyService.PersistCurrentState(player);
             await DivinerStatusPowerSync.Sync(player, choiceContext);
         }
 
@@ -399,7 +468,13 @@ public static class DivinerCombatRuntime
 
     public static void ResolveForetell(string label, int count = 1)
     {
-        if (count <= 0 || !PendingForetellEffects.TryGetValue(label, out var current))
+        ResolveForetellFor(GetLastObservedPlayer(), label, count);
+    }
+
+    private static void ResolveForetellFor(Player? player, string label, int count = 1)
+    {
+        var state = StateFor(player);
+        if (count <= 0 || !state.PendingForetellEffects.TryGetValue(label, out var current))
         {
             return;
         }
@@ -407,20 +482,20 @@ public static class DivinerCombatRuntime
         int updated = current - count;
         if (updated <= 0)
         {
-            PendingForetellEffects.Remove(label);
+            state.PendingForetellEffects.Remove(label);
         }
         else
         {
-            PendingForetellEffects[label] = updated;
+            state.PendingForetellEffects[label] = updated;
         }
 
-        RemoveForetellDetails(count);
+        RemoveForetellDetails(state, count);
         DestinyService.NotifyChanged();
     }
 
     public static int ResolveForetell(Player player, string label, int count = 1)
     {
-        ResolveForetell(label, count);
+        ResolveForetellFor(player, label, count);
         return EchoedOmenPower.GetTriggerCount(player);
     }
 
@@ -450,16 +525,17 @@ public static class DivinerCombatRuntime
         Creature playerCreature
     )
     {
-        if (!HasActiveDredgeCountdown ||
+        var state = StateFor(player);
+        if (state.DredgeCountdown <= 0 ||
             side != playerCreature.Side ||
             !participants.Contains(playerCreature))
         {
             return;
         }
 
-        SetDredgeCountdown(DredgeCountdown!.Value - 1);
+        SetDredgeCountdown(player, state.DredgeCountdown!.Value - 1);
 
-        if (DredgeCountdown > 0)
+        if (state.DredgeCountdown > 0)
         {
             return;
         }
@@ -470,53 +546,71 @@ public static class DivinerCombatRuntime
 
     public static void PlayCriticalDoomedWarningIfNeeded()
     {
-        if (DredgeCountdown != 1 || CriticalDoomedWarningPlayed)
+        PlayCriticalDoomedWarningIfNeeded(GetLastObservedPlayer());
+    }
+
+    public static void PlayCriticalDoomedWarningIfNeeded(Player? player)
+    {
+        var state = StateFor(player);
+        if (state.DredgeCountdown != 1 || state.CriticalDoomedWarningPlayed)
         {
             return;
         }
 
-        CriticalDoomedWarningPlayed = true;
+        state.CriticalDoomedWarningPlayed = true;
         DivinerEffectCue.DoomedCountdownBell();
     }
 
     public static void MarkCardFreeThisTurn(CardModel card)
     {
-        FreeThisTurnCards.Add(card);
+        StateFor(card.Owner).FreeThisTurnCards.Add(card);
     }
 
     public static bool IsCardFreeThisTurn(CardModel card)
     {
-        return FreeThisTurnCards.Contains(card);
+        return StateFor(card.Owner).FreeThisTurnCards.Contains(card);
     }
 
     public static bool IsFatedThisTurn(CardModel card)
     {
-        return FreeThisTurnCards.Contains(card);
+        return StateFor(card.Owner).FreeThisTurnCards.Contains(card);
     }
 
     public static void ClearFreeThisTurnCards()
     {
-        FreeThisTurnCards.Clear();
+        CurrentState.FreeThisTurnCards.Clear();
     }
 
     public static void MarkCardRetainThisTurn(CardModel card)
     {
-        RetainThisTurnCards.Add(card);
+        StateFor(card.Owner).RetainThisTurnCards.Add(card);
     }
 
     public static bool IsCardRetainedThisTurn(CardModel card)
     {
-        return RetainThisTurnCards.Contains(card);
+        return StateFor(card.Owner).RetainThisTurnCards.Contains(card);
     }
 
     public static void ClearTemporaryRetainCards()
     {
-        RetainThisTurnCards.Clear();
+        CurrentState.RetainThisTurnCards.Clear();
+    }
+
+    public static void ClearTemporaryRetainCards(Player? player)
+    {
+        StateFor(player).RetainThisTurnCards.Clear();
     }
 
     public static void SetNextForetellDamageOrBlockBonus(int amount)
     {
-        NextForetellDamageOrBlockBonus = Math.Max(NextForetellDamageOrBlockBonus, amount);
+        var state = CurrentState;
+        state.NextForetellDamageOrBlockBonus = Math.Max(state.NextForetellDamageOrBlockBonus, amount);
+    }
+
+    public static void SetNextForetellDamageOrBlockBonus(Player? player, int amount)
+    {
+        var state = StateFor(player);
+        state.NextForetellDamageOrBlockBonus = Math.Max(state.NextForetellDamageOrBlockBonus, amount);
     }
 
     public static int ConsumeNextForetellDamageOrBlockBonus()
@@ -526,28 +620,29 @@ public static class DivinerCombatRuntime
 
     public static int ConsumeNextForetellDamageOrBlockBonus(Player? player)
     {
-        int bonus = NextForetellDamageOrBlockBonus;
-        NextForetellDamageOrBlockBonus = 0;
+        var state = StateFor(player);
+        int bonus = state.NextForetellDamageOrBlockBonus;
+        state.NextForetellDamageOrBlockBonus = 0;
         return bonus + DivinerRelicHooks.ForetellDamageOrBlockBonus(player);
     }
 
     public static void ForceNextCardFullOmen(Player player)
     {
-        ForcedFullOmenForNextCard.Add(player);
+        StateFor(player).ForcedFullOmenForNextCard = true;
         TrackPlayer(player);
         DestinyService.NotifyChanged();
     }
 
     public static void ForceRevelationEffectsThisCombat(Player player)
     {
-        ForcedRevelationEffectsThisCombat.Add(player);
+        StateFor(player).ForcedRevelationEffectsThisCombat = true;
         TrackPlayer(player);
         DestinyService.NotifyChanged();
     }
 
     public static bool IsNextCardForcedFullOmen(Player? player)
     {
-        return player != null && ForcedFullOmenForNextCard.Contains(player);
+        return player != null && StateFor(player).ForcedFullOmenForNextCard;
     }
 
     public static void ConsumeForcedFullOmen(Player? player)
@@ -557,59 +652,62 @@ public static class DivinerCombatRuntime
             return;
         }
 
-        if (ForcedFullOmenForNextCard.Remove(player))
+        var state = StateFor(player);
+        if (state.ForcedFullOmenForNextCard)
         {
+            state.ForcedFullOmenForNextCard = false;
             DestinyService.NotifyChanged();
         }
     }
 
     public static void AddNextDivinationEnergyBonus(int amount)
     {
-        NextDivinationEnergyBonus += amount;
+        CurrentState.NextDivinationEnergyBonus += amount;
+    }
+
+    public static void AddNextDivinationEnergyBonus(Player? player, int amount)
+    {
+        StateFor(player).NextDivinationEnergyBonus += amount;
     }
 
     public static int ConsumeNextDivinationEnergyBonus()
     {
-        int bonus = NextDivinationEnergyBonus;
-        NextDivinationEnergyBonus = 0;
+        return ConsumeNextDivinationEnergyBonus(GetLastObservedPlayer());
+    }
+
+    public static int ConsumeNextDivinationEnergyBonus(Player? player)
+    {
+        var state = StateFor(player);
+        int bonus = state.NextDivinationEnergyBonus;
+        state.NextDivinationEnergyBonus = 0;
         return bonus;
     }
 
     private static void ResetCombatOnlyState()
     {
-        StartOfCombatDestinyEffectsApplied = false;
-        DoomedTriggeredThisCombat = false;
-        DredgeCountdown = null;
-        EscapeCardsPlayedThisCombat = 0;
-        EscapeCostIncreases.Clear();
-        CriticalDoomedWarningPlayed = false;
-        FreeThisTurnCards.Clear();
-        RetainThisTurnCards.Clear();
-        NextForetellDamageOrBlockBonus = 0;
-        NextDivinationEnergyBonus = 0;
-        CombatDivinationCount = 0;
-        PendingForetellEffects.Clear();
-        PendingForetellDetails.Clear();
-        PendingLedgerBlockByPlayer.Clear();
-        ForcedFullOmenForNextCard.Clear();
-        ForcedRevelationEffectsThisCombat.Clear();
+        FallbackState.Reset();
+        PlayerStates.Clear();
         DoomedCountdownOverlay.CloseAndDispose();
         CombatOnlyStateReset?.Invoke();
     }
 
-    private static bool CriticalDoomedWarningPlayed { get; set; }
-
     private static void SetDredgeCountdown(int amount)
     {
-        int? previous = DredgeCountdown;
-        DredgeCountdown = Math.Max(0, amount);
-        if (DredgeCountdown != 1)
+        SetDredgeCountdown(GetLastObservedPlayer(), amount);
+    }
+
+    private static void SetDredgeCountdown(Player? player, int amount)
+    {
+        var state = StateFor(player);
+        int? previous = state.DredgeCountdown;
+        state.DredgeCountdown = Math.Max(0, amount);
+        if (state.DredgeCountdown != 1)
         {
-            CriticalDoomedWarningPlayed = false;
+            state.CriticalDoomedWarningPlayed = false;
         }
         else if (previous != 1)
         {
-            CriticalDoomedWarningPlayed = false;
+            state.CriticalDoomedWarningPlayed = false;
         }
 
         DoomedCountdownOverlay.EnsureMounted();
@@ -677,14 +775,74 @@ public static class DivinerCombatRuntime
             : detail;
     }
 
-    private static void RemoveForetellDetails(int count)
+    private static void RemoveForetellDetails(PlayerCombatRuntimeState state, int count)
     {
-        int toRemove = Math.Min(count, PendingForetellDetails.Count);
+        int toRemove = Math.Min(count, state.PendingForetellDetails.Count);
         if (toRemove <= 0)
         {
             return;
         }
 
-        PendingForetellDetails.RemoveRange(0, toRemove);
+        state.PendingForetellDetails.RemoveRange(0, toRemove);
+    }
+
+    private static PlayerCombatRuntimeState CurrentState => StateFor(GetLastObservedPlayer());
+
+    private static PlayerCombatRuntimeState StateFor(Player? player)
+    {
+        if (player == null)
+        {
+            return FallbackState;
+        }
+
+        if (PlayerStates.TryGetValue(player, out var state))
+        {
+            return state;
+        }
+
+        state = new PlayerCombatRuntimeState();
+        PlayerStates[player] = state;
+        return state;
+    }
+
+    private sealed class PlayerCombatRuntimeState
+    {
+        public readonly HashSet<CardModel> FreeThisTurnCards = [];
+        public readonly HashSet<CardModel> RetainThisTurnCards = [];
+        public readonly Dictionary<string, int> PendingForetellEffects = [];
+        public readonly List<string> PendingForetellDetails = [];
+        public readonly Dictionary<CardModel, int> EscapeCostIncreases = [];
+
+        public bool StartOfCombatDestinyEffectsApplied;
+        public bool DoomedTriggeredThisCombat;
+        public int? DredgeCountdown;
+        public int EscapeCardsPlayedThisCombat;
+        public int NextForetellDamageOrBlockBonus;
+        public int NextDivinationEnergyBonus;
+        public int CombatDivinationCount;
+        public int PendingLedgerBlock;
+        public bool ForcedFullOmenForNextCard;
+        public bool ForcedRevelationEffectsThisCombat;
+        public bool CriticalDoomedWarningPlayed;
+
+        public void Reset()
+        {
+            StartOfCombatDestinyEffectsApplied = false;
+            DoomedTriggeredThisCombat = false;
+            DredgeCountdown = null;
+            EscapeCardsPlayedThisCombat = 0;
+            NextForetellDamageOrBlockBonus = 0;
+            NextDivinationEnergyBonus = 0;
+            CombatDivinationCount = 0;
+            PendingLedgerBlock = 0;
+            ForcedFullOmenForNextCard = false;
+            ForcedRevelationEffectsThisCombat = false;
+            CriticalDoomedWarningPlayed = false;
+            EscapeCostIncreases.Clear();
+            FreeThisTurnCards.Clear();
+            RetainThisTurnCards.Clear();
+            PendingForetellEffects.Clear();
+            PendingForetellDetails.Clear();
+        }
     }
 }

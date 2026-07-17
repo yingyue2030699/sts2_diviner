@@ -26,8 +26,8 @@ public class FalseAlarm : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardBlock(this, cardPlay);
-        DestinyService.AddDestiny(-1);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, -1);
+        DestinyService.PersistCurrentState(Owner);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

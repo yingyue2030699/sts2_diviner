@@ -35,11 +35,11 @@ public static class DivinerStatusPowerSync
             }
         }
 
-        await SyncPower<DestinyPower>(player.Creature, DestinyService.CurrentDestiny, choiceContext);
-        await SyncPower<ForetellPower>(player.Creature, DivinerCombatRuntime.QueuedForetellCount, choiceContext);
+        await SyncPower<DestinyPower>(player.Creature, DestinyService.GetDestiny(player), choiceContext);
+        await SyncPower<ForetellPower>(player.Creature, DivinerCombatRuntime.QueuedForetellCountFor(player), choiceContext);
         await SyncPower<SmokeAndMirrorsPower>(
             player.Creature,
-            DivinerCombatRuntime.NextForetellDamageOrBlockBonus,
+            DivinerCombatRuntime.NextForetellDamageOrBlockBonusFor(player),
             choiceContext);
     }
 

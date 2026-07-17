@@ -30,7 +30,7 @@ public class WardSign : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardBlock(this, cardPlay);
-        if (!DestinyService.IsGoodOmen())
+        if (!DestinyService.IsGoodOmen(Owner))
         {
             return;
         }

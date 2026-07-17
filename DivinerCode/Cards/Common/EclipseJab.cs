@@ -27,7 +27,7 @@ public class EclipseJab : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-        if (!DestinyService.IsBadOmen())
+        if (!DestinyService.IsBadOmen(Owner))
         {
             return;
         }

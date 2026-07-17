@@ -55,7 +55,7 @@ public class DestinyFall : DivinerCard
             PendingHitsByPlayer[Owner] = pending;
         }
 
-        int foretellDamage = (IsUpgraded ? 12 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus();
+        int foretellDamage = (IsUpgraded ? 12 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
         pending.Add(new PendingHit(cardPlay.Target, foretellDamage));
         DivinerCombatRuntime.QueueForetell(
             Owner,

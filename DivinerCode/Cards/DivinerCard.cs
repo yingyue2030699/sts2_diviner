@@ -46,9 +46,9 @@ public abstract class DivinerCard(int cost, CardType type, CardRarity rarity, Ta
         }
 
         var description = Description.GetFormattedText();
-        return (HasKeywordOrText(DivinerKeywords.GoodOmen, description, "Good Omen", "吉兆") && DestinyService.IsGoodOmen()) ||
-               (HasKeywordOrText(DivinerKeywords.BadOmen, description, "Bad Omen", "凶兆") && DestinyService.IsBadOmen()) ||
-               (HasKeywordOrText(DivinerKeywords.Dredge, description, "Doomed", "劫兆") && DestinyService.CurrentDestiny == DestinyConstants.MinDestiny) ||
+        return (HasKeywordOrText(DivinerKeywords.GoodOmen, description, "Good Omen", "吉兆") && DestinyService.IsGoodOmen(Owner)) ||
+               (HasKeywordOrText(DivinerKeywords.BadOmen, description, "Bad Omen", "凶兆") && DestinyService.IsBadOmen(Owner)) ||
+               (HasKeywordOrText(DivinerKeywords.Dredge, description, "Doomed", "劫兆") && DestinyService.GetDestiny(Owner) == DestinyConstants.MinDestiny) ||
                (HasKeywordOrText(DivinerKeywords.Enlightenment, description, "Revelation", "启示") && DivinerCombatRuntime.CanTriggerRevelationEffect(Owner));
     }
 

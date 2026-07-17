@@ -54,14 +54,14 @@ public class CrystalBall : DivinerRelic
             return;
         }
 
-        DivinerCombatRuntime.ClearTemporaryRetainCards();
-        DivinerCombatRuntime.PlayCriticalDoomedWarningIfNeeded();
+        DivinerCombatRuntime.ClearTemporaryRetainCards(Owner);
+        DivinerCombatRuntime.PlayCriticalDoomedWarningIfNeeded(Owner);
 
         if (!_appliedStartOfCombatEffects)
         {
             _appliedStartOfCombatEffects = true;
             Flash();
-            DestinyService.EnsureLoadedForRun(Owner.RunState);
+            DestinyService.EnsureLoadedForPlayer(Owner);
             await DivinerCombatRuntime.TryBeginStartOfCombatDestinyEffects(choiceContext, Owner, this);
             await DivinerStatusPowerSync.Sync(Owner, choiceContext);
         }
@@ -124,7 +124,7 @@ public class CrystalBall : DivinerRelic
             return;
         }
 
-        var createdCard = _lastCombatState.CreateCard(ChooseStartOfCombatCard(), Owner);
+        var createdCard = _lastCombatState.CreateCard(ChooseStartOfCombatCard(Owner), Owner);
         await CardPileCmd.AddGeneratedCardToCombat(createdCard, PileType.Hand, Owner, CardPilePosition.Bottom);
     }
 
@@ -150,9 +150,9 @@ public class CrystalBall : DivinerRelic
         return createdCard;
     }
 
-    protected static MegaCrit.Sts2.Core.Models.CardModel ChooseStartOfCombatCard()
+    protected static MegaCrit.Sts2.Core.Models.CardModel ChooseStartOfCombatCard(Player player)
     {
-        return DestinyService.IsBadOmen()
+        return DestinyService.IsBadOmen(player)
             ? ModelDb.Card<Misfortune>()
             : ModelDb.Card<Fortune>();
     }

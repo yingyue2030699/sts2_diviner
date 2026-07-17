@@ -29,7 +29,7 @@ public class SkepticsCharm : DivinerCard
     {
         await CommonActions.CardBlock(this, cardPlay);
 
-        if (DestinyService.IsBadOmen())
+        if (DestinyService.IsBadOmen(Owner))
         {
             await CreatureCmd.GainBlock(
                 Owner.Creature,

@@ -32,7 +32,7 @@ public class PalmReading : DivinerCard
     {
         await CommonActions.CardBlock(this, cardPlay);
         await DivinerCardActions.Scry(this, choiceContext, IsUpgraded ? 6 : 5);
-        if (DestinyService.IsGoodOmen())
+        if (DestinyService.IsGoodOmen(Owner))
         {
             await CardPileCmd.Draw(choiceContext, 2, Owner, false);
         }

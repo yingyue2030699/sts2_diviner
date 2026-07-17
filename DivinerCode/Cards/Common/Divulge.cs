@@ -32,14 +32,14 @@ public class Divulge : DivinerCard
             return;
         }
 
-        if (!DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
+        if (!DestinyConstants.IsDredgeDestiny(DestinyService.GetDestiny(Owner)))
         {
             await DivinationService.RecordPlaceholder(choiceContext, Owner, "Divulge");
             await CardPileCmd.Draw(choiceContext, IsUpgraded ? 3 : 2, Owner, false);
         }
 
-        DestinyService.AddDestiny(-1);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, -1);
+        DestinyService.PersistCurrentState(Owner);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

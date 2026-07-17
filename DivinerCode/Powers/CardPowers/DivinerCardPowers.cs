@@ -75,7 +75,7 @@ public class TheWrittenHourPower : DivinerCardPower
     {
         if (!ReferenceEquals(player, Owner?.Player) ||
             !DestinyService.CanUseDestiny(player) ||
-            DestinyService.CurrentDestiny != DestinyConstants.DefaultDestiny)
+            DestinyService.GetDestiny(player) != DestinyConstants.DefaultDestiny)
         {
             return;
         }
@@ -252,7 +252,10 @@ public class ResonationOfFatePower : DivinerCardPower
 
         var candidates = PileType.Hand.GetPile(player).Cards
             .Where(card => !DivinerCombatRuntime.IsFatedThisTurn(card))
-            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
+        player.RunState.Rng.CombatCardSelection.Shuffle(candidates);
+
+        candidates = candidates
             .Take(Math.Max(1, Amount))
             .ToList();
         foreach (var card in candidates)
@@ -472,7 +475,7 @@ public class WeaveTheAegisPower : DivinerCardPower
             return;
         }
 
-        int current = DestinyService.CurrentDestiny;
+        int current = DestinyService.GetDestiny(player);
         if (!_lastDestinyByPlayer.TryGetValue(player, out int previous))
         {
             _lastDestinyByPlayer[player] = current;
@@ -551,8 +554,8 @@ public class CheatTheEndingPower : DivinerCardPower
         }
 
         _triggered = true;
-        DestinyService.SetDestiny(DestinyConstants.DredgeDestiny);
-        DestinyService.PersistCurrentState(Owner.Player?.RunState);
+        DestinyService.SetDestiny(Owner.Player, DestinyConstants.DredgeDestiny);
+        DestinyService.PersistCurrentState(Owner.Player);
         int targetHp = Math.Max(1, (int)Math.Ceiling(Owner.MaxHp * 0.13m));
         return Math.Max(0, Owner.CurrentHp - targetHp);
     }
@@ -656,8 +659,8 @@ public class DoomSpiralPower : DivinerCardPower
             return;
         }
 
-        DestinyService.AddDestiny(-1);
-        DestinyService.PersistCurrentState(player.RunState);
+        DestinyService.AddDestiny(player, -1);
+        DestinyService.PersistCurrentState(player);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
         await DivinerCardActions.AddGeneratedToCombat<Misfortune>(
             player,

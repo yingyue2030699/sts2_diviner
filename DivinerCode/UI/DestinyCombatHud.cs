@@ -110,7 +110,7 @@ public static class DestinyCombatHud
 
         DivinerCombatRuntime.TrackPlayer(player);
         DivinationService.RefreshActivity(player.RunState, player);
-        var snapshot = DestinyService.Snapshot;
+        var snapshot = DestinyService.SnapshotFor(player);
 
         var destinyValue = layer.GetNodeOrNull<Label>($"{PanelName}/Margin/Stack/Header/{DestinyValueName}");
         var omenLabel = layer.GetNodeOrNull<Label>($"{PanelName}/Margin/Stack/Header/{OmenName}");
@@ -127,19 +127,20 @@ public static class DestinyCombatHud
         destinyValue.Text = snapshot.Destiny.ToString();
         omenLabel.Text = snapshot.OmenLabel;
         omenLabel.AddThemeColorOverride("font_color", GetOmenColor(snapshot.Destiny));
-        var records = GetDisplayedRecords();
+        var records = GetDisplayedRecords(player);
         int visibleCount = records.Count;
+        int totalCount = DivinationService.GetRecords(player).Count;
         divinationLabel.Text = DivinerLoc.Text(
-            $"Divinations: {visibleCount}/{DivinationService.CurrentRecords.Count}",
-            $"占卜：{visibleCount}/{DivinationService.CurrentRecords.Count}");
+            $"Divinations: {visibleCount}/{totalCount}",
+            $"占卜：{visibleCount}/{totalCount}");
         RefreshDisplayModeLabels(displayMode);
         RefreshDivinationList(divinationList, records);
-        countdownLabel.Text = DivinerCombatRuntime.HasActiveDredgeCountdown
+        countdownLabel.Text = DivinerCombatRuntime.HasActiveDredgeCountdownFor(player)
             ? DivinerLoc.Text(
-                $"Countdown of Destiny: {DivinerCombatRuntime.DredgeCountdown}",
-                $"命运倒计时：{DivinerCombatRuntime.DredgeCountdown}")
+                $"Countdown of Destiny: {DivinerCombatRuntime.DredgeCountdownFor(player)}",
+                $"命运倒计时：{DivinerCombatRuntime.DredgeCountdownFor(player)}")
             : "";
-        countdownLabel.Visible = DivinerCombatRuntime.HasActiveDredgeCountdown;
+        countdownLabel.Visible = DivinerCombatRuntime.HasActiveDredgeCountdownFor(player);
 
         RefreshPips(layer, snapshot.Destiny);
     }
@@ -350,11 +351,11 @@ public static class DestinyCombatHud
         }
     }
 
-    private static IReadOnlyList<DivinationRecord> GetDisplayedRecords()
+    private static IReadOnlyList<DivinationRecord> GetDisplayedRecords(Player player)
     {
         return _displayMode == DivinationDisplayMode.ListAll
-            ? DivinationService.GetVisibleRecords(false)
-            : DivinationService.GetVisibleRecords(true);
+            ? DivinationService.GetVisibleRecords(player, false)
+            : DivinationService.GetVisibleRecords(player, true);
     }
 
     private static void RefreshDisplayModeLabels(OptionButton displayMode)

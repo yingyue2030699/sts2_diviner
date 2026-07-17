@@ -118,8 +118,8 @@ public class Diviner : PlaceholderCharacterModel
         var player = room.CombatState.Players.FirstOrDefault(DivinerPlayerDetection.IsDivinerPlayer);
         if (player != null)
         {
-            DestinyService.EnsureLoadedForRun(player.RunState);
-            DestinyService.RecordCombatEndLuck(player.RunState);
+            DestinyService.EnsureLoadedForPlayer(player);
+            DestinyService.RecordCombatEndLuck(player);
         }
 
         return Task.CompletedTask;
@@ -127,9 +127,9 @@ public class Diviner : PlaceholderCharacterModel
 
     public override decimal ModifyCardRewardUpgradeOdds(Player player, CardModel card, decimal odds)
     {
-        DestinyService.EnsureLoadedForRun(player.RunState);
+        DestinyService.EnsureLoadedForPlayer(player);
         return Math.Clamp(
-            odds * DestinyRewardTuning.UpgradeOddsMultiplier(DestinyService.CurrentDestiny),
+            odds * DestinyRewardTuning.UpgradeOddsMultiplier(DestinyService.GetDestiny(player)),
             0m,
             1m
         );

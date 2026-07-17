@@ -46,7 +46,7 @@ public class DivinationOfWoes : DivinerCard
             PendingDamageByPlayer[Owner] = pending;
         }
 
-        int damage = (IsUpgraded ? 13 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus();
+        int damage = (IsUpgraded ? 13 : 10) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
         pending.Add(damage);
         DivinerCombatRuntime.QueueForetell(
             Owner,

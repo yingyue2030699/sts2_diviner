@@ -30,7 +30,7 @@ public class RetributiveRite : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-        if (DestinyService.IsBadOmen())
+        if (DestinyService.IsBadOmen(Owner))
         {
             await CreatureCmd.GainBlock(Owner.Creature, IsUpgraded ? 11 : 9, BlockProps.cardUnpowered, cardPlay, false);
         }

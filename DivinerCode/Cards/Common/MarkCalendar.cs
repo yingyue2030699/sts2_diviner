@@ -46,7 +46,7 @@ public class MarkCalendar : DivinerCard
             PendingBlockByPlayer[Owner] = pending;
         }
 
-        int block = (IsUpgraded ? 18 : 14) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus();
+        int block = (IsUpgraded ? 18 : 14) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
         pending.Add(block);
         DivinerCombatRuntime.QueueForetell(
             Owner,
