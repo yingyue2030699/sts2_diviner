@@ -80,9 +80,13 @@ public class Diviner : PlaceholderCharacterModel
 
     public override string CustomRestSiteAnimPath => "diviner_rest_site.png".CharacterImagePath();
 
-    public override NCreatureVisuals CreateCustomVisuals() =>
-        NodeFactory<NCreatureVisuals>.CreateFromResource(
+    public override NCreatureVisuals CreateCustomVisuals()
+    {
+        var visuals = NodeFactory<NCreatureVisuals>.CreateFromResource(
             ResourceLoader.Load<Texture2D>("diviner_combat_idle.png".CharacterImagePath()));
+        visuals.Scale = new Vector2(0.75f, 0.75f);
+        return visuals;
+    }
 
     public override IEnumerable<CardModel> StartingDeck =>
     [

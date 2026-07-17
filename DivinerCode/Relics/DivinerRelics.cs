@@ -222,6 +222,8 @@ public class KnockedCompass : DivinerRelic
 
 public class MarkedDeck : DivinerRelic
 {
+    private static readonly HashSet<List<CardCreationResult>> ModifiedRewardLists = new(ReferenceEqualityComparer.Instance);
+
     public override RelicRarity Rarity => RelicRarity.Uncommon;
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
@@ -238,6 +240,22 @@ public class MarkedDeck : DivinerRelic
         List<CardCreationResult> cardRewardOptions,
         CardCreationOptions creationOptions)
     {
+        return TryAddGoodOmenCardRewardOption(player, cardRewardOptions, creationOptions);
+    }
+
+    public override bool TryModifyCardRewardOptionsLate(
+        Player player,
+        List<CardCreationResult> cardRewardOptions,
+        CardCreationOptions creationOptions)
+    {
+        return TryAddGoodOmenCardRewardOption(player, cardRewardOptions, creationOptions);
+    }
+
+    private bool TryAddGoodOmenCardRewardOption(
+        Player player,
+        List<CardCreationResult> cardRewardOptions,
+        CardCreationOptions creationOptions)
+    {
         try
         {
             if (!ReferenceEquals(Owner, player))
@@ -247,6 +265,11 @@ public class MarkedDeck : DivinerRelic
 
             DestinyService.EnsureLoadedForRun(player.RunState);
             if (!DestinyService.IsGoodOmen())
+            {
+                return false;
+            }
+
+            if (!ModifiedRewardLists.Add(cardRewardOptions))
             {
                 return false;
             }

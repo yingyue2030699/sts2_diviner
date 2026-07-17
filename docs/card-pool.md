@@ -96,7 +96,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Cold Reading | Skill | 1 | Apply 1 Weak. Draw 2 card. | Apply 2 Weak and draw 2 cards. |
 | Read Ahead | Skill | 0 | Draw 2 cards. Put up to 2 cards from your hand on top of your draw pile. | Draw 3; put up to 3 cards back. |
 | Unasked Question | Skill | 0 | Lose 5 HP. Divinate. Exhaust.  | Lose 3 HP. |
-| Rewrite the Sign | Skill | 0 | Exhaust. Replace all Misfortunes in your hand, draw pile, and discard pile with Fortunes. | Replace with `Fortune+` instead of `Fortune`. |
+| Rewrite the Sign | Skill | 0 | Exhaust. Transform all Misfortunes in your hand, draw pile, and discard pile into Fortunes. | Transform into `Fortune+` instead of `Fortune`. |
 | Predestined Path | Skill | 1 | Choose up to 1 card from your draw pile. Foretell: put them into your hand; they are Fated that turn. | Choose 2 cards. |
 | Read the Ashes | Skill | 1 | Exhaust a card. Foretell: draw 2 cards. If a Status or Curse was Exhausted, Foretell: gain 2 Energy. | Costs 0. |
 | Borrowed Tomorrow | Skill | 0 | Exhaust. Gain 3 Energy. Foretell: lose 1 Energy. | Gain 4 Energy. |
@@ -150,4 +150,4 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 
 | Name | Type | Cost | Effect | Notes |
 |---|---|---:|---|---|
-| Escape from Destiny | Skill | 1+ | Doomed only. Gain 1 Countdown of Destiny. This card costs 1 more this combat. | Generated the first time each combat Destiny reaches 0. |
+| Escape from Destiny | Skill | 1+ | Gain 1 Countdown of Destiny. This card costs 1 more this combat. | Generated the first time each combat Destiny reaches 0. |

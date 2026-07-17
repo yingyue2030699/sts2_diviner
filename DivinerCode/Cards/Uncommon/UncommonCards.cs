@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace Diviner.DivinerCode.Cards.Uncommon;
@@ -589,10 +590,10 @@ public class RewriteTheSign : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Rewrite the Sign",
-        "Replace all Misfortunes in your hand, draw pile, and discard pile with Fortunes.",
+        "Transform all Misfortunes in your hand, draw pile, and discard pile into Fortunes.",
         "改写征兆",
-        "将你的手牌、抽牌堆和弃牌堆中所有厄运替换为福运。",
-        ("upgradedDesc", "Replace all Misfortunes in your hand, draw pile, and discard pile with Fortune+.", "将你的手牌、抽牌堆和弃牌堆中所有厄运替换为福运+。")
+        "将你的手牌、抽牌堆和弃牌堆中所有厄运变化为福运。",
+        ("upgradedDesc", "Transform all Misfortunes in your hand, draw pile, and discard pile into Fortune+.", "将你的手牌、抽牌堆和弃牌堆中所有厄运变化为福运+。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -609,12 +610,11 @@ public class RewriteTheSign : DivinerCard
             .ToList();
         foreach (var card in cardsToReplace)
         {
-            await CardCmd.Exhaust(choiceContext, card, false, false);
-            await DivinerCardActions.AddGeneratedToCombat<Fortune>(
-                this,
-                pileType,
-                CardPilePosition.Bottom,
-                IsUpgraded);
+            var result = await CardCmd.TransformTo<Fortune>(card, CardPreviewStyle.HorizontalLayout);
+            if (IsUpgraded && result is { success: true, cardAdded: { } replacement })
+            {
+                CardCmd.Upgrade(replacement);
+            }
         }
     }
 

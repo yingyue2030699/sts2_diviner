@@ -120,7 +120,9 @@ public static class DestinyRewardTuning
 
         if (clamped <= 1)
         {
-            lines.Add(DivinerLoc.Text("Common card/relic results are 50% more likely.", "普通卡牌/遗物结果提高 50%。"));
+            lines.Add(DivinerLoc.Text(
+                "Eligible reward rarity rolls shift toward common cards and relics.",
+                "可调整的奖励稀有度随机更偏向普通卡牌和普通遗物。"));
         }
 
         if (clamped <= 2)
@@ -135,7 +137,9 @@ public static class DestinyRewardTuning
 
         if (clamped >= 4)
         {
-            lines.Add(DivinerLoc.Text("Common card/relic results are cut in half.", "普通卡牌/遗物结果减半。"));
+            lines.Add(DivinerLoc.Text(
+                "Eligible reward rarity rolls shift away from common cards and relics.",
+                "可调整的奖励稀有度随机更不易出现普通卡牌和普通遗物。"));
         }
 
         if (clamped >= 5)

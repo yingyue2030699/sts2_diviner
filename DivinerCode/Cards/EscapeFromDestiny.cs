@@ -18,9 +18,9 @@ public class EscapeFromDestiny : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Escape from Destiny",
-        "Doomed only. Gain 1 Countdown of Destiny. This card costs 1 more this combat.",
+        "Gain 1 Countdown of Destiny. This card costs 1 more this combat.",
         "逃离命运",
-        "仅限劫兆。获得 1 层命运倒计时。本牌在本场战斗中多消耗 1 点能量。"
+        "获得 1 层命运倒计时。本牌在本场战斗中多消耗 1 点能量。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
