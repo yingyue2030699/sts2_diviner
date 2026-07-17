@@ -2,14 +2,12 @@
   "title": "Diviner",
   "description": "A Slay the Spire 2 character mod built around Destiny, Divination, Foretell, Doom, and Revelation.",
   "visibility": "private",
-  "changeNote": "Initial Diviner workshop upload.",
+  "changeNote": "Update log since the previous Workshop upload:\n- Fixed generated draw-pile card handling and several omen QoL issues: Escape from Destiny wording, Destiny tooltip wording, Rewrite the Sign transform behavior, Marked Deck multi-reward option support, and Diviner combat art scale.\n- Recentered the Tar of Dread potion icon and removed a stray AI-generation artifact.",
   "tags": [
     "Character",
     "Gameplay"
   ],
   "dependencies": [
     3737335127
-  ],
-  "minBranch": "public",
-  "maxBranch": "public"
+  ]
 }
