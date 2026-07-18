@@ -97,8 +97,8 @@ public class TheFinalStrand : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DestinyService.AddDestiny(-5);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, -5);
+        DestinyService.PersistCurrentState(Owner);
         DivinerCombatRuntime.ForceRevelationEffectsThisCombat(Owner);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }

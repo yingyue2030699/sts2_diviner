@@ -28,8 +28,8 @@ public class DestinedLance : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        int damage = (IsUpgraded ? 20 : 16) + (DestinyService.IsBadOmen() ? (IsUpgraded ? 12 : 10) : 0);
-        if (DestinyService.IsGoodOmen())
+        int damage = (IsUpgraded ? 20 : 16) + (DestinyService.IsBadOmen(Owner) ? (IsUpgraded ? 12 : 10) : 0);
+        if (DestinyService.IsGoodOmen(Owner))
         {
             var enemies = CombatState?.HittableEnemies.Where(creature => creature.Side != Owner.Creature.Side).ToList() ?? [];
             foreach (var enemy in enemies)

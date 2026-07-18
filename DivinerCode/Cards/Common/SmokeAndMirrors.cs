@@ -28,7 +28,7 @@ public class SmokeAndMirrors : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardBlock(this, cardPlay);
-        DivinerCombatRuntime.SetNextForetellDamageOrBlockBonus(IsUpgraded ? 9 : 7);
+        DivinerCombatRuntime.SetNextForetellDamageOrBlockBonus(Owner, IsUpgraded ? 9 : 7);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

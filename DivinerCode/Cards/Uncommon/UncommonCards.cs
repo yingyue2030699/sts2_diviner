@@ -35,7 +35,7 @@ public class StarNeedle : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        int sets = DivinationService.CurrentRecords.Count / 7;
+        int sets = DivinationService.GetRecords(Owner).Count / 7;
         await CommonActions.CardAttack(this, cardPlay.Target, 3 + sets * (IsUpgraded ? 3 : 2)).Execute(choiceContext);
         int vulnerable = sets * (IsUpgraded ? 2 : 1);
         if (cardPlay.Target != null && vulnerable > 0)
@@ -195,7 +195,7 @@ public class Hexagram : DivinerCard
                      (await DivinerCombatRuntime.TryConsumeRevelationEffect(choiceContext, Owner) ? IsUpgraded ? 11 : 9 : 0);
         for (int i = 0; i < 6; i++)
         {
-            var target = enemies[Random.Shared.Next(enemies.Count)];
+            var target = enemies[Owner.RunState.Rng.CombatTargets.NextInt(enemies.Count)];
             await CreatureCmd.Damage(choiceContext, target, damage, DamageProps.card, Owner.Creature, this);
         }
     }
@@ -328,7 +328,7 @@ public class Inevitability : DivinerCard
         }
 
         int divisor = IsUpgraded ? 3 : 4;
-        modifiedCost = Math.Max(0, originalCost - (DivinationService.CurrentRecords.Count / divisor));
+        modifiedCost = Math.Max(0, originalCost - (DivinationService.GetRecords(Owner).Count / divisor));
         return modifiedCost != originalCost;
     }
 
@@ -357,7 +357,7 @@ public class CursedPrediction : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-        if (DestinyService.IsBadOmen())
+        if (DestinyService.IsBadOmen(Owner))
         {
             await DivinerCardActions.AddGeneratedToCombat<Misfortune>(
                 this,
@@ -392,7 +392,7 @@ public class DeadStar : DivinerCard
     {
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
         await CreatureCmd.Damage(choiceContext, Owner.Creature, 3, DamageProps.nonCardHpLoss, Owner.Creature, this);
-        if (cardPlay.Target != null && DestinyService.IsBadOmen())
+        if (cardPlay.Target != null && DestinyService.IsBadOmen(Owner))
         {
             await CommonActions.CardAttack(this, cardPlay.Target).Execute(choiceContext);
         }
@@ -424,10 +424,10 @@ public class Augury : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardBlock(this, cardPlay);
-        if (DivinerCombatRuntime.CombatDivinationCount >= 2)
+        if (DivinerCombatRuntime.CombatDivinationCountFor(Owner) >= 2)
         {
-            DestinyService.AddDestiny(1);
-            DestinyService.PersistCurrentState(Owner.RunState);
+            DestinyService.AddDestiny(Owner, 1);
+            DestinyService.PersistCurrentState(Owner);
             await DivinerStatusPowerSync.Sync(Owner, choiceContext);
         }
     }
@@ -742,7 +742,7 @@ public class EvilEye : DivinerCard
             await PowerCmd.Apply<WeakPower>(choiceContext, cardPlay.Target, IsUpgraded ? 5 : 3, Owner.Creature, this, false);
         }
 
-        if (DestinyService.IsBadOmen())
+        if (DestinyService.IsBadOmen(Owner))
         {
             await PlayerCmd.GainEnergy(1, Owner);
         }
@@ -958,7 +958,7 @@ public class FuneralClock : DivinerCard
     {
         await CommonActions.CardBlock(this, cardPlay);
         if (DestinyService.CanUseDestiny(Owner) &&
-            DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
+            DestinyConstants.IsDredgeDestiny(DestinyService.GetDestiny(Owner)))
         {
             await CardPileCmd.Draw(choiceContext, 2, Owner, false);
             await DivinerStatusPowerSync.Sync(Owner, choiceContext);
@@ -970,7 +970,7 @@ public class FuneralClock : DivinerCard
         modifiedCost = originalCost;
         if (!ReferenceEquals(card, this) ||
             !DestinyService.CanUseDestiny(Owner) ||
-            !DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
+            !DestinyConstants.IsDredgeDestiny(DestinyService.GetDestiny(Owner)))
         {
             return false;
         }
@@ -1156,7 +1156,7 @@ public class DoomEngine : DivinerCard
     public override bool TryModifyEnergyCostInCombat(CardModel card, decimal originalCost, out decimal modifiedCost)
     {
         modifiedCost = originalCost;
-        if (!ReferenceEquals(card, this) || !DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
+        if (!ReferenceEquals(card, this) || !DestinyConstants.IsDredgeDestiny(DestinyService.GetDestiny(Owner)))
         {
             return false;
         }

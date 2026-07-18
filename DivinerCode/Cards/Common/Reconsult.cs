@@ -26,7 +26,7 @@ public class Reconsult : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (DivinerCombatRuntime.HasDivinatedThisCombat)
+        if (DivinerCombatRuntime.HasDivinatedThisCombatFor(Owner))
         {
             await DivinationService.RecordPlaceholder(choiceContext, Owner, "Reconsult");
         }

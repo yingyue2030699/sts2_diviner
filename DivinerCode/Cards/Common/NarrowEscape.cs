@@ -28,7 +28,7 @@ public class NarrowEscape : DivinerCard
     {
         await CommonActions.CardBlock(this, cardPlay);
         if (DestinyService.CanUseDestiny(Owner) &&
-            DestinyConstants.IsDredgeDestiny(DestinyService.CurrentDestiny))
+            DestinyConstants.IsDredgeDestiny(DestinyService.GetDestiny(Owner)))
         {
             await DivinerCombatRuntime.IncreaseDredgeCountdown(choiceContext, Owner, IsUpgraded ? 2 : 1);
         }

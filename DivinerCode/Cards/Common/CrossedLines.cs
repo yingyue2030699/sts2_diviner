@@ -30,7 +30,7 @@ public class CrossedLines : DivinerCard
     {
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
 
-        if (DivinerCombatRuntime.HasDivinatedThisCombat && cardPlay.Target != null)
+        if (DivinerCombatRuntime.HasDivinatedThisCombatFor(Owner) && cardPlay.Target != null)
         {
             await PowerCmd.Apply<WeakPower>(choiceContext, cardPlay.Target, IsUpgraded ? 4 : 3, Owner.Creature, this, false);
         }

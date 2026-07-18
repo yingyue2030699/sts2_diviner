@@ -26,10 +26,10 @@ internal static class DestinyLuckPatches
                 return;
             }
 
-            DestinyService.EnsureLoadedForRun(player.RunState);
+            DestinyService.EnsureLoadedForPlayer(player);
             __result = DestinyRewardTuning.AdjustCardRarity(
                 __result,
-                DestinyService.CurrentDestiny,
+                DestinyService.GetDestiny(player),
                 chance => RollChance(player, chance),
                 DivinerRelicHooks.SuppressesPositiveRewardRarity(player)
             );
@@ -46,10 +46,10 @@ internal static class DestinyLuckPatches
                 return;
             }
 
-            DestinyService.EnsureLoadedForRun(player.RunState);
+            DestinyService.EnsureLoadedForPlayer(player);
             __result = DestinyRewardTuning.AdjustPotionRoll(
                 __result,
-                DestinyService.CurrentDestiny,
+                DestinyService.GetDestiny(player),
                 chance => RollChance(player, chance),
                 player
             );
@@ -66,10 +66,10 @@ internal static class DestinyLuckPatches
                 return;
             }
 
-            DestinyService.EnsureLoadedForRun(player.RunState);
+            DestinyService.EnsureLoadedForPlayer(player);
             __result = DestinyRewardTuning.AdjustRelicRarity(
                 __result,
-                DestinyService.CurrentDestiny,
+                DestinyService.GetDestiny(player),
                 chance => RollChance(player, chance),
                 DivinerRelicHooks.SuppressesPositiveRewardRarity(player)
             );
@@ -87,10 +87,10 @@ internal static class DestinyLuckPatches
                 return;
             }
 
-            DestinyService.EnsureLoadedForRun(runState);
+            DestinyService.EnsureLoadedForPlayer(player);
             __result = DestinyRewardTuning.AdjustUnknownRoomType(
                 __result,
-                DestinyService.CurrentDestiny,
+                DestinyService.GetDestiny(player),
                 blacklist.ToHashSet(),
                 chance => RollChance(player, chance)
             );

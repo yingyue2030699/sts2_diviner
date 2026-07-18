@@ -46,9 +46,10 @@ public static class DivinerRelicHooks
             }
         }
 
+        int recordCount = DivinationService.GetRecords(player).Count;
         if (HasRelic<BloodTablet>(player) &&
-            DivinationService.CurrentRecords.Count > 0 &&
-            DivinationService.CurrentRecords.Count % 5 == 0)
+            recordCount > 0 &&
+            recordCount % 5 == 0)
         {
             await CreatureCmd.Heal(player.Creature, 5, true);
         }
@@ -56,7 +57,7 @@ public static class DivinerRelicHooks
 
     public static async Task OnStatusSync(Player player, PlayerChoiceContext? choiceContext)
     {
-        int destiny = DestinyService.CurrentDestiny;
+        int destiny = DestinyService.GetDestiny(player);
         if (!LastObservedDestinyByPlayer.TryGetValue(player, out var previous))
         {
             LastObservedDestinyByPlayer[player] = destiny;
@@ -87,7 +88,7 @@ public static class DivinerRelicHooks
 
     public static bool IsFirstEscapeFree(Player? player)
     {
-        return HasRelic<HourglassOfMercy>(player) && DivinerCombatRuntime.EscapeCardsPlayedThisCombat == 0;
+        return HasRelic<HourglassOfMercy>(player) && DivinerCombatRuntime.EscapeCardsPlayedThisCombatFor(player) == 0;
     }
 
     public static int EnlightenmentThresholdReduction(Player? player)
@@ -97,7 +98,7 @@ public static class DivinerRelicHooks
 
     public static bool SuppressesPositiveRewardRarity(Player? player)
     {
-        return HasRelic<FatedContract>(player) && DestinyConstants.Clamp(DestinyService.CurrentDestiny) >= 4;
+        return HasRelic<FatedContract>(player) && DestinyConstants.Clamp(DestinyService.GetDestiny(player)) >= 4;
     }
 
     public static float PotionDropBonus(Player? player)
@@ -107,7 +108,7 @@ public static class DivinerRelicHooks
             return 0f;
         }
 
-        return DestinyService.IsGoodOmen() ? 0.8f : 0.4f;
+        return DestinyService.IsGoodOmen(player) ? 0.8f : 0.4f;
     }
 }
 
@@ -206,8 +207,8 @@ public class KnockedCompass : DivinerRelic
         }
 
         _applied = true;
-        DestinyService.EnsureLoadedForRun(player.RunState);
-        if (!DestinyService.IsBadOmen())
+        DestinyService.EnsureLoadedForPlayer(player);
+        if (!DestinyService.IsBadOmen(player))
         {
             return;
         }
@@ -263,8 +264,8 @@ public class MarkedDeck : DivinerRelic
                 return false;
             }
 
-            DestinyService.EnsureLoadedForRun(player.RunState);
-            if (!DestinyService.IsGoodOmen())
+            DestinyService.EnsureLoadedForPlayer(player);
+            if (!DestinyService.IsGoodOmen(player))
             {
                 return false;
             }
@@ -331,8 +332,8 @@ public class SealedEnvelope : DivinerRelic
             await DivinationService.RecordPlaceholder(Owner, "Sealed Envelope");
         }
 
-        DestinyService.AddDestiny(1);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, 1);
+        DestinyService.PersistCurrentState(Owner);
     }
 }
 
@@ -367,8 +368,8 @@ public class OracleBone : DivinerRelic
 
     public override Task AfterObtained()
     {
-        DestinyService.AddDestiny(5);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.AddDestiny(Owner, 5);
+        DestinyService.PersistCurrentState(Owner);
         return Task.CompletedTask;
     }
 }
@@ -417,13 +418,13 @@ public class LastProphecy : DivinerRelic
         if (target != Owner.Creature ||
             TriggeredThisCombat.Contains(Owner) ||
             amount < target.CurrentHp ||
-            DivinationService.CurrentRecords.Count < 8)
+            DivinationService.GetRecords(Owner).Count < 8)
         {
             return amount;
         }
 
-        int recordsToDelete = Math.Min(9, DivinationService.CurrentRecords.Count);
-        if (!DivinationService.TryConsumeRecords(recordsToDelete, Owner.RunState))
+        int recordsToDelete = Math.Min(9, DivinationService.GetRecords(Owner).Count);
+        if (!DivinationService.TryConsumeRecords(Owner, recordsToDelete, Owner.RunState))
         {
             return amount;
         }
@@ -461,7 +462,7 @@ public class VelvetPouch : DivinerRelic
             return cost;
         }
 
-        decimal multiplier = DestinyService.IsGoodOmen() ? 0.2m : 0.6m;
+        decimal multiplier = DestinyService.IsGoodOmen(player) ? 0.2m : 0.6m;
         return Math.Max(0, Math.Ceiling(cost * multiplier));
     }
 }
@@ -495,7 +496,7 @@ public class FatedContract : DivinerRelic
 
     private void SetDestinyToFive()
     {
-        DestinyService.SetDestiny(DestinyConstants.EnlightenmentDestiny);
-        DestinyService.PersistCurrentState(Owner.RunState);
+        DestinyService.SetDestiny(Owner, DestinyConstants.EnlightenmentDestiny);
+        DestinyService.PersistCurrentState(Owner);
     }
 }

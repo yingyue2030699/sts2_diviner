@@ -27,7 +27,7 @@ public class ForewarnedBlow : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-        if (DestinyService.IsGoodOmen())
+        if (DestinyService.IsGoodOmen(Owner))
         {
             await DivinerCardActions.AddGeneratedToCombat<Fortune>(
                 this,
@@ -35,7 +35,7 @@ public class ForewarnedBlow : DivinerCard
                 CardPilePosition.Bottom,
                 IsUpgraded);
         }
-        else if (DestinyService.IsBadOmen())
+        else if (DestinyService.IsBadOmen(Owner))
         {
             await DivinerCardActions.AddGeneratedToCombat<Misfortune>(
                 this,

@@ -24,25 +24,50 @@ public static class DivinationService
         "DivinerDivinationRecords"
     );
 
+    private static readonly SavedSpireField<Player, string> SavedPlayerRecords = new(
+        () => "",
+        "DivinerPlayerDivinationRecords"
+    );
+
     private static readonly List<DivinationRecord> Records = [];
+    private static readonly Dictionary<Player, List<DivinationRecord>> RecordsByPlayer = [];
     private static IRunState? _activeRunState;
+    private static Player? _activePlayer;
 
     public static event Action? RecordsChanged;
 
-    public static IReadOnlyList<DivinationRecord> CurrentRecords => Records;
+    public static IReadOnlyList<DivinationRecord> CurrentRecords => GetRecords(_activePlayer);
 
     public static IReadOnlyList<DivinationRecord> GetVisibleRecords(bool hideInactive)
     {
+        return GetVisibleRecords(_activePlayer, hideInactive);
+    }
+
+    public static IReadOnlyList<DivinationRecord> GetVisibleRecords(Player? player, bool hideInactive)
+    {
+        var records = GetRecords(player);
         return hideInactive
-            ? Records.Where(record => record.IsActive).ToList()
+            ? records.Where(record => record.IsActive).ToList()
+            : records;
+    }
+
+    public static IReadOnlyList<DivinationRecord> GetRecords(Player? player)
+    {
+        return player != null
+            ? GetOrLoadPlayerRecords(player)
             : Records;
     }
 
-    public static IReadOnlyList<ModelId> ActiveRelicDivinationIds => Records
-        .Where(record => record.IsActive && GetCategoryGroup(record.Category) == "Relic")
-        .SelectMany(record => record.GetPreviewRelicIds())
-        .Distinct()
-        .ToList();
+    public static IReadOnlyList<ModelId> ActiveRelicDivinationIds => GetActiveRelicDivinationIds(_activePlayer);
+
+    public static IReadOnlyList<ModelId> GetActiveRelicDivinationIds(Player? player)
+    {
+        return GetRecords(player)
+            .Where(record => record.IsActive && GetCategoryGroup(record.Category) == "Relic")
+            .SelectMany(record => record.GetPreviewRelicIds())
+            .Distinct()
+            .ToList();
+    }
 
     public static DivinationRecord RecordPlaceholder(IRunState? runState, string source)
     {
@@ -78,11 +103,11 @@ public static class DivinationService
 
     private static async Task ApplyPostDivinationEffects(PlayerChoiceContext? choiceContext, Player player)
     {
-        DivinerCombatRuntime.RecordCombatDivination();
+        DivinerCombatRuntime.RecordCombatDivination(player);
         DivinerEffectCue.Divinate(player.Creature);
-        await DivinerRelicHooks.AfterDivination(choiceContext, player, DivinerCombatRuntime.CombatDivinationCount);
+        await DivinerRelicHooks.AfterDivination(choiceContext, player, DivinerCombatRuntime.CombatDivinationCountFor(player));
 
-        int energyBonus = DivinerCombatRuntime.ConsumeNextDivinationEnergyBonus() +
+        int energyBonus = DivinerCombatRuntime.ConsumeNextDivinationEnergyBonus(player) +
                           Math.Max(0, player.Creature.GetPower<SmallRitualPower>()?.Amount ?? 0);
         if (energyBonus > 0)
         {
@@ -100,26 +125,28 @@ public static class DivinationService
     public static void RefreshActivity(IRunState? runState, Player? player)
     {
         _activeRunState = runState ?? _activeRunState;
-        if (_activeRunState == null || Records.Count == 0)
+        _activePlayer = player ?? _activePlayer;
+        var records = GetMutableRecords(player);
+        if (_activeRunState == null || records.Count == 0)
         {
             return;
         }
 
         bool changed = false;
-        for (int i = 0; i < Records.Count; i++)
+        for (int i = 0; i < records.Count; i++)
         {
-            var record = Records[i];
+            var record = records[i];
             bool isActive = IsRecordStillActive(record, _activeRunState, player);
             if (record.IsActive != isActive)
             {
-                Records[i] = record with { IsActive = isActive };
+                records[i] = record with { IsActive = isActive };
                 changed = true;
             }
         }
 
         if (changed)
         {
-            PersistCurrentRecords(_activeRunState);
+            PersistRecords(player, _activeRunState, records);
             RecordsChanged?.Invoke();
         }
     }
@@ -128,6 +155,7 @@ public static class DivinationService
     {
         var relic = ModelDb.GetByIdOrNull<RelicModel>(relicId);
         var grabBag = player.RelicGrabBag ?? player.RunState?.SharedRelicGrabBag;
+        var records = GetOrLoadPlayerRecords(player);
         if (relic == null || grabBag == null)
         {
             return false;
@@ -137,19 +165,19 @@ public static class DivinationService
         {
             grabBag.Remove(relic);
             bool changed = false;
-            for (int i = 0; i < Records.Count; i++)
+            for (int i = 0; i < records.Count; i++)
             {
-                var record = Records[i];
+                var record = records[i];
                 if (record.IsActive && record.GetPreviewRelicIds().Any(id => id.Equals(relicId)))
                 {
-                    Records[i] = record with { IsActive = false };
+                    records[i] = record with { IsActive = false };
                     changed = true;
                 }
             }
 
             if (changed)
             {
-                PersistCurrentRecords(player.RunState);
+                PersistRecords(player, player.RunState, records);
                 RecordsChanged?.Invoke();
             }
 
@@ -162,13 +190,75 @@ public static class DivinationService
         }
     }
 
+    private static List<DivinationRecord> GetMutableRecords(Player? player)
+    {
+        return player != null
+            ? GetOrLoadPlayerRecords(player)
+            : Records;
+    }
+
+    private static List<DivinationRecord> GetOrLoadPlayerRecords(Player player)
+    {
+        if (!RecordsByPlayer.TryGetValue(player, out var records))
+        {
+            records = LoadPlayerRecords(player);
+            RecordsByPlayer[player] = records;
+        }
+
+        return records;
+    }
+
+    private static List<DivinationRecord> LoadPlayerRecords(Player player)
+    {
+        string serialized = SavedPlayerRecords.Get(player) ?? "";
+        if (!string.IsNullOrWhiteSpace(serialized) &&
+            TryDeserializeRecords(serialized, $"player {player.NetId}", clearBadPlayerSave: player) is { } playerRecords)
+        {
+            return playerRecords;
+        }
+
+        if (TryGetSavedRun(player.RunState) is { } savedRun)
+        {
+            string legacySerialized = SavedRecords.Get(savedRun) ?? "[]";
+            if (TryDeserializeRecords(legacySerialized, "legacy run", clearBadPlayerSave: null) is { } legacyRecords)
+            {
+                return legacyRecords;
+            }
+        }
+
+        return [];
+    }
+
+    private static List<DivinationRecord>? TryDeserializeRecords(
+        string serialized,
+        string source,
+        Player? clearBadPlayerSave)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<List<DivinationRecord>>(serialized) ?? [];
+        }
+        catch (JsonException ex)
+        {
+            MainFile.Logger.Info($"Diviner failed to load {source} divination records: {ex}");
+            if (clearBadPlayerSave != null)
+            {
+                SavedPlayerRecords.Set(clearBadPlayerSave, "[]");
+            }
+
+            return null;
+        }
+    }
+
     private static DivinationRecord RecordPlaceholderInternal(IRunState? runState, Player? player, string source)
     {
         _activeRunState = runState ?? _activeRunState;
+        _activePlayer = player ?? _activePlayer;
         var record = CreateActualDivination(_activeRunState, player, source);
+        var records = GetMutableRecords(player);
 
-        Records.Add(record);
-        PersistCurrentRecords(_activeRunState);
+        records.Add(record);
+        PersistRecords(player, _activeRunState, records);
         RecordsChanged?.Invoke();
         MainFile.Logger.Info($"Diviner recorded divination: {record.Text}");
         return record;
@@ -177,18 +267,35 @@ public static class DivinationService
     private static DivinationRecord RecordRelicDivinationInternal(IRunState? runState, Player? player, string source)
     {
         _activeRunState = runState ?? _activeRunState;
+        _activePlayer = player ?? _activePlayer;
         var record = CreateRelicDivination(_activeRunState, player, source);
+        var records = GetMutableRecords(player);
 
-        Records.Add(record);
-        PersistCurrentRecords(_activeRunState);
+        records.Add(record);
+        PersistRecords(player, _activeRunState, records);
         RecordsChanged?.Invoke();
         MainFile.Logger.Info($"Diviner recorded relic divination: {record.Text}");
         return record;
     }
 
+    public static void LoadForPlayer(Player? player)
+    {
+        if (player == null)
+        {
+            LoadForRun(player?.RunState);
+            return;
+        }
+
+        _activeRunState = player.RunState;
+        _activePlayer = player;
+        RecordsByPlayer[player] = LoadPlayerRecords(player);
+        RecordsChanged?.Invoke();
+    }
+
     public static void LoadForRun(IRunState? runState)
     {
         _activeRunState = runState;
+        _activePlayer = null;
         Records.Clear();
 
         if (TryGetSavedRun(runState) is not { } savedRun)
@@ -217,25 +324,38 @@ public static class DivinationService
 
     public static void Clear()
     {
-        Records.Clear();
-        PersistCurrentRecords(_activeRunState);
+        Clear(_activePlayer);
+    }
+
+    public static void Clear(Player? player)
+    {
+        var records = player != null ? GetOrLoadPlayerRecords(player) : Records;
+        records.Clear();
+        PersistRecords(player, player?.RunState ?? _activeRunState, records);
         RecordsChanged?.Invoke();
     }
 
     public static bool TryConsumeRecords(int count, IRunState? runState = null)
+    {
+        return TryConsumeRecords(_activePlayer, count, runState);
+    }
+
+    public static bool TryConsumeRecords(Player? player, int count, IRunState? runState = null)
     {
         if (count <= 0)
         {
             return true;
         }
 
-        if (Records.Count < count)
+        var records = GetMutableRecords(player);
+        if (records.Count < count)
         {
             return false;
         }
 
         _activeRunState = runState ?? _activeRunState;
-        var indexesToRemove = Records
+        _activePlayer = player ?? _activePlayer;
+        var indexesToRemove = records
             .Select((record, index) => new { record, index })
             .OrderBy(entry => entry.record.IsActive ? 1 : 0)
             .ThenBy(entry => entry.index)
@@ -246,19 +366,30 @@ public static class DivinationService
 
         foreach (int index in indexesToRemove)
         {
-            Records.RemoveAt(index);
+            records.RemoveAt(index);
         }
 
-        PersistCurrentRecords(_activeRunState);
+        PersistRecords(player, _activeRunState, records);
         RecordsChanged?.Invoke();
         return true;
     }
 
     private static void PersistCurrentRecords(IRunState? runState)
     {
+        PersistRecords(_activePlayer, runState, GetRecords(_activePlayer));
+    }
+
+    private static void PersistRecords(Player? player, IRunState? runState, IReadOnlyList<DivinationRecord> records)
+    {
+        if (player != null)
+        {
+            SavedPlayerRecords.Set(player, JsonSerializer.Serialize(records));
+            return;
+        }
+
         if (TryGetSavedRun(runState) is { } savedRun)
         {
-            SavedRecords.Set(savedRun, JsonSerializer.Serialize(Records));
+            SavedRecords.Set(savedRun, JsonSerializer.Serialize(records));
         }
     }
 
@@ -295,7 +426,7 @@ public static class DivinationService
 
         var freshCandidates = candidates.Where(candidate => !candidate.IsDuplicate).ToList();
         var selectionPool = freshCandidates.Count > 0 ? freshCandidates : candidates;
-        var selected = PickWeightedByCategory(selectionPool);
+        var selected = PickWeightedByCategory(selectionPool, runState.Rng.Niche);
         return new DivinationRecord(
             selected.Category,
             selected.Text,
@@ -323,7 +454,7 @@ public static class DivinationService
 
         var freshCandidates = candidates.Where(candidate => !candidate.IsDuplicate).ToList();
         var selectionPool = freshCandidates.Count > 0 ? freshCandidates : candidates;
-        var selected = PickWeightedByCategory(selectionPool);
+        var selected = PickWeightedByCategory(selectionPool, runState.Rng.Niche);
         return new DivinationRecord(
             selected.Category,
             selected.Text,
@@ -936,7 +1067,9 @@ public static class DivinationService
         };
     }
 
-    private static ForecastCandidate PickWeightedByCategory(IReadOnlyList<ForecastCandidate> candidates)
+    private static ForecastCandidate PickWeightedByCategory(
+        IReadOnlyList<ForecastCandidate> candidates,
+        MegaCrit.Sts2.Core.Random.Rng rng)
     {
         var recentCategories = Records
             .TakeLast(2)
@@ -951,25 +1084,27 @@ public static class DivinationService
                 recentCategories.Contains(group.Key) ? 12 : 100))
             .ToList();
         int totalGroupWeight = groups.Sum(group => group.Weight);
-        int groupRoll = Random.Shared.Next(Math.Max(1, totalGroupWeight));
+        int groupRoll = rng.NextInt(Math.Max(1, totalGroupWeight));
 
         foreach (var group in groups)
         {
             groupRoll -= group.Weight;
             if (groupRoll < 0)
             {
-                return PickWeightedWithinGroup(group.Candidates);
+                return PickWeightedWithinGroup(group.Candidates, rng);
             }
         }
 
-        return PickWeightedWithinGroup(groups[^1].Candidates);
+        return PickWeightedWithinGroup(groups[^1].Candidates, rng);
     }
 
-    private static ForecastCandidate PickWeightedWithinGroup(IReadOnlyList<ForecastCandidate> candidates)
+    private static ForecastCandidate PickWeightedWithinGroup(
+        IReadOnlyList<ForecastCandidate> candidates,
+        MegaCrit.Sts2.Core.Random.Rng rng)
     {
         var weights = candidates.Select(candidate => candidate.Weight).ToList();
         int totalWeight = weights.Sum();
-        int roll = Random.Shared.Next(Math.Max(1, totalWeight));
+        int roll = rng.NextInt(Math.Max(1, totalWeight));
 
         for (int i = 0; i < candidates.Count; i++)
         {

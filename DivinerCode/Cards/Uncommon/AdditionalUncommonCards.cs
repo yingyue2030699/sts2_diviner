@@ -38,8 +38,8 @@ public class Epiphany : DivinerCard
 
         if (x >= 4)
         {
-            DestinyService.AddDestiny(1);
-            DestinyService.PersistCurrentState(Owner.RunState);
+            DestinyService.AddDestiny(Owner, 1);
+            DestinyService.PersistCurrentState(Owner);
             await DivinerStatusPowerSync.Sync(Owner, choiceContext);
         }
     }

@@ -30,7 +30,7 @@ public class PalmStrike : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         int damage = IsUpgraded ? 13 : 10;
-        if (DestinyService.IsBadOmen())
+        if (DestinyService.IsBadOmen(Owner))
         {
             damage += 6;
         }
@@ -40,7 +40,7 @@ public class PalmStrike : DivinerCard
             await CreatureCmd.Damage(choiceContext, cardPlay.Target, damage, DamageProps.card, Owner.Creature, this);
         }
 
-        if (DestinyService.IsGoodOmen())
+        if (DestinyService.IsGoodOmen(Owner))
         {
             await CardPileCmd.Draw(choiceContext, 1, Owner, false);
         }
