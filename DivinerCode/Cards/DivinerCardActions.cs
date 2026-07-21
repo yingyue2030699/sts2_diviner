@@ -165,14 +165,7 @@ public static class DivinerCardActions
         CardPilePosition position)
         where TCard : CardModel
     {
-        if (DivinerCombatRuntime.CombatState == null)
-        {
-            MainFile.Logger.Error($"Diviner could not create generated {typeof(TCard).Name}: no combat state tracked.");
-            return;
-        }
-
-        var createdCard = DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<TCard>(), source.Owner);
-        await CardPileCmd.AddGeneratedCardToCombat(createdCard, pileType, source.Owner, position);
+        await AddGeneratedToCombatAtomic<TCard>(source.Owner, pileType, position, false);
     }
 
     public static async Task AddGeneratedToCombat<TCard>(
@@ -182,19 +175,7 @@ public static class DivinerCardActions
         bool upgraded)
         where TCard : CardModel
     {
-        if (DivinerCombatRuntime.CombatState == null)
-        {
-            MainFile.Logger.Error($"Diviner could not create generated {typeof(TCard).Name}: no combat state tracked.");
-            return;
-        }
-
-        var createdCard = DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<TCard>(), source.Owner);
-        if (upgraded)
-        {
-            CardCmd.Upgrade(createdCard);
-        }
-
-        await CardPileCmd.AddGeneratedCardToCombat(createdCard, pileType, source.Owner, position);
+        await AddGeneratedToCombatAtomic<TCard>(source.Owner, pileType, position, upgraded);
     }
 
     public static async Task AddGeneratedToCombat<TCard>(
@@ -203,14 +184,7 @@ public static class DivinerCardActions
         CardPilePosition position)
         where TCard : CardModel
     {
-        if (DivinerCombatRuntime.CombatState == null)
-        {
-            MainFile.Logger.Error($"Diviner could not create generated {typeof(TCard).Name}: no combat state tracked.");
-            return;
-        }
-
-        var createdCard = DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<TCard>(), player);
-        await CardPileCmd.AddGeneratedCardToCombat(createdCard, pileType, player, position);
+        await AddGeneratedToCombatAtomic<TCard>(player, pileType, position, false);
     }
 
     public static async Task AddGeneratedToCombat<TCard>(
@@ -220,19 +194,55 @@ public static class DivinerCardActions
         bool upgraded)
         where TCard : CardModel
     {
-        if (DivinerCombatRuntime.CombatState == null)
+        await AddGeneratedToCombatAtomic<TCard>(player, pileType, position, upgraded);
+    }
+
+    private static async Task AddGeneratedToCombatAtomic<TCard>(
+        Player player,
+        PileType pileType,
+        CardPilePosition position,
+        bool upgraded)
+        where TCard : CardModel
+    {
+        var combatState = DivinerCombatRuntime.CombatState;
+        if (combatState == null)
         {
             MainFile.Logger.Error($"Diviner could not create generated {typeof(TCard).Name}: no combat state tracked.");
             return;
         }
 
-        var createdCard = DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<TCard>(), player);
-        if (upgraded)
+        CardModel? createdCard = null;
+        try
         {
-            CardCmd.Upgrade(createdCard);
-        }
+            createdCard = combatState.CreateCard(ModelDb.Card<TCard>(), player);
+            if (upgraded)
+            {
+                CardCmd.Upgrade(createdCard);
+            }
 
-        await CardPileCmd.AddGeneratedCardToCombat(createdCard, pileType, player, position);
+            var result = await CardPileCmd.AddGeneratedCardToCombat(
+                createdCard,
+                pileType,
+                player,
+                position);
+            if (!result.success && createdCard.Pile == null && combatState.ContainsCard(createdCard))
+            {
+                createdCard.RemoveFromState();
+                MainFile.Logger.Info(
+                    $"Diviner removed unplaced generated card after a rejected add: card={typeof(TCard).Name}, pile={pileType}, player={player.NetId}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (createdCard != null && createdCard.Pile == null && combatState.ContainsCard(createdCard))
+            {
+                createdCard.RemoveFromState();
+            }
+
+            MainFile.Logger.Error(
+                $"Diviner generated-card add failed: card={typeof(TCard).Name}, pile={pileType}, player={player.NetId}. {ex}");
+            throw;
+        }
     }
 
     public static async Task AddGeneratedToCombat<TCard>(
@@ -242,22 +252,25 @@ public static class DivinerCardActions
         CardPilePosition position)
         where TCard : CardModel
     {
-        if (DivinerCombatRuntime.CombatState == null)
-        {
-            MainFile.Logger.Error($"Diviner could not create generated {typeof(TCard).Name}: no combat state tracked.");
-            return;
-        }
-
-        var createdCards = Enumerable
-            .Range(0, Math.Max(0, count))
-            .Select(_ => DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<TCard>(), player))
-            .ToList();
-        if (createdCards.Count == 0)
+        int safeCount = Math.Max(0, count);
+        if (safeCount == 0)
         {
             return;
         }
 
-        await CardPileCmd.AddGeneratedCardsToCombat(createdCards, pileType, player, position);
+        MainFile.Logger.Info(
+            $"Diviner generated-card add begin: card={typeof(TCard).Name}, count={safeCount}, pile={pileType}, player={player.NetId}.");
+        for (int i = 0; i < safeCount; i++)
+        {
+            // Create and place each card atomically. Creating the full batch first can
+            // leave pileless cards in CombatState if a later pile hook throws.
+            await AddGeneratedToCombat<TCard>(player, pileType, position);
+        }
+
+        var destinationPile = pileType.GetPile(player);
+        destinationPile.InvokeCardAddFinished();
+        MainFile.Logger.Info(
+            $"Diviner generated-card add complete: card={typeof(TCard).Name}, pile={pileType}, pileCount={destinationPile.Cards.Count}, player={player.NetId}.");
     }
 
     public static async Task AddGeneratedToCombat<TCard>(
@@ -267,22 +280,23 @@ public static class DivinerCardActions
         CardPilePosition position)
         where TCard : CardModel
     {
-        if (DivinerCombatRuntime.CombatState == null)
-        {
-            MainFile.Logger.Error($"Diviner could not create generated {typeof(TCard).Name}: no combat state tracked.");
-            return;
-        }
-
-        var createdCards = Enumerable
-            .Range(0, Math.Max(0, count))
-            .Select(_ => DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<TCard>(), source.Owner))
-            .ToList();
-        if (createdCards.Count == 0)
+        int safeCount = Math.Max(0, count);
+        if (safeCount == 0)
         {
             return;
         }
 
-        await CardPileCmd.AddGeneratedCardsToCombat(createdCards, pileType, source.Owner, position);
+        MainFile.Logger.Info(
+            $"Diviner generated-card add begin: source={source.Id.Entry}, card={typeof(TCard).Name}, count={safeCount}, pile={pileType}, player={source.Owner.NetId}.");
+        for (int i = 0; i < safeCount; i++)
+        {
+            await AddGeneratedToCombat<TCard>(source, pileType, position);
+        }
+
+        var destinationPile = pileType.GetPile(source.Owner);
+        destinationPile.InvokeCardAddFinished();
+        MainFile.Logger.Info(
+            $"Diviner generated-card add complete: source={source.Id.Entry}, card={typeof(TCard).Name}, pile={pileType}, pileCount={destinationPile.Cards.Count}, player={source.Owner.NetId}.");
     }
 
     public static async Task DrawUntilHandSize(

@@ -223,8 +223,6 @@ public class KnockedCompass : DivinerRelic
 
 public class MarkedDeck : DivinerRelic
 {
-    private static readonly HashSet<List<CardCreationResult>> ModifiedRewardLists = new(ReferenceEqualityComparer.Instance);
-
     public override RelicRarity Rarity => RelicRarity.Uncommon;
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
@@ -241,7 +239,9 @@ public class MarkedDeck : DivinerRelic
         List<CardCreationResult> cardRewardOptions,
         CardCreationOptions creationOptions)
     {
-        return TryAddGoodOmenCardRewardOption(player, cardRewardOptions, creationOptions);
+        // The late pass runs for every reward list and avoids modifying the same
+        // mutable list in both hook phases.
+        return false;
     }
 
     public override bool TryModifyCardRewardOptionsLate(
@@ -270,11 +270,7 @@ public class MarkedDeck : DivinerRelic
                 return false;
             }
 
-            if (!ModifiedRewardLists.Add(cardRewardOptions))
-            {
-                return false;
-            }
-
+            int originalCount = cardRewardOptions.Count;
             var extraOptions = CardRewardOptionHelper.CreateExtraOptionsFromCurrentReward(
                 player,
                 cardRewardOptions,
@@ -286,6 +282,8 @@ public class MarkedDeck : DivinerRelic
             }
 
             cardRewardOptions.AddRange(extraOptions);
+            MainFile.Logger.Info(
+                $"Diviner Marked Deck modified reward: before={originalCount}, added={extraOptions.Count}, after={cardRewardOptions.Count}, player={player.NetId}.");
             return true;
         }
         catch (Exception ex)

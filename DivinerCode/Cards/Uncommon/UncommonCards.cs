@@ -598,24 +598,37 @@ public class RewriteTheSign : DivinerCard
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await ReplaceInPile(choiceContext, PileType.Hand);
-        await ReplaceInPile(choiceContext, PileType.Draw);
-        await ReplaceInPile(choiceContext, PileType.Discard);
-    }
-
-    private async Task ReplaceInPile(PlayerChoiceContext choiceContext, PileType pileType)
-    {
-        var cardsToReplace = pileType.GetPile(Owner).Cards
+        var cardsToReplace = new[] { PileType.Hand, PileType.Draw, PileType.Discard }
+            .SelectMany(pileType => pileType.GetPile(Owner).Cards)
             .Where(card => card is Misfortune)
             .ToList();
-        foreach (var card in cardsToReplace)
+        if (cardsToReplace.Count == 0)
         {
-            var result = await CardCmd.TransformTo<Fortune>(card, CardPreviewStyle.HorizontalLayout);
-            if (IsUpgraded && result is { success: true, cardAdded: { } replacement })
+            return;
+        }
+
+        MainFile.Logger.Info(
+            $"Diviner Rewrite the Sign transform begin: count={cardsToReplace.Count}, upgraded={IsUpgraded}, player={Owner.NetId}.");
+        var transformations = cardsToReplace.Select(card =>
+        {
+            var replacement = card.CardScope?.CreateCard<Fortune>(Owner)
+                ?? throw new InvalidOperationException(
+                    $"Rewrite the Sign cannot transform {card.Id.Entry} without an active card scope.");
+            if (IsUpgraded)
             {
                 CardCmd.Upgrade(replacement);
             }
-        }
+
+            return new CardTransformation(card, replacement);
+        }).ToList();
+
+        var results = (await CardCmd.Transform(
+                transformations,
+                null,
+                CardPreviewStyle.HorizontalLayout))
+            .ToList();
+        MainFile.Logger.Info(
+            $"Diviner Rewrite the Sign transform complete: requested={cardsToReplace.Count}, transformed={results.Count(result => result.success)}, player={Owner.NetId}.");
     }
 
     protected override void OnUpgrade()

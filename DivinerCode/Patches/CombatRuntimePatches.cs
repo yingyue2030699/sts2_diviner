@@ -2,6 +2,7 @@ using Diviner.DivinerCode.Mechanics;
 using Diviner.DivinerCode.UI;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Models;
 
 namespace Diviner.DivinerCode.Patches;
 
@@ -32,6 +33,32 @@ internal static class CombatRuntimePatches
         ClearRuntime("combat end");
     }
 
+    [HarmonyPrefix]
+    [HarmonyPatch("EndCombatInternal")]
+    private static void BeforeEndCombatInternal()
+    {
+        try
+        {
+            var combatState = DivinerCombatRuntime.CombatState;
+            if (combatState == null)
+            {
+                MainFile.Logger.Info("Diviner combat cleanup begin: no tracked combat state.");
+                return;
+            }
+
+            var allCardsField = AccessTools.Field(typeof(CombatState), "_allCards");
+            var allCards = allCardsField?.GetValue(combatState) as IEnumerable<CardModel>;
+            int totalCards = allCards?.Count() ?? -1;
+            int pilelessCards = allCards?.Count(card => card.Pile == null) ?? -1;
+            MainFile.Logger.Info(
+                $"Diviner combat cleanup begin: players={combatState.Players.Count}, totalCards={totalCards}, pilelessCards={pilelessCards}.");
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Info($"Diviner combat cleanup diagnostics failed: {ex}");
+        }
+    }
+
     [HarmonyPostfix]
     [HarmonyPatch("Reset", new[] { typeof(bool) })]
     private static void AfterReset()
@@ -45,6 +72,7 @@ internal static class CombatRuntimePatches
         {
             DivinerCombatRuntime.ClearCombatState();
             DestinyCombatHud.CloseAndDispose();
+            MainFile.Logger.Info($"Diviner runtime cleared after {reason}.");
         }
         catch (Exception ex)
         {
