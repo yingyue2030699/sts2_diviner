@@ -5,6 +5,7 @@
 - Fixed a combat-state cleanup risk that could leave generated cards without a pile when several cards were created at once. Generated cards are now created and placed atomically, and their destination pile is explicitly refreshed.
 - Hardened Rewrite the Sign by transforming all eligible Misfortunes in one supported transform operation instead of starting overlapping per-card transform sequences.
 - Hardened Marked Deck card rewards by applying its extra choice only in the late reward pass and removing permanent references to prior reward lists.
+- Fixed End Turn becoming unresponsive when no Doomed countdown was active. The Dredge turn-end hook now treats an absent countdown as inactive instead of dereferencing a null value.
 - Added persistent diagnostics around generated cards, combat cleanup, rest-site option generation, and rest-site room setup. If a rest site still fails, `godot.log` will now identify the failed stage and retain the exception stack trace.
 
 ## Investigation record
@@ -15,6 +16,7 @@
 - Diviner does not override `TryModifyRestSiteOptions`; base-game generation creates Heal and Smith before invoking run hooks.
 - The affected DLL introduced a generated-card batch path which registered every card in `CombatState` before adding the first card to a pile. A failure during a later add could therefore leave floating cards behind during room transition.
 - The affected DLL also changed Rewrite the Sign to run one awaited transform operation per Misfortune and added permanent static tracking of Marked Deck reward-list objects. Both paths are now bounded to one operation per invocation.
+- A runtime test of the hotfix exposed `InvalidOperationException: Nullable object must have a value` in `DivinerCombatRuntime.TickDredgeCountdownAtTurnEnd`. The null countdown passed a lifted nullable comparison before `.Value` was accessed; the hook now snapshots the countdown and returns unless it has a positive value.
 
 ## Diagnostic log markers
 

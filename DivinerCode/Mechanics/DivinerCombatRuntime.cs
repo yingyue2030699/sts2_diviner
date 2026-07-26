@@ -526,16 +526,19 @@ public static class DivinerCombatRuntime
     )
     {
         var state = StateFor(player);
-        if (state.DredgeCountdown <= 0 ||
+        int? countdown = state.DredgeCountdown;
+        if (!countdown.HasValue ||
+            countdown.Value <= 0 ||
             side != playerCreature.Side ||
             !participants.Contains(playerCreature))
         {
             return;
         }
 
-        SetDredgeCountdown(player, state.DredgeCountdown!.Value - 1);
+        int nextCountdown = countdown.Value - 1;
+        SetDredgeCountdown(player, nextCountdown);
 
-        if (state.DredgeCountdown > 0)
+        if (nextCountdown > 0)
         {
             return;
         }
