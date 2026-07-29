@@ -16,9 +16,9 @@ public class OmensAlign : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Omens Align",
-        "Exhaust. Put all Fortune and Misfortune cards from anywhere into your hand.",
+        "Put all Fortune and Misfortune cards from anywhere into your hand.",
         "征兆相合",
-        "消耗。将所有位置的福运和厄运牌加入你的手牌。",
+        "将所有位置的福运和厄运牌加入你的手牌。",
         ("upgradedDesc", "Put all Fortune and Misfortune cards from anywhere into your hand.", "将所有位置的福运和厄运牌加入你的手牌。")
     );
 

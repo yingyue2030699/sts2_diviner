@@ -1,4 +1,5 @@
 using Diviner.DivinerCode.Character;
+using Diviner.DivinerCode.Extensions;
 using Diviner.DivinerCode.Mechanics;
 using Godot;
 using HarmonyLib;
@@ -51,6 +52,8 @@ internal static class RestSiteGenerationDiagnosticsPatch
 [HarmonyPatch(typeof(NRestSiteRoom), "_Ready")]
 internal static class RestSiteRoomDiagnosticsPatch
 {
+    private const string StaticPortraitNodeName = "DivinerRestSitePortrait";
+
     [HarmonyPrefix]
     private static void BeforeReady()
     {
@@ -74,6 +77,7 @@ internal static class RestSiteRoomDiagnosticsPatch
     {
         try
         {
+            AddStaticDivinerPortrait(__instance);
             MainFile.Logger.Info(
                 $"Diviner rest-site room ready complete: optionCount={__instance.Options.Count}, " +
                 $"characterCount={__instance.characterAnims.Count}.");
@@ -82,6 +86,51 @@ internal static class RestSiteRoomDiagnosticsPatch
         {
             MainFile.Logger.Info($"Diviner rest-site room completion diagnostics failed: {ex}");
         }
+    }
+
+    private static void AddStaticDivinerPortrait(NRestSiteRoom room)
+    {
+        var bgContainer = AccessTools
+            .Property(typeof(NRestSiteRoom), "BgContainer")
+            ?.GetValue(room) as Control;
+        var divinerCharacters = room.Characters
+            .Where(character =>
+                character.Player != null &&
+                DivinerPlayerDetection.IsDivinerPlayer(character.Player))
+            .ToList();
+        if (bgContainer == null ||
+            divinerCharacters.Count == 0 ||
+            bgContainer.GetNodeOrNull<TextureRect>(StaticPortraitNodeName) != null)
+        {
+            return;
+        }
+
+        string portraitPath = "diviner_restsite.png".CharacterImagePath();
+        var portraitTexture = ResourceLoader.Load<Texture2D>(portraitPath);
+        if (portraitTexture == null)
+        {
+            MainFile.Logger.Error(
+                $"Diviner static rest-site portrait could not be loaded: path={portraitPath}.");
+            return;
+        }
+
+        foreach (var character in divinerCharacters)
+        {
+            character.Visible = false;
+        }
+
+        var portrait = new TextureRect
+        {
+            Name = StaticPortraitNodeName,
+            Texture = portraitTexture,
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered,
+            MouseFilter = Control.MouseFilterEnum.Ignore
+        };
+        bgContainer.AddChild(portrait);
+        portrait.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        MainFile.Logger.Info(
+            $"Diviner static rest-site portrait installed beneath UI; hiddenCharacterCount={divinerCharacters.Count}.");
     }
 
     [HarmonyFinalizer]

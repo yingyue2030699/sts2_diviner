@@ -22,10 +22,10 @@ public class Epiphany : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Epiphany",
-        "Gain !Block! Block X times. Gain 1 Destiny if X is 4 or more. Exhaust.",
+        "Gain !Block! Block X times. Gain 1 Destiny if X is 4 or more.",
         "顿悟",
-        "获得 !Block! 点格挡 X 次。如果 X 至少为 4，获得 1 点命运。消耗。",
-        ("upgradedDesc", "Gain !Block! Block X times. Gain 1 Destiny if X is 4 or more. Exhaust.", "获得 !Block! 点格挡 X 次。如果 X 至少为 4，获得 1 点命运。消耗。")
+        "获得 !Block! 点格挡 X 次。如果 X 至少为 4，获得 1 点命运。",
+        ("upgradedDesc", "Gain !Block! Block X times. Gain 1 Destiny if X is 4 or more.", "获得 !Block! 点格挡 X 次。如果 X 至少为 4，获得 1 点命运。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

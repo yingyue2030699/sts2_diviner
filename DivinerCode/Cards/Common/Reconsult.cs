@@ -18,10 +18,10 @@ public class Reconsult : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Reconsult",
-        "Exhaust. If you have divinated this combat, Divinate.",
+        "If you have divinated this combat, Divinate.",
         "重新占问",
-        "消耗。如果你在本场战斗中占卜过，占卜。",
-        ("upgradedDesc", "Retain. If you have divinated this combat, Divinate.", "保留。如果你在本场战斗中占卜过，占卜。")
+        "如果你在本场战斗中占卜过，占卜。",
+        ("upgradedDesc", "If you have divinated this combat, Divinate.", "如果你在本场战斗中占卜过，占卜。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

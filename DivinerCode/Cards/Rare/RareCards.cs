@@ -28,10 +28,10 @@ public class Clairvoyance : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Clairvoyance",
-        "Search anywhere for 1 card. Put it into your hand; it is Fated. Exhaust.",
+        "Search anywhere for 1 card. Put it into your hand; it is Fated.",
         "千里眼",
-        "从任意位置选择 1 张牌加入手牌；它为注定。消耗。",
-        ("upgradedDesc", "Search anywhere for 1 card. Put it into your hand; it is Fated. Exhaust.", "从任意位置选择 1 张牌加入手牌；它为注定。消耗。"),
+        "从任意位置选择 1 张牌加入手牌；它为注定。",
+        ("upgradedDesc", "Search anywhere for 1 card. Put it into your hand; it is Fated.", "从任意位置选择 1 张牌加入手牌；它为注定。"),
         ("selectPrompt", "Choose a card to put into your hand.", "选择一张牌加入你的手牌。")
     );
 
@@ -394,10 +394,10 @@ public class GreaterPortent : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Greater Portent",
-        "Exhaust. Search up to 3 cards from your draw pile. Put them into your hand; they are Fated.",
+        "Search up to 3 cards from your draw pile. Put them into your hand; they are Fated.",
         "大预兆",
-        "消耗。从你的抽牌堆中选择至多 3 张牌加入手牌；它们为注定。",
-        ("upgradedDesc", "Exhaust. Search up to 3 cards from your draw pile. Put them into your hand; they are Fated.", "消耗。从你的抽牌堆中选择至多 3 张牌加入手牌；它们为注定。"),
+        "从你的抽牌堆中选择至多 3 张牌加入手牌；它们为注定。",
+        ("upgradedDesc", "Search up to 3 cards from your draw pile. Put them into your hand; they are Fated.", "从你的抽牌堆中选择至多 3 张牌加入手牌；它们为注定。"),
         ("selectPrompt", "Choose cards to put into your hand.", "选择要加入手牌的牌。")
     );
 
@@ -424,10 +424,10 @@ public class Reversal : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Reversal",
-        "Exhaust. Set Destiny to 5 minus its current value.",
+        "Set Destiny to 5 minus its current value.",
         "逆转",
-        "消耗。将命运设为 5 减去当前命运。",
-        ("upgradedDesc", "Retain. Exhaust. Set Destiny to 5 minus its current value.", "保留。消耗。将命运设为 5 减去当前命运。")
+        "将命运设为 5 减去当前命运。",
+        ("upgradedDesc", "Set Destiny to 5 minus its current value.", "将命运设为 5 减去当前命运。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -454,9 +454,9 @@ public class OraclesBargain : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Oracle's Bargain",
-        "Gain 1 Destiny. Shuffle 3 Misfortunes into your draw pile. Exhaust.",
+        "Gain 1 Destiny. Shuffle 3 Misfortunes into your draw pile.",
         "神谕交易",
-        "获得 1 点命运。将 3 张厄运洗入抽牌堆。消耗。"
+        "获得 1 点命运。将 3 张厄运洗入抽牌堆。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -600,9 +600,9 @@ public class Veil : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Veil",
-        "Exhaust. Gain Block equal to the number of recorded divinations.",
+        "Gain Block equal to the number of recorded divinations.",
         "面纱",
-        "消耗。获得等同于已记录占卜数量的格挡。",
+        "获得等同于已记录占卜数量的格挡。",
         ("upgradedDesc", "Gain Block equal to the number of recorded divinations.", "获得等同于已记录占卜数量的格挡。")
     );
 
