@@ -212,16 +212,34 @@ public static class DivinationService
     {
         string serialized = SavedPlayerRecords.Get(player) ?? "";
         if (!string.IsNullOrWhiteSpace(serialized) &&
-            TryDeserializeRecords(serialized, $"player {player.NetId}", clearBadPlayerSave: player) is { } playerRecords)
+            TryDeserializeRecords(
+                serialized,
+                $"player {player.NetId}",
+                clearBadPlayerSave: player,
+                out bool repairedPlayerRecords) is { } playerRecords)
         {
+            if (repairedPlayerRecords)
+            {
+                SavedPlayerRecords.Set(player, JsonSerializer.Serialize(playerRecords));
+            }
+
             return playerRecords;
         }
 
         if (TryGetSavedRun(player.RunState) is { } savedRun)
         {
             string legacySerialized = SavedRecords.Get(savedRun) ?? "[]";
-            if (TryDeserializeRecords(legacySerialized, "legacy run", clearBadPlayerSave: null) is { } legacyRecords)
+            if (TryDeserializeRecords(
+                    legacySerialized,
+                    "legacy run",
+                    clearBadPlayerSave: null,
+                    out bool repairedLegacyRecords) is { } legacyRecords)
             {
+                if (repairedLegacyRecords)
+                {
+                    SavedRecords.Set(savedRun, JsonSerializer.Serialize(legacyRecords));
+                }
+
                 return legacyRecords;
             }
         }
@@ -232,11 +250,22 @@ public static class DivinationService
     private static List<DivinationRecord>? TryDeserializeRecords(
         string serialized,
         string source,
-        Player? clearBadPlayerSave)
+        Player? clearBadPlayerSave,
+        out bool repaired)
     {
+        repaired = false;
         try
         {
-            return JsonSerializer.Deserialize<List<DivinationRecord>>(serialized) ?? [];
+            var records = JsonSerializer.Deserialize<List<DivinationRecord>>(serialized) ?? [];
+            int removedCount = RemoveDuplicateOneShotRecords(records);
+            repaired = removedCount > 0;
+            if (repaired)
+            {
+                MainFile.Logger.Info(
+                    $"Diviner removed {removedCount} duplicate one-shot divination record(s) while loading {source}.");
+            }
+
+            return records;
         }
         catch (JsonException ex)
         {
@@ -250,12 +279,36 @@ public static class DivinationService
         }
     }
 
+    private static int RemoveDuplicateOneShotRecords(List<DivinationRecord> records)
+    {
+        HashSet<string> seenCategories = new(StringComparer.Ordinal);
+        return records.RemoveAll(record =>
+            IsOneShotCategory(record.Category) &&
+            !seenCategories.Add(record.Category));
+    }
+
+    private static bool IsOneShotCategory(string category)
+    {
+        return category.StartsWith("Boss.", StringComparison.Ordinal);
+    }
+
     private static DivinationRecord RecordPlaceholderInternal(IRunState? runState, Player? player, string source)
     {
         _activeRunState = runState ?? _activeRunState;
         _activePlayer = player ?? _activePlayer;
         var record = CreateActualDivination(_activeRunState, player, source);
         var records = GetMutableRecords(player);
+
+        if (IsOneShotCategory(record.Category))
+        {
+            int existingIndex = records.FindIndex(existing => existing.Category == record.Category);
+            if (existingIndex >= 0)
+            {
+                MainFile.Logger.Info(
+                    $"Diviner suppressed duplicate one-shot divination category {record.Category} from {source}.");
+                return records[existingIndex];
+            }
+        }
 
         records.Add(record);
         PersistRecords(player, _activeRunState, records);
@@ -288,7 +341,7 @@ public static class DivinationService
 
         _activeRunState = player.RunState;
         _activePlayer = player;
-        RecordsByPlayer[player] = LoadPlayerRecords(player);
+        _ = GetOrLoadPlayerRecords(player);
         RecordsChanged?.Invoke();
     }
 
@@ -305,17 +358,20 @@ public static class DivinationService
         }
 
         string serialized = SavedRecords.Get(savedRun) ?? "[]";
-        try
+        if (TryDeserializeRecords(
+                serialized,
+                "saved run",
+                clearBadPlayerSave: null,
+                out bool repairedRecords) is { } loadedRecords)
         {
-            var loadedRecords = JsonSerializer.Deserialize<List<DivinationRecord>>(serialized);
-            if (loadedRecords != null)
+            Records.AddRange(loadedRecords);
+            if (repairedRecords)
             {
-                Records.AddRange(loadedRecords);
+                SavedRecords.Set(savedRun, JsonSerializer.Serialize(loadedRecords));
             }
         }
-        catch (JsonException ex)
+        else
         {
-            MainFile.Logger.Info($"Diviner failed to load saved divination records: {ex}");
             SavedRecords.Set(savedRun, "[]");
         }
 
@@ -325,6 +381,15 @@ public static class DivinationService
     public static void Clear()
     {
         Clear(_activePlayer);
+    }
+
+    public static void ClearRuntimeState()
+    {
+        _activeRunState = null;
+        _activePlayer = null;
+        Records.Clear();
+        RecordsByPlayer.Clear();
+        RecordsChanged?.Invoke();
     }
 
     public static void Clear(Player? player)
@@ -411,13 +476,14 @@ public static class DivinationService
         }
 
         RefreshActivity(runState, player);
+        var records = GetRecords(player);
 
         List<ForecastCandidate> candidates = [];
-        AddBossCandidates(candidates, runState);
-        AddAncientCandidates(candidates, runState, player);
-        AddRelicCandidates(candidates, runState, player);
+        AddBossCandidates(candidates, runState, records);
+        AddAncientCandidates(candidates, runState, player, records);
+        AddRelicCandidates(candidates, runState, player, records);
         AddEliteCandidates(candidates, runState);
-        AddEventCandidates(candidates, runState);
+        AddEventCandidates(candidates, runState, records);
 
         if (candidates.Count == 0)
         {
@@ -426,7 +492,7 @@ public static class DivinationService
 
         var freshCandidates = candidates.Where(candidate => !candidate.IsDuplicate).ToList();
         var selectionPool = freshCandidates.Count > 0 ? freshCandidates : candidates;
-        var selected = PickWeightedByCategory(selectionPool, runState.Rng.Niche);
+        var selected = PickWeightedByCategory(selectionPool, runState.Rng.Niche, records);
         return new DivinationRecord(
             selected.Category,
             selected.Text,
@@ -444,9 +510,10 @@ public static class DivinationService
         }
 
         RefreshActivity(runState, player);
+        var records = GetRecords(player);
 
         List<ForecastCandidate> candidates = [];
-        AddRelicCandidates(candidates, runState, player);
+        AddRelicCandidates(candidates, runState, player, records);
         if (candidates.Count == 0)
         {
             return FallbackRecord(source, "No committed future is currently readable.");
@@ -454,7 +521,7 @@ public static class DivinationService
 
         var freshCandidates = candidates.Where(candidate => !candidate.IsDuplicate).ToList();
         var selectionPool = freshCandidates.Count > 0 ? freshCandidates : candidates;
-        var selected = PickWeightedByCategory(selectionPool, runState.Rng.Niche);
+        var selected = PickWeightedByCategory(selectionPool, runState.Rng.Niche, records);
         return new DivinationRecord(
             selected.Category,
             selected.Text,
@@ -464,21 +531,31 @@ public static class DivinationService
                 : null);
     }
 
-    private static void AddBossCandidates(List<ForecastCandidate> candidates, IRunState runState)
+    private static void AddBossCandidates(
+        List<ForecastCandidate> candidates,
+        IRunState runState,
+        IReadOnlyList<DivinationRecord> records)
     {
         if (runState.CurrentActIndex <= 0)
         {
-            AddBossCandidate(candidates, runState, 1, "Act 2 boss", "Boss.Act2");
+            AddBossCandidate(candidates, runState, records, 1, "Act 2 boss", "Boss.Act2");
         }
 
         if (runState.CurrentActIndex <= 1)
         {
-            AddBossCandidate(candidates, runState, 2, "Act 3 boss", "Boss.Act3.Primary");
+            AddBossCandidate(candidates, runState, records, 2, "Act 3 boss", "Boss.Act3.Primary");
 
             var act3 = GetAct(runState, 2);
             if (act3?.HasSecondBoss == true && act3.SecondBossEncounter != null)
             {
-                AddBossCandidate(candidates, runState, 2, "Act 3 second boss", "Boss.Act3.Second", true);
+                AddBossCandidate(
+                    candidates,
+                    runState,
+                    records,
+                    2,
+                    "Act 3 second boss",
+                    "Boss.Act3.Second",
+                    true);
             }
         }
     }
@@ -486,12 +563,13 @@ public static class DivinationService
     private static void AddBossCandidate(
         List<ForecastCandidate> candidates,
         IRunState runState,
+        IReadOnlyList<DivinationRecord> records,
         int actIndex,
         string label,
         string category,
         bool useSecondBoss = false)
     {
-        if (Records.Any(record => record.Category == category))
+        if (records.Any(record => record.Category == category))
         {
             return;
         }
@@ -518,16 +596,20 @@ public static class DivinationService
             DivinerLoc.Text($"{label}: {bossName}.", $"{chineseLabel}：{bossName}。")));
     }
 
-    private static void AddAncientCandidates(List<ForecastCandidate> candidates, IRunState runState, Player? player)
+    private static void AddAncientCandidates(
+        List<ForecastCandidate> candidates,
+        IRunState runState,
+        Player? player,
+        IReadOnlyList<DivinationRecord> records)
     {
         if (runState.CurrentActIndex <= 0)
         {
-            AddAncientCandidate(candidates, runState, player, 1, "Act 2");
+            AddAncientCandidate(candidates, runState, player, records, 1, "Act 2");
         }
 
         if (runState.CurrentActIndex <= 1)
         {
-            AddAncientCandidate(candidates, runState, player, 2, "Act 3");
+            AddAncientCandidate(candidates, runState, player, records, 2, "Act 3");
         }
     }
 
@@ -535,11 +617,12 @@ public static class DivinationService
         List<ForecastCandidate> candidates,
         IRunState runState,
         Player? player,
+        IReadOnlyList<DivinationRecord> records,
         int actIndex,
         string label)
     {
         var category = $"AncientReward.Act{actIndex + 1}";
-        if (Records.Count(record => record.Category == category) >= 3)
+        if (records.Count(record => record.Category == category) >= 3)
         {
             return;
         }
@@ -550,7 +633,7 @@ public static class DivinationService
             return;
         }
 
-        var option = TryDescribeAncientOption(ancient, runState, player, category);
+        var option = TryDescribeAncientOption(ancient, runState, player, category, records);
         if (option == null)
         {
             return;
@@ -571,7 +654,11 @@ public static class DivinationService
             PreviewRelicIds: option.PreviewRelicId is { } relicId ? [relicId] : []));
     }
 
-    private static void AddRelicCandidates(List<ForecastCandidate> candidates, IRunState runState, Player? player)
+    private static void AddRelicCandidates(
+        List<ForecastCandidate> candidates,
+        IRunState runState,
+        Player? player,
+        IReadOnlyList<DivinationRecord> records)
     {
         var grabBag = player?.RelicGrabBag ?? runState.SharedRelicGrabBag;
         if (grabBag == null || !grabBag.IsPopulated)
@@ -590,13 +677,14 @@ public static class DivinationService
             return;
         }
 
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Common, 1, "common relic", "普通遗物", false);
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Uncommon, 1, "uncommon relic", "罕见遗物", false);
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Rare, 1, "rare relic", "稀有遗物", false);
-        AddRelicCandidate(candidates, relicIdLists, RelicRarity.Shop, 1, "shop relic", "商店遗物", true);
+        AddRelicCandidate(candidates, relicIdLists, records, RelicRarity.Common, 1, "common relic", "普通遗物", false);
+        AddRelicCandidate(candidates, relicIdLists, records, RelicRarity.Uncommon, 1, "uncommon relic", "罕见遗物", false);
+        AddRelicCandidate(candidates, relicIdLists, records, RelicRarity.Rare, 1, "rare relic", "稀有遗物", false);
+        AddRelicCandidate(candidates, relicIdLists, records, RelicRarity.Shop, 1, "shop relic", "商店遗物", true);
         AddRelicCandidate(
             candidates,
             relicIdLists,
+            records,
             RelicRarity.Common,
             1,
             "shop common relic",
@@ -606,6 +694,7 @@ public static class DivinationService
         AddRelicCandidate(
             candidates,
             relicIdLists,
+            records,
             RelicRarity.Uncommon,
             1,
             "shop uncommon relic",
@@ -615,6 +704,7 @@ public static class DivinationService
         AddRelicCandidate(
             candidates,
             relicIdLists,
+            records,
             RelicRarity.Rare,
             1,
             "shop rare relic",
@@ -626,6 +716,7 @@ public static class DivinationService
     private static void AddRelicCandidate(
         List<ForecastCandidate> candidates,
         IReadOnlyDictionary<RelicRarity, List<ModelId>> relicIdLists,
+        IReadOnlyList<DivinationRecord> records,
         RelicRarity rarity,
         int count,
         string label,
@@ -642,8 +733,13 @@ public static class DivinationService
             ? ids.AsEnumerable().Reverse().ToList()
             : ids.ToList();
         var category = categoryOverride ?? $"Relic.{rarity}";
-        var activeForecastIds = GetActiveQueuedRelicForecastIds(category, orderedIds);
-        var selectedIds = SelectNextRelicForecastIds(category, orderedIds, count, activeForecastIds);
+        var activeForecastIds = GetActiveQueuedRelicForecastIds(category, orderedIds, records);
+        var selectedIds = SelectNextRelicForecastIds(
+            category,
+            orderedIds,
+            count,
+            activeForecastIds,
+            records);
         if (selectedIds.Count == 0)
         {
             return;
@@ -670,9 +766,10 @@ public static class DivinationService
 
     private static IReadOnlyList<ModelId> GetActiveQueuedRelicForecastIds(
         string category,
-        IReadOnlyList<ModelId> orderedQueue)
+        IReadOnlyList<ModelId> orderedQueue,
+        IReadOnlyList<DivinationRecord> records)
     {
-        return Records
+        return records
             .Where(record => record.IsActive && record.Category == category)
             .SelectMany(record => record.GetPreviewRelicIds())
             .Where(id => orderedQueue.Any(queuedId => queuedId.Equals(id)))
@@ -684,9 +781,10 @@ public static class DivinationService
         string category,
         IReadOnlyList<ModelId> orderedQueue,
         int count,
-        IReadOnlyList<ModelId> activeForecastIds)
+        IReadOnlyList<ModelId> activeForecastIds,
+        IReadOnlyList<DivinationRecord> records)
     {
-        int startIndex = FindMostRecentActiveForecastIndex(category, orderedQueue);
+        int startIndex = FindMostRecentActiveForecastIndex(category, orderedQueue, records);
         var selectedIds = orderedQueue
             .Skip(startIndex + 1)
             .Where(id => activeForecastIds.All(activeId => !activeId.Equals(id)))
@@ -704,9 +802,12 @@ public static class DivinationService
             .ToList();
     }
 
-    private static int FindMostRecentActiveForecastIndex(string category, IReadOnlyList<ModelId> orderedQueue)
+    private static int FindMostRecentActiveForecastIndex(
+        string category,
+        IReadOnlyList<ModelId> orderedQueue,
+        IReadOnlyList<DivinationRecord> records)
     {
-        foreach (var record in Records.AsEnumerable().Reverse())
+        foreach (var record in records.Reverse())
         {
             if (!record.IsActive || record.Category != category)
             {
@@ -739,7 +840,10 @@ public static class DivinationService
         // Skipping this provider avoids recording unintelligible "row/col" forecasts.
     }
 
-    private static void AddEventCandidates(List<ForecastCandidate> candidates, IRunState runState)
+    private static void AddEventCandidates(
+        List<ForecastCandidate> candidates,
+        IRunState runState,
+        IReadOnlyList<DivinationRecord> records)
     {
         if (runState.BaseRoom is not MegaCrit.Sts2.Core.Rooms.EventRoom eventRoom ||
             eventRoom.CanonicalEvent == null)
@@ -756,7 +860,7 @@ public static class DivinationService
             category,
             "Event",
             text,
-            IsDuplicate: Records.Any(record => record.Category == category && record.Text == text)));
+            IsDuplicate: records.Any(record => record.Category == category && record.Text == text)));
     }
 
     private static ActModel? GetAct(IRunState runState, int actIndex)
@@ -808,23 +912,28 @@ public static class DivinationService
         AncientEventModel ancient,
         IRunState runState,
         Player? player,
-        string category)
+        string category,
+        IReadOnlyList<DivinationRecord> records)
     {
-        return TryDescribeGeneratedAncientOption(ancient, category) ??
-               TryDescribeProjectedAncientOption(ancient, runState, player, category);
+        return TryDescribeGeneratedAncientOption(ancient, category, records) ??
+               TryDescribeProjectedAncientOption(ancient, runState, player, category, records);
     }
 
-    private static AncientOptionForecast? TryDescribeGeneratedAncientOption(AncientEventModel ancient, string category)
+    private static AncientOptionForecast? TryDescribeGeneratedAncientOption(
+        AncientEventModel ancient,
+        string category,
+        IReadOnlyList<DivinationRecord> records)
     {
         var options = TryGetGeneratedAncientOptions(ancient);
-        return options == null ? null : SelectAncientOptionForecast(options, category, false);
+        return options == null ? null : SelectAncientOptionForecast(options, category, false, records);
     }
 
     private static AncientOptionForecast? TryDescribeProjectedAncientOption(
         AncientEventModel ancient,
         IRunState runState,
         Player? player,
-        string category)
+        string category,
+        IReadOnlyList<DivinationRecord> records)
     {
         var simulationPlayer = TryGetAncientSimulationPlayer(runState, player);
         if (simulationPlayer == null)
@@ -842,7 +951,7 @@ public static class DivinationService
 
             SetEventOwnerAndRng(simulatedAncient, runState, simulationPlayer);
             var options = InvokeGenerateInitialOptions(simulatedAncient);
-            return options == null ? null : SelectAncientOptionForecast(options, category, true);
+            return options == null ? null : SelectAncientOptionForecast(options, category, true, records);
         }
         catch (Exception ex)
         {
@@ -872,7 +981,8 @@ public static class DivinationService
     private static AncientOptionForecast? SelectAncientOptionForecast(
         IEnumerable<EventOption> options,
         string category,
-        bool isProjected)
+        bool isProjected,
+        IReadOnlyList<DivinationRecord> records)
     {
         var optionList = options.ToList();
         if (optionList.Count == 0)
@@ -900,7 +1010,7 @@ public static class DivinationService
             return null;
         }
 
-        var seenRelics = Records
+        var seenRelics = records
             .Where(record => record.Category == category)
             .SelectMany(record => record.GetPreviewRelicIds())
             .ToList();
@@ -908,7 +1018,7 @@ public static class DivinationService
                 forecast.PreviewRelicId is { } relicId &&
                 seenRelics.All(seenId => !seenId.Equals(relicId))) ??
             forecasts.FirstOrDefault(forecast =>
-                Records.Where(record => record.Category == category)
+                records.Where(record => record.Category == category)
                     .All(record => !record.Text.Contains(forecast.Text, StringComparison.Ordinal))) ??
             forecasts[0];
     }
@@ -1069,9 +1179,10 @@ public static class DivinationService
 
     private static ForecastCandidate PickWeightedByCategory(
         IReadOnlyList<ForecastCandidate> candidates,
-        MegaCrit.Sts2.Core.Random.Rng rng)
+        MegaCrit.Sts2.Core.Random.Rng rng,
+        IReadOnlyList<DivinationRecord> records)
     {
-        var recentCategories = Records
+        var recentCategories = records
             .TakeLast(2)
             .Select(record => record.Category)
             .ToHashSet(StringComparer.Ordinal);

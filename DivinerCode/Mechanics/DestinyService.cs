@@ -327,7 +327,7 @@ public static class DestinyService
         _destiny = DestinyConstants.DefaultDestiny;
         _luckDestiny = DestinyConstants.DefaultDestiny;
         PlayerStates.Clear();
-        DivinationService.Clear();
+        DivinationService.ClearRuntimeState();
         NotifyChanged();
     }
 
