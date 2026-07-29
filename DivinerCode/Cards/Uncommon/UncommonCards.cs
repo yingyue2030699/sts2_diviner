@@ -36,7 +36,8 @@ public class StarNeedle : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         int sets = DivinationService.GetRecords(Owner).Count / 7;
-        await CommonActions.CardAttack(this, cardPlay.Target, 3 + sets * (IsUpgraded ? 3 : 2)).Execute(choiceContext);
+        decimal damage = 3 + sets * (IsUpgraded ? 3 : 2);
+        await CommonActions.CardAttack(this, cardPlay.Target, damage).Execute(choiceContext);
         int vulnerable = sets * (IsUpgraded ? 2 : 1);
         if (cardPlay.Target != null && vulnerable > 0)
         {
