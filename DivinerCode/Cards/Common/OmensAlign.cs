@@ -18,8 +18,8 @@ public class OmensAlign : DivinerCard
         "Omens Align",
         "Put all Fortune and Misfortune cards from anywhere into your hand.",
         "征兆相合",
-        "将所有位置的福运和厄运牌加入你的手牌。",
-        ("upgradedDesc", "Put all Fortune and Misfortune cards from anywhere into your hand.", "将所有位置的福运和厄运牌加入你的手牌。")
+        "将所有位置的福运和噩运牌加入你的手牌。",
+        ("upgradedDesc", "Put all Fortune and Misfortune cards from anywhere into your hand.", "将所有位置的福运和噩运牌加入你的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

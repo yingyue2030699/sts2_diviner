@@ -35,6 +35,7 @@ public static class DestinyCombatHud
     private static bool _isOpen;
     private static DivinationDisplayMode _displayMode = DivinationDisplayMode.Default;
     private static string _lastRenderedDivinationSignature = "";
+    private static Control? _hudRoot;
 
     public static void Toggle()
     {
@@ -58,7 +59,11 @@ public static class DestinyCombatHud
             return;
         }
 
-        tree.Root.GetNodeOrNull<CanvasLayer>(HudNodeName)?.QueueFree();
+        if (_hudRoot != null && GodotObject.IsInstanceValid(_hudRoot))
+        {
+            _hudRoot.QueueFree();
+        }
+        _hudRoot = null;
     }
 
     public static void EnsureMounted()
@@ -68,22 +73,25 @@ public static class DestinyCombatHud
             return;
         }
 
-        var existing = tree.Root.GetNodeOrNull<CanvasLayer>(HudNodeName);
-        if (existing != null)
+        if (_hudRoot != null && GodotObject.IsInstanceValid(_hudRoot))
         {
-            Refresh(existing);
+            Refresh(_hudRoot);
             return;
         }
 
-        var layer = new CanvasLayer
+        var root = DivinerUiLayering.CreateOverlayRoot(HudNodeName);
+        root.Visible = false;
+        root.TreeExiting += () =>
         {
-            Name = HudNodeName,
-            Layer = 128,
-            Visible = false
+            if (_hudRoot == root)
+            {
+                _hudRoot = null;
+            }
         };
-        BuildHudRoot(layer);
-        AddRefreshTimer(layer);
-        tree.Root.CallDeferred(Node.MethodName.AddChild, layer);
+        BuildHudRoot(root);
+        AddRefreshTimer(root);
+        DivinerUiLayering.MountBelowHoverTips(root, tree);
+        _hudRoot = root;
     }
 
     public static void RefreshIfMounted()
@@ -93,13 +101,13 @@ public static class DestinyCombatHud
             return;
         }
 
-        if (tree.Root.GetNodeOrNull<CanvasLayer>(HudNodeName) is { } layer)
+        if (_hudRoot != null && GodotObject.IsInstanceValid(_hudRoot))
         {
-            Refresh(layer);
+            Refresh(_hudRoot);
         }
     }
 
-    private static void Refresh(CanvasLayer layer)
+    private static void Refresh(Control layer)
     {
         var player = GetTrackedDivinerPlayer();
         layer.Visible = player != null && _isOpen;
@@ -157,7 +165,7 @@ public static class DestinyCombatHud
             .FirstOrDefault(DivinerPlayerDetection.IsDivinerPlayer);
     }
 
-    private static void BuildHudRoot(CanvasLayer layer)
+    private static void BuildHudRoot(Control layer)
     {
         var panel = new PanelContainer
         {
@@ -166,7 +174,6 @@ public static class DestinyCombatHud
             TopLevel = true,
             Position = new Vector2(26, 156),
             Size = new Vector2(456, 424),
-            ZIndex = 1000,
             CustomMinimumSize = new Vector2(456, 424)
         };
         panel.SetAnchorsPreset(Control.LayoutPreset.TopLeft);
@@ -310,7 +317,7 @@ public static class DestinyCombatHud
         stack.AddChild(countdownLabel);
     }
 
-    private static void AddRefreshTimer(CanvasLayer layer)
+    private static void AddRefreshTimer(Control layer)
     {
         var timer = new Godot.Timer
         {
@@ -324,7 +331,7 @@ public static class DestinyCombatHud
         layer.AddChild(timer);
     }
 
-    private static void RefreshPips(CanvasLayer layer, int destiny)
+    private static void RefreshPips(Control layer, int destiny)
     {
         var pips = layer.GetNodeOrNull<HBoxContainer>($"{PanelName}/Margin/Stack/{PipsName}");
         if (pips == null)

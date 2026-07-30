@@ -22,7 +22,7 @@ public class Insurance : DivinerCard
         "Insurance",
         "Gain !Block! Block. You no longer lose HP from Misfortune or Misfortune+ at the end of this turn.",
         "预留后路",
-        "获得 !Block! 点格挡。本回合结束时，你不再因厄运或厄运+失去生命。"
+        "获得 !Block! 点格挡。本回合结束时，你不再因噩运或噩运+失去生命。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

@@ -33,7 +33,7 @@ public class DivinationOfWoes : DivinerCard
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Omen of Woes",
         "Foretell: Deal !Damage! damage and apply 1 Weak and 1 Vulnerable to all enemies.",
-        "灾厄征兆",
+        "灾祸征兆",
         "预言：对所有敌人造成 !Damage! 点伤害，并给予 1 层虚弱和 1 层易伤。"
     );
 
@@ -53,7 +53,7 @@ public class DivinationOfWoes : DivinerCard
             ForetellLabel,
             detail: DivinerLoc.Text(
                 $"Omen of Woes: deal {damage} damage and apply 1 Weak and 1 Vulnerable to all enemies.",
-                $"灾厄征兆：对所有敌人造成 {damage} 点伤害，并给予 1 层虚弱和 1 层易伤。"));
+                $"灾祸征兆：对所有敌人造成 {damage} 点伤害，并给予 1 层虚弱和 1 层易伤。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 

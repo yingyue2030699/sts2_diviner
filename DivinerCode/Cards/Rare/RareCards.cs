@@ -236,10 +236,10 @@ public class HandOfFate : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Hand of Fate",
-        "Deal !Damage! damage. Draw !Cards! card. Revelation: play this 3 times.",
+        "Deal !Damage! damage. Draw !Cards! card. Revelation: trigger this effect 3 times.",
         "命运之手",
-        "造成 !Damage! 点伤害。抽 !Cards! 张牌。启示：打出本牌 3 次。",
-        ("upgradedDesc", "Deal !Damage! damage. Draw !Cards! card. Revelation: play this 4 times.", "造成 !Damage! 点伤害。抽 !Cards! 张牌。启示：打出本牌 4 次。")
+        "造成 !Damage! 点伤害。抽 !Cards! 张牌。启示：此效果触发 3 次。",
+        ("upgradedDesc", "Deal !Damage! damage. Draw !Cards! card. Revelation: trigger this effect 4 times.", "造成 !Damage! 点伤害。抽 !Cards! 张牌。启示：此效果触发 4 次。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -465,7 +465,7 @@ public class OraclesBargain : DivinerCard
         "Oracle's Bargain",
         "Gain 1 Destiny. Shuffle 3 Misfortunes into your draw pile.",
         "神谕交易",
-        "获得 1 点命运。将 3 张厄运洗入抽牌堆。"
+        "获得 1 点命运。将 3 张噩运洗入抽牌堆。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -753,10 +753,10 @@ public class DoomSpiral : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Doom Spiral",
-        "Innate. At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
-        "厄运螺旋",
-        "固有。回合开始时，失去 1 点命运并将一张厄运加入你的手牌。",
-        ("upgradedDesc", "Innate. At start of turn, lose 1 Destiny and add a Misfortune+ to your hand.", "固有。回合开始时，失去 1 点命运并将一张厄运+加入你的手牌。")
+        "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
+        "噩运螺旋",
+        "回合开始时，失去 1 点命运并将一张噩运加入你的手牌。",
+        ("upgradedDesc", "At start of turn, lose 1 Destiny and add a Misfortune+ to your hand.", "回合开始时，失去 1 点命运并将一张噩运+加入你的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

@@ -1,6 +1,6 @@
 {
   "DIVINER-CRYSTAL_BALL.title": "水晶球",
-  "DIVINER-CRYSTAL_BALL.description": "战斗开始时，将一张福运或厄运加入你的手牌。右键点击以打开或关闭命运账册。",
+  "DIVINER-CRYSTAL_BALL.description": "战斗开始时，将一张福运或噩运加入你的手牌。右键点击以打开或关闭命运账册。",
   "DIVINER-CRYSTAL_BALL.flavor": "朦胧的镜面中满是差点成真的未来。",
   "DIVINER-CLOUDED_LENS.title": "雾蚀透镜",
   "DIVINER-CLOUDED_LENS.description": "每场战斗中你第一次占卜时，抽 2 张牌。",
@@ -45,6 +45,6 @@
   "DIVINER-FATED_CONTRACT.description": "拾取时以及每幕开始时，将命运设为 5。命运为 4 或更高时不再提高奖励稀有度。",
   "DIVINER-FATED_CONTRACT.flavor": "未来先签名，再开口询问。",
   "DIVINER-DESTINED_CRYSTAL_BALL.title": "既定水晶球",
-  "DIVINER-DESTINED_CRYSTAL_BALL.description": "你的占卜记录于此。战斗开始时，将一张福运+和一张厄运+加入你的手牌。它们本回合费用为 0。",
+  "DIVINER-DESTINED_CRYSTAL_BALL.description": "你的占卜记录于此。战斗开始时，将一张福运+和一张噩运+加入你的手牌。它们本回合费用为 0。",
   "DIVINER-DESTINED_CRYSTAL_BALL.flavor": "清澈的镜面：一份祝福，一场毁灭，皆已注定。"
 }

@@ -292,9 +292,9 @@ public class DoomEnginePower : DivinerCardPower
         "Doom Engine",
         "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage.",
         "Misfortunes lose {HpLossReduction} less HP and deal {DamageBonus} more damage.",
-        "厄运引擎",
-        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。",
-        "厄运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。"
+        "噩运引擎",
+        "噩运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。",
+        "噩运少失去 {HpLossReduction} 点生命并额外造成 {DamageBonus} 点伤害。"
     );
 
     public override void AddDumbVariablesToPowerDescription(LocString description)
@@ -369,8 +369,8 @@ public class InsurancePower : DivinerCardPower
         "You do not lose HP from Misfortune at the end of this turn.",
         "You do not lose HP from Misfortune at the end of this turn.",
         "预留后路",
-        "本回合结束时，你不会因厄运失去生命。",
-        "本回合结束时，你不会因厄运失去生命。"
+        "本回合结束时，你不会因噩运失去生命。",
+        "本回合结束时，你不会因噩运失去生命。"
     );
 
     public override async Task BeforeSideTurnEnd(
@@ -640,9 +640,9 @@ public class DoomSpiralPower : DivinerCardPower
         "Doom Spiral",
         "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
         "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
-        "厄运螺旋",
-        "回合开始时，失去 1 点命运并将一张厄运加入你的手牌。",
-        "回合开始时，失去 1 点命运并将一张厄运加入你的手牌。"
+        "噩运螺旋",
+        "回合开始时，失去 1 点命运并将一张噩运加入你的手牌。",
+        "回合开始时，失去 1 点命运并将一张噩运加入你的手牌。"
     );
 
     public override async Task BeforeSideTurnStart(

@@ -22,7 +22,7 @@ public class Misfortune : DivinerCard
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Misfortune",
         "Deal !Damage! damage to all enemies. At end of turn, lose 5 HP and trigger this effect.",
-        "厄运",
+        "噩运",
         "对所有敌人造成 !Damage! 点伤害。回合结束时，失去 5 点生命并触发此效果。",
         ("upgradedDesc", "Deal !Damage! damage to all enemies. At end of turn, lose 3 HP and trigger this effect.", "对所有敌人造成 !Damage! 点伤害。回合结束时，失去 3 点生命并触发此效果。")
     );

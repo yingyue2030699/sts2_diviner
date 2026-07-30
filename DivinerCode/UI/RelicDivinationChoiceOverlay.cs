@@ -9,6 +9,7 @@ namespace Diviner.DivinerCode.UI;
 public static class RelicDivinationChoiceOverlay
 {
     private const string OverlayName = "DivinerRelicDivinationChoiceOverlay";
+    private static Control? _activeOverlay;
 
     private static readonly Color PanelColor = new("111522f2");
     private static readonly Color BorderColor = new("c7b7ffcc");
@@ -26,7 +27,11 @@ public static class RelicDivinationChoiceOverlay
             return Task.FromResult<ModelId?>(null);
         }
 
-        tree.Root.GetNodeOrNull<CanvasLayer>(OverlayName)?.QueueFree();
+        if (_activeOverlay != null && GodotObject.IsInstanceValid(_activeOverlay))
+        {
+            _activeOverlay.QueueFree();
+        }
+        _activeOverlay = null;
 
         var relics = relicIds
             .Select(relicId => (Relic: ModelDb.GetByIdOrNull<RelicModel>(relicId), Id: relicId))
@@ -41,12 +46,16 @@ public static class RelicDivinationChoiceOverlay
         var layout = CalculateLayout(viewportSize, relics.Count, allowSkip);
 
         var completion = new TaskCompletionSource<ModelId?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var layer = new CanvasLayer
+        var overlay = DivinerUiLayering.CreateOverlayRoot(OverlayName);
+        _activeOverlay = overlay;
+        overlay.TreeExiting += () =>
         {
-            Name = OverlayName,
-            Layer = 256
+            completion.TrySetResult(null);
+            if (_activeOverlay == overlay)
+            {
+                _activeOverlay = null;
+            }
         };
-        layer.TreeExiting += () => completion.TrySetResult(null);
 
         var panel = new PanelContainer
         {
@@ -57,7 +66,7 @@ public static class RelicDivinationChoiceOverlay
             CustomMinimumSize = layout.PanelSize
         };
         panel.AddThemeStyleboxOverride("panel", CreatePanelStyle());
-        layer.AddChild(panel);
+        overlay.AddChild(panel);
 
         var margin = new MarginContainer();
         margin.AddThemeConstantOverride("margin_left", 18);
@@ -117,7 +126,7 @@ public static class RelicDivinationChoiceOverlay
             stack.AddChild(skip);
         }
 
-        tree.Root.AddChild(layer);
+        DivinerUiLayering.MountBelowHoverTips(overlay, tree);
         return completion.Task;
 
         void Complete(ModelId? chosen)
@@ -127,9 +136,14 @@ public static class RelicDivinationChoiceOverlay
                 return;
             }
 
-            if (GodotObject.IsInstanceValid(layer))
+            if (_activeOverlay == overlay)
             {
-                layer.QueueFree();
+                _activeOverlay = null;
+            }
+
+            if (GodotObject.IsInstanceValid(overlay))
+            {
+                overlay.QueueFree();
             }
         }
     }

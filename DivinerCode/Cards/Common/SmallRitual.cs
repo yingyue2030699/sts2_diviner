@@ -20,9 +20,9 @@ public class SmallRitual : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Small Ritual",
-        "Innate. Whenever you Divinate, gain 1 Energy.",
+        "Whenever you Divinate, gain 1 Energy.",
         "小仪式",
-        "固有。每当你占卜时，获得 1 点能量。"
+        "每当你占卜时，获得 1 点能量。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

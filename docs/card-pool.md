@@ -117,7 +117,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Name | Type | Cost | Effect | Upgrade |
 |---|---|---:|---|---|
 | Apocalypse | Attack | 1 | Deal 9 damage to random enemy 9 times. Add Destiny to the cost of this card. | Deal 10 damage to random enemy 10 times. |
-| Hand of Fate | Attack | 1 | Deal 13 damage. Draw 1 card. Revelation: do this 3 times. | 16 damage. Revelation: do this 4 times.  |
+| Hand of Fate | Attack | 1 | Deal 13 damage. Draw 1 card. Revelation: trigger this effect 3 times. | 16 damage. Revelation: trigger this effect 4 times. |
 | The Last Word | Attack | 2 | Retain.  Deal 20 damage. If Fatal, gain 1 Destiny. Exhaust. | 28 damage. |
 | Unavoidable End | Attack | 2 | Deal 8 damage. Foretell: deal triple the damage dealt to all enemies. | 11 damage; Foretell deals triple the damage dealt to all enemies. |
 | Moment of Reckoning | Attack | 2 | Trigger all Foretell effects immediately. For each Foretell effect trigger, deal 10 damage to all enemies once. | For each Foretell effect trigger, deal 13 damage to all enemies once. |

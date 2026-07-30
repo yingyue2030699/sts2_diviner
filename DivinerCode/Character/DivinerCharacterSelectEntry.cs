@@ -17,7 +17,7 @@ public class DivinerCharacterSelectEntry : CustomCharacterSelectEntry
     public override string EntryDescription =>
         DivinerLoc.Text(
             "A seer who bargains with fortune, misfortune, and the shape of tomorrow.",
-            "与福运、厄运，以及明日轮廓交易的预言者。");
+            "与福运、噩运，以及明日轮廓交易的预言者。");
 
     public override int SortOrder => 40;
 

@@ -26,7 +26,7 @@ public class CrystalBall : DivinerRelic
         "At the start of combat, add a Fortune or Misfortune to your hand. Right-click to open or close the Destiny ledger.",
         "A cloudy lens full of futures that almost happened.",
         "水晶球",
-        "战斗开始时，将一张福运或厄运加入你的手牌。右键点击以打开或关闭命运账册。",
+        "战斗开始时，将一张福运或噩运加入你的手牌。右键点击以打开或关闭命运账册。",
         "朦胧的镜面中满是差点成真的未来。"
     );
 
@@ -165,7 +165,7 @@ public class DestinedCrystalBall : CrystalBall
         "Your divinations are recorded here. At the start of combat, add a Fortune+ and a Misfortune+ to your hand. They cost 0 this turn.",
         "A clear lens: one blessing, one ruin, both already chosen.",
         "既定水晶球",
-        "你的占卜记录于此。战斗开始时，将一张福运+和一张厄运+加入你的手牌。它们本回合费用为 0。",
+        "你的占卜记录于此。战斗开始时，将一张福运+和一张噩运+加入你的手牌。它们本回合费用为 0。",
         "清澈的镜面：一份祝福，一场毁灭，皆已注定。"
     );
 

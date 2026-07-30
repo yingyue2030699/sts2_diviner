@@ -32,7 +32,7 @@ public class Diviner : PlaceholderCharacterModel
         DivinerLoc.Text("The Diviner", "占卜师"),
         DivinerLoc.Text(
             "A seer who bargains with fortune, misfortune, and the shape of tomorrow.",
-            "与福运、厄运，以及明日轮廓交易的预言者。"),
+            "与福运、噩运，以及明日轮廓交易的预言者。"),
         DivinerLoc.Text("them", "其"),
         DivinerLoc.Text("they", "其"),
         DivinerLoc.Text("theirs", "其"),
@@ -47,7 +47,7 @@ public class Diviner : PlaceholderCharacterModel
         DivinerLoc.Text("Diviner Cards", "占卜师牌"),
         DivinerLoc.Text(
             "Destiny, divinations, delayed woes, and generated fortunes.",
-            "命运、占卜、延迟的灾厄与生成的福运。")
+            "命运、占卜、延迟的灾祸与生成的福运。")
     );
 
     public override Color NameColor => Color;

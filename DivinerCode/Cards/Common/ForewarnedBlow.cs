@@ -20,8 +20,8 @@ public class ForewarnedBlow : DivinerCard
         "Forewarned Blow",
         "Deal !Damage! damage. Bad Omen: add a Misfortune to your draw pile. Good Omen: add a Fortune to your draw pile.",
         "先兆重击",
-        "造成 !Damage! 点伤害。凶兆：将一张厄运加入抽牌堆。吉兆：将一张福运加入抽牌堆。",
-        ("upgradedDesc", "Deal !Damage! damage. Bad Omen: add a Misfortune+ to your draw pile. Good Omen: add a Fortune+ to your draw pile.", "造成 !Damage! 点伤害。凶兆：将一张厄运+加入抽牌堆。吉兆：将一张福运+加入抽牌堆。")
+        "造成 !Damage! 点伤害。凶兆：将一张噩运加入抽牌堆。吉兆：将一张福运加入抽牌堆。",
+        ("upgradedDesc", "Deal !Damage! damage. Bad Omen: add a Misfortune+ to your draw pile. Good Omen: add a Fortune+ to your draw pile.", "造成 !Damage! 点伤害。凶兆：将一张噩运+加入抽牌堆。吉兆：将一张福运+加入抽牌堆。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

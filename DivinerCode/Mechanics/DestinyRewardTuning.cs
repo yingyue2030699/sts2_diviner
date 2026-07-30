@@ -139,7 +139,7 @@ public static class DestinyRewardTuning
         {
             lines.Add(DivinerLoc.Text(
                 "Eligible reward rarity rolls shift away from common cards and relics.",
-                "可调整的奖励稀有度随机更不易出现普通卡牌和普通遗物。"));
+                "奖励原本生成普通卡牌或普通遗物时，有 50% 概率将其提升为更高稀有度。"));
         }
 
         if (clamped >= 5)

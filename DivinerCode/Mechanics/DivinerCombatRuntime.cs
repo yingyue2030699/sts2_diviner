@@ -729,7 +729,7 @@ public static class DivinerCombatRuntime
         {
             "Woes" => DivinerLoc.Text(
                 "Omen of Woes: damage, Weak, and Vulnerable to all enemies.",
-                "灾厄征兆：对所有敌人造成伤害，给予虚弱和易伤。"),
+                "灾祸征兆：对所有敌人造成伤害，给予虚弱和易伤。"),
             "Draw" => DivinerLoc.Text(
                 "Thread Pull: draw cards.",
                 "牵引命线：抽牌。"),
@@ -756,7 +756,7 @@ public static class DivinerCombatRuntime
                 "脏卜术：将脏卜术加入你的手牌。"),
             "Vulnerable" => DivinerLoc.Text(
                 "Doomscript: apply Vulnerable to all enemies.",
-                "灾厄手稿：给予所有敌人易伤。"),
+                "灾祸手稿：给予所有敌人易伤。"),
             "Pestilence" => DivinerLoc.Text(
                 "Omen of Pestilence: apply Weak and Poison to all enemies.",
                 "疫病征兆：给予所有敌人虚弱和中毒。"),

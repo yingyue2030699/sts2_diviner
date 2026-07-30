@@ -75,7 +75,7 @@ public class TarOfDread : DivinerPotion
         "Tar of Dread",
         "Add 3 Misfortune to your hand.",
         "恐惧焦油",
-        "将 3 张厄运加入你的手牌。"
+        "将 3 张噩运加入你的手牌。"
     );
 
     protected override async Task OnUse(PlayerChoiceContext choiceContext, Creature? target)
@@ -197,8 +197,8 @@ public class CondensedMisfortune : DivinerPotion
     public override List<(string, string)>? Localization => DivinerLoc.Potion(
         "Condensed Misfortune",
         "Add a Misfortune to your hand. It costs 0 this combat.",
-        "凝缩厄运",
-        "将 1 张厄运加入你的手牌。本场战斗中它耗能为 0。"
+        "凝缩噩运",
+        "将 1 张噩运加入你的手牌。本场战斗中它耗能为 0。"
     );
 
     protected override async Task OnUse(PlayerChoiceContext choiceContext, Creature? target)

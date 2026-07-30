@@ -62,9 +62,9 @@ public class Doomscript : DivinerCard
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Doomscript",
         "Deal !Damage! damage. Add a Misfortune to your draw pile.",
-        "厄文",
-        "造成 !Damage! 点伤害。将一张厄运加入抽牌堆。",
-        ("upgradedDesc", "Deal !Damage! damage. Add a Misfortune+ to your draw pile.", "造成 !Damage! 点伤害。将一张厄运+加入抽牌堆。")
+        "劫文",
+        "造成 !Damage! 点伤害。将一张噩运加入抽牌堆。",
+        ("upgradedDesc", "Deal !Damage! damage. Add a Misfortune+ to your draw pile.", "造成 !Damage! 点伤害。将一张噩运+加入抽牌堆。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -360,8 +360,8 @@ public class CursedPrediction : DivinerCard
         "Cursed Prediction",
         "Deal !Damage! damage. Bad Omen: add a Misfortune to your hand.",
         "受咒预言",
-        "造成 !Damage! 点伤害。凶兆：将一张厄运加入手牌。",
-        ("upgradedDesc", "Deal !Damage! damage. Bad Omen: add a Misfortune+ to your hand.", "造成 !Damage! 点伤害。凶兆：将一张厄运+加入手牌。")
+        "造成 !Damage! 点伤害。凶兆：将一张噩运加入手牌。",
+        ("upgradedDesc", "Deal !Damage! damage. Bad Omen: add a Misfortune+ to your hand.", "造成 !Damage! 点伤害。凶兆：将一张噩运+加入手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -484,8 +484,8 @@ public class WheelOfFortune : DivinerCard
         "Wheel of Fortune",
         "Add a Fortune and a Misfortune to your hand.",
         "命运之轮",
-        "将一张福运和一张厄运加入你的手牌。",
-        ("upgradedDesc", "Add a Fortune+ and a Misfortune+ to your hand.", "将一张福运+和一张厄运+加入你的手牌。")
+        "将一张福运和一张噩运加入你的手牌。",
+        ("upgradedDesc", "Add a Fortune+ and a Misfortune+ to your hand.", "将一张福运+和一张噩运+加入你的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -602,8 +602,8 @@ public class RewriteTheSign : DivinerCard
         "Rewrite the Sign",
         "Transform all Misfortunes in your hand, draw pile, and discard pile into Fortunes.",
         "改写征兆",
-        "将你的手牌、抽牌堆和弃牌堆中所有厄运变化为福运。",
-        ("upgradedDesc", "Transform all Misfortunes in your hand, draw pile, and discard pile into Fortune+.", "将你的手牌、抽牌堆和弃牌堆中所有厄运变化为福运+。")
+        "将你的手牌、抽牌堆和弃牌堆中所有噩运变化为福运。",
+        ("upgradedDesc", "Transform all Misfortunes in your hand, draw pile, and discard pile into Fortune+.", "将你的手牌、抽牌堆和弃牌堆中所有噩运变化为福运+。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -1057,9 +1057,9 @@ public class PropheticTrance : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Prophetic Trance",
-        "Innate. Whenever you Divinate, draw 2 cards.",
+        "Whenever you Divinate, draw 2 cards.",
         "占卜恍惚",
-        "固有。每当你占卜时，抽 2 张牌。"
+        "每当你占卜时，抽 2 张牌。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -1165,9 +1165,9 @@ public class DoomEngine : DivinerCard
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Doom Engine",
         "Misfortunes' HP loss is reduced by 2 and they deal 9 more damage. Doomed: this card costs 0.",
-        "厄运引擎",
-        "厄运失去的生命减少 2 点，并额外造成 9 点伤害。劫兆：本牌费用为 0。",
-        ("upgradedDesc", "Misfortunes' HP loss is reduced by 2 and they deal 13 more damage. Doomed: this card costs 0.", "厄运失去的生命减少 2 点，并额外造成 13 点伤害。劫兆：本牌费用为 0。")
+        "噩运引擎",
+        "噩运失去的生命减少 2 点，并额外造成 9 点伤害。劫兆：本牌费用为 0。",
+        ("upgradedDesc", "Misfortunes' HP loss is reduced by 2 and they deal 13 more damage. Doomed: this card costs 0.", "噩运失去的生命减少 2 点，并额外造成 13 点伤害。劫兆：本牌费用为 0。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

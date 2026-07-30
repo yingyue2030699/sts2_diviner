@@ -106,7 +106,7 @@ public class TheFinalStrand : DivinerCard
         "Lose 5 Destiny. Revelation effects always trigger regardless of Destiny this combat.",
         "终末命缕",
         "失去 5 点命运。本场战斗中，启示效果总是触发，无视命运。",
-        ("upgradedDesc", "Innate. Lose 5 Destiny. Revelation effects always trigger regardless of Destiny this combat.", "固有。失去 5 点命运。本场战斗中，启示效果总是触发，无视命运。")
+        ("upgradedDesc", "Lose 5 Destiny. Revelation effects always trigger regardless of Destiny this combat.", "失去 5 点命运。本场战斗中，启示效果总是触发，无视命运。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
