@@ -33,7 +33,7 @@
   "DIVINER-ORACLE_BONE.description": "On pickup, gain 5 Destiny.",
   "DIVINER-ORACLE_BONE.flavor": "Cracked once. Read forever.",
   "DIVINER-FIXED_STAR_MAP.title": "Fixed Star Map",
-  "DIVINER-FIXED_STAR_MAP.description": "Revelation triggers with 1 less Destiny.",
+  "DIVINER-FIXED_STAR_MAP.description": "Cards with Revelation effects can trigger them with 1 less Destiny.",
   "DIVINER-FIXED_STAR_MAP.flavor": "A chart of stars that refuse to drift.",
   "DIVINER-LAST_PROPHECY.title": "Last Prophecy",
   "DIVINER-LAST_PROPHECY.description": "Once per combat, if you would die with at least 8 recorded Divinations, delete up to 9 records and heal to 1 HP.",

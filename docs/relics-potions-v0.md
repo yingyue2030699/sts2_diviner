@@ -15,7 +15,7 @@
 | Sealed Envelope | Uncommon | On pickup, divinate 3 times and Gain 1 destiny. | Low-risk strategic relic. |
 | Hourglass of Mercy | Uncommon | Dredge starts with 5 Countdown instead of 3. The first Escape from Destiny each combat costs 0. | Dedicated destiny-0 support. |
 | Oracle Bone | Rare | On pickup, Gain 5 destiny. | 1 time destiny boost. |
-| Fixed Star Map | Rare | Enlightment triggers with 1 less destiny. | Stacks with the Enlightenment search burst. |
+| Fixed Star Map | Rare | Cards with Revelation effects can trigger them with 1 less Destiny. | Lowers only card-effect requirements, not the start-of-combat Revelation threshold. |
 | Last Prophecy | Rare | Once per combat, if you would die with at least 8 recorded divinations, delete 9 records and heal to 1. | Dramatic safety valve. |
 | Velvet Pouch | Shop | Gain 1 Potion slot. Potions are 40 percent cheaper and potion drop rate is increased by 40 percent; these effects are doubled in Good Omen. | Shop/potion synergy. |
 | Fated Contract | Boss | At the start of each act, set Destiny to 5, but Destiny of 4+ no longer improves reward rarity. | Turns Destiny into combat power, removes economy snowball. |

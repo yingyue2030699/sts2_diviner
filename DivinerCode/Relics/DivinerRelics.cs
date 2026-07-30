@@ -378,10 +378,10 @@ public class FixedStarMap : DivinerRelic
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Fixed Star Map",
-        "Revelation triggers with 1 less Destiny.",
+        "Cards with Revelation effects can trigger them with 1 less Destiny.",
         "A chart of stars that refuse to drift.",
         "恒星图",
-        "启示所需命运减少 1。",
+        "卡牌的启示效果可以用低 1 点的命运触发。",
         "一张绘着拒绝漂移之星的图。"
     );
 }

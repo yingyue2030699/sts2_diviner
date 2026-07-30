@@ -420,6 +420,16 @@ public static class DivinerCombatRuntime
             return false;
         }
 
+        return DestinyConstants.IsEnlightenmentDestiny(DestinyService.GetDestiny(player));
+    }
+
+    public static bool CanTriggerRevelationEffect(Player? player)
+    {
+        if (player == null || !DestinyService.CanUseDestiny(player))
+        {
+            return false;
+        }
+
         if (StateFor(player).ForcedRevelationEffectsThisCombat)
         {
             return true;
@@ -436,11 +446,6 @@ public static class DivinerCombatRuntime
         return DestinyService.GetDestiny(player) >= threshold;
     }
 
-    public static bool CanTriggerRevelationEffect(Player? player)
-    {
-        return player != null && HasEnlightenmentEffect(player);
-    }
-
     public static IReadOnlyList<Creature> HittableEnemiesFor(Player player)
     {
         return CombatState?.HittableEnemies
@@ -450,7 +455,7 @@ public static class DivinerCombatRuntime
 
     public static async Task<bool> TryConsumeRevelationEffect(PlayerChoiceContext choiceContext, Player player)
     {
-        if (!HasEnlightenmentEffect(player))
+        if (!CanTriggerRevelationEffect(player))
         {
             return false;
         }

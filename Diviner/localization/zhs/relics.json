@@ -33,7 +33,7 @@
   "DIVINER-ORACLE_BONE.description": "拾取时，获得 5 点命运。",
   "DIVINER-ORACLE_BONE.flavor": "裂过一次，便可永读。",
   "DIVINER-FIXED_STAR_MAP.title": "恒星图",
-  "DIVINER-FIXED_STAR_MAP.description": "启示所需命运减少 1。",
+  "DIVINER-FIXED_STAR_MAP.description": "卡牌的启示效果可以用低 1 点的命运触发。",
   "DIVINER-FIXED_STAR_MAP.flavor": "一张绘着拒绝漂移之星的图。",
   "DIVINER-LAST_PROPHECY.title": "最后预言",
   "DIVINER-LAST_PROPHECY.description": "每场战斗一次，若你将要死亡且至少记录了 8 次占卜，删除至多 9 条记录并回复至 1 点生命。",
