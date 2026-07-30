@@ -6,6 +6,7 @@ using Diviner.DivinerCode.Mechanics;
 using Diviner.DivinerCode.Powers.CardPowers;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -83,18 +84,26 @@ public class Apocalypse : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         var enemies = DivinerCardActions.HittableEnemies(this);
-        if (enemies.Count == 0)
+        if (enemies.Count == 0 || CombatState == null)
         {
             return;
         }
 
         int hits = IsUpgraded ? 10 : 9;
         int damage = IsUpgraded ? 10 : 9;
+        await using var attack = await AttackCommand.CreateContextAsync(CombatState, choiceContext, this);
         for (int i = 0; i < hits; i++)
         {
             var target = enemies[Owner.RunState.Rng.CombatTargets.NextInt(enemies.Count)];
             DivinerEffectCue.BombardmentImpact([target]);
-            await CreatureCmd.Damage(choiceContext, target, damage, DamageProps.card, Owner.Creature, this);
+            var results = await CreatureCmd.Damage(
+                choiceContext,
+                target,
+                damage,
+                DamageProps.card,
+                Owner.Creature,
+                this);
+            attack.AddHit(results);
         }
     }
 

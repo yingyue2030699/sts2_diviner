@@ -3,6 +3,7 @@ using Diviner.DivinerCode.Cards.Common;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Powers.CardPowers;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -55,9 +56,17 @@ public class Misfortune : DivinerCard
         }
 
         var enemies = CombatState?.HittableEnemies.Where(creature => creature.Side != Owner.Creature.Side).ToList() ?? [];
-        if (enemies.Count > 0)
+        if (enemies.Count > 0 && CombatState != null)
         {
-            await CreatureCmd.Damage(choiceContext, enemies, 25 + DoomEnginePower.GetDamageBonus(Owner), DamageProps.card, Owner.Creature, this);
+            await using var attack = await AttackCommand.CreateContextAsync(CombatState, choiceContext, this);
+            var results = await CreatureCmd.Damage(
+                choiceContext,
+                enemies,
+                25 + DoomEnginePower.GetDamageBonus(Owner),
+                DamageProps.card,
+                Owner.Creature,
+                this);
+            attack.AddHit(results);
         }
     }
 }

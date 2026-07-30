@@ -4,6 +4,7 @@ using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -32,6 +33,12 @@ public class MomentOfReckoning : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         int triggerCount = await DivinerCombatRuntime.TriggerAllForetellNow(choiceContext, Owner);
+        if (triggerCount <= 0 || CombatState == null)
+        {
+            return;
+        }
+
+        await using var attack = await AttackCommand.CreateContextAsync(CombatState, choiceContext, this);
         for (int i = 0; i < triggerCount; i++)
         {
             var enemies = DivinerCardActions.HittableEnemies(this);
@@ -40,7 +47,14 @@ public class MomentOfReckoning : DivinerCard
                 return;
             }
 
-            await CreatureCmd.Damage(choiceContext, enemies, IsUpgraded ? 13 : 10, DamageProps.card, Owner.Creature, this);
+            var results = await CreatureCmd.Damage(
+                choiceContext,
+                enemies,
+                IsUpgraded ? 13 : 10,
+                DamageProps.card,
+                Owner.Creature,
+                this);
+            attack.AddHit(results);
         }
     }
 

@@ -3,6 +3,7 @@ using BaseLib.Utils;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.ValueProps;
@@ -35,9 +36,17 @@ public class PalmStrike : DivinerCard
             damage += 6;
         }
 
-        if (cardPlay.Target != null)
+        if (cardPlay.Target != null && CombatState != null)
         {
-            await CreatureCmd.Damage(choiceContext, cardPlay.Target, damage, DamageProps.card, Owner.Creature, this);
+            await using var attack = await AttackCommand.CreateContextAsync(CombatState, choiceContext, this);
+            var results = await CreatureCmd.Damage(
+                choiceContext,
+                cardPlay.Target,
+                damage,
+                DamageProps.card,
+                Owner.Creature,
+                this);
+            attack.AddHit(results);
         }
 
         if (DestinyService.IsGoodOmen(Owner))

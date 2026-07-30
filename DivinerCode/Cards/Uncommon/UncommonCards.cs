@@ -4,6 +4,7 @@ using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using Diviner.DivinerCode.Powers.CardPowers;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -187,17 +188,25 @@ public class Hexagram : DivinerCard
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         var enemies = DivinerCardActions.HittableEnemies(this);
-        if (enemies.Count == 0)
+        if (enemies.Count == 0 || CombatState == null)
         {
             return;
         }
 
         int damage = (IsUpgraded ? 4 : 3) +
                      (await DivinerCombatRuntime.TryConsumeRevelationEffect(choiceContext, Owner) ? IsUpgraded ? 11 : 9 : 0);
+        await using var attack = await AttackCommand.CreateContextAsync(CombatState, choiceContext, this);
         for (int i = 0; i < 6; i++)
         {
             var target = enemies[Owner.RunState.Rng.CombatTargets.NextInt(enemies.Count)];
-            await CreatureCmd.Damage(choiceContext, target, damage, DamageProps.card, Owner.Creature, this);
+            var results = await CreatureCmd.Damage(
+                choiceContext,
+                target,
+                damage,
+                DamageProps.card,
+                Owner.Creature,
+                this);
+            attack.AddHit(results);
         }
     }
 
