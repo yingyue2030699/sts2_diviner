@@ -36,7 +36,9 @@ public static class StartOfCombatDestinyEffect
             var title = CreateTitleBlock(
                 viewportSize,
                 DivinerLoc.Text("DOOMED", "劫兆"),
-                DivinerLoc.Text("Escape from Destiny shuffles into your draw pile.", "逃离命运洗入你的抽牌堆。"),
+                DivinerLoc.Text(
+                    "3 Escape from Destiny cards shuffle into your draw pile and 3 into your discard pile.",
+                    "将 3 张逃离命劫洗入抽牌堆，并将 3 张洗入弃牌堆。"),
                 DoomedTextColor,
                 DoomedMutedTextColor,
                 -170);

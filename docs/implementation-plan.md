@@ -70,9 +70,9 @@ Open balance choice:
 
 Deliverables:
 
-- `Dredge`: at Destiny 0, start combat with Countdown of Destiny 3 and shuffle 3 Escape from Destiny into draw pile.
+- `Dredge`: the first time Destiny reaches 0 each combat, start Countdown of Destiny 3, shuffle 3 Escape from Destiny into the draw pile, and shuffle 3 into the discard pile.
 - `Countdown of Destiny`: loses 1 at end of player turn; when it reaches 0, player is defeated.
-- `Escape from Destiny`: 1 cost generated card; increase Countdown by 1; increase Escape cost by 1 for the rest of combat. Recommended v0.1: Exhaust.
+- `Escape from Destiny`: 1 cost generated-only card; increase Countdown by 1; Exhaust. Upgrades to 0 cost.
 - `Enlightenment`: at Destiny 5, start combat by choosing 3 cards from draw pile, putting them into hand, and making them free this turn.
 
 Fallback if deck-search UI is unstable:

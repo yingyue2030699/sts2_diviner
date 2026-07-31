@@ -20,7 +20,7 @@ public static class DestinyConstants
     public const int DredgeDestiny = 0;
     public const int EnlightenmentDestiny = 5;
     public const int DredgeStartingCountdown = 3;
-    public const int DredgeEscapeCardCount = 3;
+    public const int DredgeEscapeCardsPerPile = 3;
     public const int EnlightenmentCardCount = 3;
 
     public static int Clamp(int destiny)

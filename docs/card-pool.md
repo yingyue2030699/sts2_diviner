@@ -10,7 +10,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Destiny | Persistent run value from 0 to 5. Starts at 3. If you would lose Destiny while at 0, lose 1 Countdown of Destiny instead. |
 | Bad Omen | Destiny 0, 1, or 2. Destiny 0 is also Doomed. |
 | Good Omen | Destiny 3, 4, or 5. Destiny 5 is also Revelation. |
-| Doomed | Destiny exactly 0. The first time each combat your Destiny reaches 0, gain 3 Countdown of Destiny and shuffle 3 Escape from Destiny cards into the draw pile. Further Destiny loss reduces Countdown of Destiny instead. |
+| Doomed | Destiny exactly 0. The first time each combat your Destiny reaches 0, gain 3 Countdown of Destiny, shuffle 3 Escape from Destiny cards into the draw pile, and shuffle 3 into the discard pile. Further Destiny loss reduces Countdown of Destiny instead. |
 | Revelation | Destiny exactly 5. At combat start, search for 3 cards and put them into your hand, then lose 1 Destiny. When a card extra effect with Revelation is triggered, lose 1 Destiny. |
 | Divinate | Record a future forecast in Crystal Ball. Several cards care about whether the run or combat has recorded divinations. |
 | Foretell | Queue the listed effect to resolve at the start of your next turn. Multiple Foretell effects queue separately. |
@@ -131,7 +131,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Perfect Forecast | Skill | 1 | Exhaust. Divinate. Gain 1 Energy for every 7 recorded divinations. | Gain 1 Energy for every 5 recorded divinations. |
 | Cheat the Ending | Skill | 1 | Retain. Exhaust. The next time you would die this combat, heal to 13% of max HP and set Destiny to 0. | Costs 0. |
 | Veil | Skill | 1 | Exhaust. Gain Block equal to number of recorded divinations. | Does not exhaust. |
-| The Final Strand | Power | 0 | Set Destiny to 0. Revelation effects always trigger regardless of Destiny this combat. | Innate. |
+| The Final Strand | Power | 0 | Set Destiny to 0. Revelation effects always trigger regardless of Destiny and no longer reduce Destiny this combat. | Innate. |
 | Fixed Point | Skill | 1 | Destiny cannot change this turn. Retain your hand this turn. Exhaust. | Costs 0. |
 | Duality | Power | 1 | Good Omen and Bad Omen extra effect always trigger. | Cost 0 |
 | Many Futures | Power | 2 | Card rewards at the end of this combat have 1 additional option. When you Scry, Scry 2 additional cards. | Cost 1. |
@@ -150,4 +150,4 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 
 | Name | Type | Cost | Effect | Notes |
 |---|---|---:|---|---|
-| Escape from Destiny | Skill | 1+ | Gain 1 Countdown of Destiny. This card costs 1 more this combat. | Generated the first time each combat Destiny reaches 0. |
+| Escape from Destiny | Skill | 1 | Gain 1 Countdown of Destiny. Exhaust. | Costs 0. Generated only the first time each combat Destiny reaches 0; excluded from card rewards. |

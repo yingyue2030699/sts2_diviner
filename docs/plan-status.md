@@ -10,7 +10,7 @@ Last updated: 2026-06-30
 | Character foundation | Diviner character model, starter deck, Crystal Ball starter relic, card/relic/potion pools, localization, and placeholder resources are wired. |
 | Vocabulary cleanup | Player-facing text now uses `Foretell`, `Doomed`, `Revelation`, and a concrete `Fated` definition. Internal identifiers still use the old Dredge/Enlightenment names for compatibility. |
 | Starter mechanics | Balance, Omen of Woes, Fortune, Misfortune, and Crystal Ball compile and are wired into the starter kit. |
-| Doomed v0 | Destiny 0 applies Countdown of Destiny 3, generates 3 Escape from Destiny cards, ticks countdown at player turn end, increases Escape cost tax, and defeats the player at 0. |
+| Doomed v0 | The first Destiny 0 each combat applies Countdown of Destiny 3, generates 3 Escape from Destiny cards in both draw and discard piles, ticks countdown at player turn end, and defeats the player at 0. |
 | Revelation v0 | Destiny 5 opens a draw-pile search, moves up to 3 chosen cards to hand, and makes them Fated with absolute cost 0 for the turn. |
 | Destiny scale v1 | Destiny now uses tiered effects: 3+ prevents unknown-room combats, 4+ halves common card/relic outcomes, 5 adds Revelation, 2- guarantees unknown-room combat when allowed, 1- increases common card/relic outcomes, and 0 adds Doomed. |
 | Card balance update | `docs/card-pool-v0.md` is reconciled with `docs/card-pool-v01-balance-fix.md`, including Regent-collision renames. |

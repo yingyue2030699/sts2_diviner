@@ -32,7 +32,7 @@ These notes come from the installed `sts2.xml`, BaseLib `3.3.2` XML docs, and lo
 - `CardEnergyCost.SetUntilPlayed`, `SetThisTurnOrUntilPlayed`, `SetThisTurn`, and `SetThisCombat` apply absolute local costs.
 - `CardEnergyCost.AddUntilPlayed`, `AddThisTurnOrUntilPlayed`, `AddThisTurn`, and `AddThisCombat` apply relative local costs.
 - Use `SetThisTurnOrUntilPlayed(0, false)` for Fated/free-this-turn cards unless a different lifetime is required.
-- Escape from Destiny currently grows through a shared combat tax in `TryModifyEnergyCostInCombat`. Per-card `AddThisCombat(1, false)` remains a viable alternative if we decide each copy should track its own cost.
+- Escape from Destiny has a fixed 1 cost, upgrades to 0, and Exhausts. Its former per-card combat cost tax was removed.
 - Add a keyword only on upgrade with `WithKeyword(CardKeyword.Retain, UpgradeType.Add)`. Remove one on upgrade with `WithKeyword(keyword, UpgradeType.Remove)` or an explicit `RemoveKeyword(...)` in `OnUpgrade`.
 
 ## Damage and HP-Loss Hooks

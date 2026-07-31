@@ -103,10 +103,10 @@ public class TheFinalStrand : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "The Final Strand",
-        "Set Destiny to 0. Revelation effects always trigger regardless of Destiny this combat.",
+        "Set Destiny to 0. Revelation effects always trigger regardless of Destiny and no longer reduce Destiny this combat.",
         "终末命缕",
-        "将命运设为 0。本场战斗中，启示效果总是触发，无视命运。",
-        ("upgradedDesc", "Set Destiny to 0. Revelation effects always trigger regardless of Destiny this combat.", "将命运设为 0。本场战斗中，启示效果总是触发，无视命运。")
+        "将命运设为 0。本场战斗中，启示效果总是触发，无视命运，且不再降低命运。",
+        ("upgradedDesc", "Set Destiny to 0. Revelation effects always trigger regardless of Destiny and no longer reduce Destiny this combat.", "将命运设为 0。本场战斗中，启示效果总是触发，无视命运，且不再降低命运。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

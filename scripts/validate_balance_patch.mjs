@@ -76,6 +76,12 @@ const requiredLocalization = [
   [zhCards, "DIVINER-DOOM_SPIRAL.upgradedDesc", "噩运+"],
   [enPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "Doom Spiral+ adds Misfortune+ instead"],
   [zhPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "噩运螺旋+改为加入噩运+"],
+  [enCards, "DIVINER-ESCAPE_FROM_DESTINY.description", "Gain 1 Countdown of Destiny"],
+  [zhCards, "DIVINER-ESCAPE_FROM_DESTINY.description", "获得 1 层命运倒计时"],
+  [enKeywords, "DIVINER-DREDGE.description", "shuffle 3 into your discard pile"],
+  [zhKeywords, "DIVINER-DREDGE.description", "将3张洗入弃牌堆"],
+  [enCards, "DIVINER-THE_FINAL_STRAND.description", "no longer reduce Destiny"],
+  [zhCards, "DIVINER-THE_FINAL_STRAND.description", "不再降低命运"],
   [enCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"],
   [zhCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"]
 ];
@@ -97,6 +103,8 @@ const staleLocalization = [
   [zhCards, "DIVINER-DOOM_SPIRAL.description", "失去 1 点命运"],
   [enPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "lose 1 Destiny"],
   [zhPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "失去 1 点命运"],
+  [enCards, "DIVINER-ESCAPE_FROM_DESTINY.description", "costs"],
+  [zhCards, "DIVINER-ESCAPE_FROM_DESTINY.description", "多消耗"],
   [enCards, "DIVINER-PERFECT_FORECAST.description", "unique category"],
   [zhCards, "DIVINER-UNAVOIDABLE_END.title", "无可避免的结局"]
 ];
@@ -107,7 +115,6 @@ for (const [table, key, forbidden] of staleLocalization) {
 
 const energyCardKeys = [
   "DIVINER-SMALL_RITUAL.description",
-  "DIVINER-ESCAPE_FROM_DESTINY.description",
   "DIVINER-FORTUNE.description",
   "DIVINER-EVIL_EYE.description",
   "DIVINER-READ_THE_ASHES.description",
@@ -200,6 +207,7 @@ for (const file of findCsFiles(path.join(root, "DivinerCode/Cards"))) {
 const source = [
   read("DivinerCode/Mechanics/DestinyService.cs"),
   read("DivinerCode/Mechanics/DivinerCombatRuntime.cs"),
+  read("DivinerCode/Cards/EscapeFromDestiny.cs"),
   read("DivinerCode/Cards/Common/Divulge.cs"),
   read("DivinerCode/Cards/Common/NarrowEscape.cs"),
   read("DivinerCode/Cards/Common/ThreadCut.cs"),
@@ -230,6 +238,7 @@ const runtimeFiles = {
   misfortune: read("DivinerCode/Cards/Misfortune.cs"),
   threadCut: read("DivinerCode/Cards/Common/ThreadCut.cs"),
   omenOfWoes: read("DivinerCode/Cards/DivinationOfWoes.cs"),
+  escape: read("DivinerCode/Cards/EscapeFromDestiny.cs"),
   finalStrand: read("DivinerCode/Cards/Rare/AdditionalRareCards.cs"),
   rare: read("DivinerCode/Cards/Rare/RareCards.cs"),
   uncommon: read("DivinerCode/Cards/Uncommon/UncommonCards.cs"),
@@ -241,6 +250,11 @@ for (const [file, needle, message] of [
   ["divulge", "WithCards(1, 1)", "Divulge does not draw 1/2 cards."],
   ["divulge", "DestinyService.AddDestiny(Owner, -1)", "Divulge does not lose Destiny."],
   ["narrowEscape", "IsUpgraded ? 2 : 1", "Narrow Escape+ does not gain 2 Countdown."],
+  ["escape", ": base(1, CardType.Skill, CardRarity.Basic", "Escape from Destiny is not a generated-only Basic card."],
+  ["escape", "WithCostUpgradeBy(-1)", "Escape from Destiny+ does not cost 0."],
+  ["escape", "CardKeyword.Exhaust", "Escape from Destiny does not Exhaust."],
+  ["escape", "RecordEscapePlayed(Owner)", "Escape from Destiny does not preserve the first-Escape relic counter."],
+  ["escape", "DivinerRelicHooks.IsFirstEscapeFree(card.Owner)", "Hourglass of Mercy no longer makes the first Escape from Destiny free."],
   ["misfortune", "DamageCmd.Attack(25 + DoomEnginePower.GetDamageBonus(Owner))", "Misfortune does not use the standard attack pipeline."],
   ["threadCut", "IsUpgraded ? 12m : 10m", "Thread Cut+ does not use a 12-damage second hit."],
   ["uncommon", "WithDamage(6, 3)", "Doomscript+ does not deal 9 damage."],
@@ -262,6 +276,26 @@ for (const [file, needle, message] of [
   includes(runtimeFiles[file], needle, message);
 }
 
+excludes(
+  source,
+  "EscapeCostIncreases",
+  "The removed Escape from Destiny combat cost tax is still present."
+);
+excludes(
+  source,
+  "IncreaseEscapeCost",
+  "Escape from Destiny still increases its cost when played."
+);
+includes(
+  source,
+  "PileType.Discard,\n            player,\n            CardPilePosition.Random",
+  "Doomed does not add Escape from Destiny cards to the discard pile."
+);
+includes(
+  runtimeFiles.rare + runtimeFiles.finalStrand + read("DivinerCode/Mechanics/DivinerCombatRuntime.cs"),
+  "!StateFor(player).ForcedRevelationEffectsThisCombat",
+  "The Final Strand does not prevent Revelation effects from reducing Destiny."
+);
 excludes(
   runtimeFiles.misfortune,
   "AttackCommand.CreateContextAsync",

@@ -261,18 +261,27 @@ public static class DivinerCombatRuntime
         var state = StateFor(player);
         SetDredgeCountdown(player, DivinerRelicHooks.DredgeStartingCountdown(player));
         state.EscapeCardsPlayedThisCombat = 0;
-        state.EscapeCostIncreases.Clear();
 
-        var escapeCards = Enumerable
-            .Range(0, DestinyConstants.DredgeEscapeCardCount)
+        var drawEscapeCards = Enumerable
+            .Range(0, DestinyConstants.DredgeEscapeCardsPerPile)
+            .Select(_ => CombatState.CreateCard(ModelDb.Card<EscapeFromDestiny>(), player))
+            .ToList();
+        var discardEscapeCards = Enumerable
+            .Range(0, DestinyConstants.DredgeEscapeCardsPerPile)
             .Select(_ => CombatState.CreateCard(ModelDb.Card<EscapeFromDestiny>(), player))
             .ToList();
 
-        await StartOfCombatDestinyEffect.PlayDoomedEscapeShuffle(escapeCards.Count);
+        await StartOfCombatDestinyEffect.PlayDoomedEscapeShuffle(drawEscapeCards.Count);
 
         await CardPileCmd.AddGeneratedCardsToCombat(
-            escapeCards,
+            drawEscapeCards,
             PileType.Draw,
+            player,
+            CardPilePosition.Random
+        );
+        await CardPileCmd.AddGeneratedCardsToCombat(
+            discardEscapeCards,
+            PileType.Discard,
             player,
             CardPilePosition.Random
         );
@@ -368,17 +377,11 @@ public static class DivinerCombatRuntime
         return true;
     }
 
-    public static void IncreaseEscapeCost(CardModel card)
+    public static void RecordEscapePlayed(Player? player)
     {
-        var state = StateFor(card.Owner);
-        state.EscapeCostIncreases[card] = state.EscapeCostIncreases.GetValueOrDefault(card) + 1;
+        var state = StateFor(player);
         state.EscapeCardsPlayedThisCombat += 1;
         DestinyService.NotifyChanged();
-    }
-
-    public static int EscapeCostIncreaseFor(CardModel card)
-    {
-        return StateFor(card.Owner).EscapeCostIncreases.GetValueOrDefault(card);
     }
 
     public static void QueueForetell(string label, int count = 1, string? detail = null)
@@ -478,7 +481,9 @@ public static class DivinerCombatRuntime
         }
 
         DivinerEffectCue.Revelation(player.Creature);
-        if (!IsNextCardForcedFullOmen(player) && !AscendedFormPower.PreventsRevelationDestinyLoss(player))
+        if (!IsNextCardForcedFullOmen(player) &&
+            !StateFor(player).ForcedRevelationEffectsThisCombat &&
+            !AscendedFormPower.PreventsRevelationDestinyLoss(player))
         {
             DestinyService.AddDestiny(player, -1);
             DestinyService.PersistCurrentState(player);
@@ -858,8 +863,6 @@ public static class DivinerCombatRuntime
         public readonly HashSet<CardModel> RetainThisTurnCards = [];
         public readonly Dictionary<string, int> PendingForetellEffects = [];
         public readonly List<string> PendingForetellDetails = [];
-        public readonly Dictionary<CardModel, int> EscapeCostIncreases = [];
-
         public bool StartOfCombatDestinyEffectsApplied;
         public bool DoomedTriggeredThisCombat;
         public int? DredgeCountdown;
@@ -885,7 +888,6 @@ public static class DivinerCombatRuntime
             ForcedFullOmenForNextCard = false;
             ForcedRevelationEffectsThisCombat = false;
             CriticalDoomedWarningPlayed = false;
-            EscapeCostIncreases.Clear();
             FreeThisTurnCards.Clear();
             RetainThisTurnCards.Clear();
             PendingForetellEffects.Clear();
