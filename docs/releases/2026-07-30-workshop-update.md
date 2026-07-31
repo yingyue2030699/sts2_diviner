@@ -1,5 +1,11 @@
 # Diviner Workshop Update - 2026-07-30
 
+## Workshop page
+
+- Added a prominent singleplayer-only warning to the Workshop title and description. Multiplayer is currently unsupported and may be unstable or cause bugs and crashes.
+- Split the English and Simplified Chinese descriptions into Steam's dedicated language entries.
+- Added a card-gallery preview image.
+
 ## English
 
 ### Gameplay and balance
