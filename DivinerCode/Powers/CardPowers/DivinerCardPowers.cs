@@ -659,11 +659,11 @@ public class DoomSpiralPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Doom Spiral",
-        "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
-        "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
+        "At start of turn, add a Misfortune to your hand. Doom Spiral+ adds Misfortune+ instead.",
+        "At start of turn, add a Misfortune to your hand. Doom Spiral+ adds Misfortune+ instead.",
         "噩运螺旋",
-        "回合开始时，失去 1 点命运并将一张噩运加入你的手牌。",
-        "回合开始时，失去 1 点命运并将一张噩运加入你的手牌。"
+        "回合开始时，将一张噩运加入你的手牌。噩运螺旋+改为加入噩运+。",
+        "回合开始时，将一张噩运加入你的手牌。噩运螺旋+改为加入噩运+。"
     );
 
     public override async Task BeforeSideTurnStart(
@@ -674,15 +674,11 @@ public class DoomSpiralPower : DivinerCardPower
     {
         if (Owner?.Player is not { } player ||
             side != Owner.Side ||
-            !participants.Contains(Owner) ||
-            !DestinyService.CanUseDestiny(player))
+            !participants.Contains(Owner))
         {
             return;
         }
 
-        DestinyService.AddDestiny(player, -1);
-        DestinyService.PersistCurrentState(player);
-        await DivinerStatusPowerSync.Sync(player, choiceContext);
         await DivinerCardActions.AddGeneratedToCombat<Misfortune>(
             player,
             PileType.Hand,

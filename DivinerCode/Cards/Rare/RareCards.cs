@@ -774,14 +774,21 @@ public class DoomSpiral : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Doom Spiral",
-        "At start of turn, lose 1 Destiny and add a Misfortune to your hand.",
+        "Set Destiny to 0. At start of turn, add a Misfortune to your hand.",
         "噩运螺旋",
-        "回合开始时，失去 1 点命运并将一张噩运加入你的手牌。",
-        ("upgradedDesc", "At start of turn, lose 1 Destiny and add a Misfortune+ to your hand.", "回合开始时，失去 1 点命运并将一张噩运+加入你的手牌。")
+        "将命运设为 0。回合开始时，将一张噩运加入你的手牌。",
+        ("upgradedDesc", "Set Destiny to 0. At start of turn, add a Misfortune+ to your hand.", "将命运设为 0。回合开始时，将一张噩运+加入你的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
+        if (DestinyService.CanUseDestiny(Owner))
+        {
+            DestinyService.SetDestiny(Owner, DestinyConstants.MinDestiny);
+            DestinyService.PersistCurrentState(Owner);
+            await DivinerStatusPowerSync.Sync(Owner, choiceContext);
+        }
+
         await PowerCmd.Apply<DoomSpiralPower>(choiceContext, Owner.Creature, IsUpgraded ? 2 : 1, Owner.Creature, this, false);
     }
 

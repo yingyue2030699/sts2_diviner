@@ -70,6 +70,12 @@ const requiredLocalization = [
   [enCards, "DIVINER-PERFECT_FORECAST.description", "every 7 recorded divinations"],
   [enCards, "DIVINER-PERFECT_FORECAST.upgradedDesc", "every 5 recorded divinations"],
   [enCards, "DIVINER-THE_FINAL_STRAND.description", "Set Destiny to 0"],
+  [enCards, "DIVINER-DOOM_SPIRAL.description", "Set Destiny to 0"],
+  [enCards, "DIVINER-DOOM_SPIRAL.upgradedDesc", "Misfortune+"],
+  [zhCards, "DIVINER-DOOM_SPIRAL.description", "将命运设为 0"],
+  [zhCards, "DIVINER-DOOM_SPIRAL.upgradedDesc", "噩运+"],
+  [enPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "Doom Spiral+ adds Misfortune+ instead"],
+  [zhPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "噩运螺旋+改为加入噩运+"],
   [enCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"],
   [zhCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"]
 ];
@@ -87,6 +93,10 @@ const staleLocalization = [
   [enCards, "DIVINER-OMEN_OF_PESTILENCE.description", "3 Weak"],
   [enCards, "DIVINER-LEDGER_OF_SIGNS.description", "gain 5 Block"],
   [enCards, "DIVINER-THE_FINAL_STRAND.description", "Lose 5 Destiny"],
+  [enCards, "DIVINER-DOOM_SPIRAL.description", "lose 1 Destiny"],
+  [zhCards, "DIVINER-DOOM_SPIRAL.description", "失去 1 点命运"],
+  [enPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "lose 1 Destiny"],
+  [zhPowers, "DIVINER-DOOM_SPIRAL_POWER.description", "失去 1 点命运"],
   [enCards, "DIVINER-PERFECT_FORECAST.description", "unique category"],
   [zhCards, "DIVINER-UNAVOIDABLE_END.title", "无可避免的结局"]
 ];
@@ -243,6 +253,8 @@ for (const [file, needle, message] of [
   ["rare", "int hits = IsUpgraded ? 10 : 9", "Apocalypse hit counts are stale."],
   ["rare", "DivinationService.GetRecords(Owner).Count / (IsUpgraded ? 5 : 7)", "Perfect Forecast thresholds are stale."],
   ["rare", "new PendingTranscendence(IsUpgraded ? 4 : 3, IsUpgraded ? 3 : 2)", "Omen of Transcendence values are stale."],
+  ["rare", "DestinyService.SetDestiny(Owner, DestinyConstants.MinDestiny)", "Doom Spiral does not set Destiny to 0."],
+  ["powers", "Amount > 1", "Doom Spiral+ does not generate Misfortune+."],
   ["finalStrand", "SetDestiny(Owner, DestinyConstants.MinDestiny)", "The Final Strand still loses Destiny incrementally."],
   ["omenOfWoes", "ITranscendenceCard", "Omen of Woes is not registered for Archaic Tooth."],
   ["powers", "CardCreationSource.Encounter", "Many Futures is not guarded to encounter rewards."]
@@ -259,6 +271,11 @@ excludes(
   runtimeFiles.misfortune,
   "CardCmd.Exhaust",
   "Misfortune still moves piles inside the engine-owned turn-end hand wrapper."
+);
+excludes(
+  runtimeFiles.powers,
+  "DestinyService.AddDestiny(player, -1)",
+  "Doom Spiral still loses Destiny at the start of each turn."
 );
 
 if (failures.length > 0) {

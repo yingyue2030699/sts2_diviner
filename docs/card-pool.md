@@ -71,7 +71,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Funeral Clock | Skill | 2 | Gain 13 Block. Doomed: costs 0 and draw 2 cards. | 16 Block. |
 | Omen of Vigor | Skill | 1 | Foretell: Gain 3 energy. | Cost 0. |
 | Doom Engine | Power | 2 | Misfortunes' HP loss is reduced by 2 and they deal 9 more damage. Doomed: this card costs 0. | Misfortunes deal 13 more damage. |
-| Doom Spiral | Power | 0 | Innate. At start of turn, lose 1 destiny and add a Misfortune to your hand. | Lose 1 destiny and add a Misfortune+ to your hand. |
+| Doom Spiral | Power | 0 | Innate. Set Destiny to 0. At start of turn, add a Misfortune to your hand. | Add a Misfortune+ instead. |
 
 ## Uncommon Cards
 
