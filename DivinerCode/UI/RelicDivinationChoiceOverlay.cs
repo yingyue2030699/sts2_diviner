@@ -60,7 +60,6 @@ public static class RelicDivinationChoiceOverlay
         var panel = new PanelContainer
         {
             MouseFilter = Control.MouseFilterEnum.Stop,
-            TopLevel = true,
             Size = layout.PanelSize,
             Position = layout.PanelPosition,
             CustomMinimumSize = layout.PanelSize

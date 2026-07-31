@@ -1,7 +1,7 @@
 {
   "id": "Diviner",
   "name": "Diviner",
-  "author": "yueying",
+  "author": "modius",
   "description": "A Slay the Spire 2 mod built on BaseLib.",
   "version": "v0.0.0",
   "min_game_version": "0.107.0",
@@ -15,4 +15,3 @@
   ],
   "affects_gameplay": true
 }
-

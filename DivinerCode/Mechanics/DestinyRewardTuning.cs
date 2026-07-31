@@ -114,8 +114,8 @@ public static class DestinyRewardTuning
         if (clamped <= 0)
         {
             lines.Add(DivinerLoc.Text(
-                "Doomed: the first time Destiny reaches 0 each combat, start Countdown of Destiny.",
-                "劫兆：每场战斗中第一次命运降至 0 时，开始命运倒计时。"));
+                "Doomed: the first time Destiny reaches 0 each combat, start Countdown of Destiny. Further Destiny loss reduces that countdown instead.",
+                "劫兆：每场战斗中第一次命运降至 0 时，开始命运倒计时；此后若将失去命运，则改为失去命运倒计时。"));
         }
 
         if (clamped <= 1)

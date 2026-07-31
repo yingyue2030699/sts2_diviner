@@ -6,6 +6,7 @@ using Diviner.DivinerCode.Extensions;
 using Diviner.DivinerCode.Mechanics;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Localization;
 
 namespace Diviner.DivinerCode.Cards;
 
@@ -31,6 +32,12 @@ public abstract class DivinerCard(int cost, CardType type, CardRarity rarity, Ta
     protected void WithEnergyCostX()
     {
         MockSetEnergyCost(new CardEnergyCost(this, 0, true));
+    }
+
+    internal string FormatDescription(LocString description)
+    {
+        AddExtraArgsToDescription(description);
+        return description.GetFormattedText();
     }
 
     public virtual bool ShouldGlowForDivinerCondition()

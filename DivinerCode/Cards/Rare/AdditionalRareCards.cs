@@ -66,7 +66,7 @@ public class MomentOfReckoning : DivinerCard
 public class RelicBanishing : DivinerCard
 {
     public RelicBanishing()
-        : base(2, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(3, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Divinate);
@@ -103,15 +103,15 @@ public class TheFinalStrand : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "The Final Strand",
-        "Lose 5 Destiny. Revelation effects always trigger regardless of Destiny this combat.",
+        "Set Destiny to 0. Revelation effects always trigger regardless of Destiny this combat.",
         "终末命缕",
-        "失去 5 点命运。本场战斗中，启示效果总是触发，无视命运。",
-        ("upgradedDesc", "Lose 5 Destiny. Revelation effects always trigger regardless of Destiny this combat.", "失去 5 点命运。本场战斗中，启示效果总是触发，无视命运。")
+        "将命运设为 0。本场战斗中，启示效果总是触发，无视命运。",
+        ("upgradedDesc", "Set Destiny to 0. Revelation effects always trigger regardless of Destiny this combat.", "将命运设为 0。本场战斗中，启示效果总是触发，无视命运。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        DestinyService.AddDestiny(Owner, -5);
+        DestinyService.SetDestiny(Owner, DestinyConstants.MinDestiny);
         DestinyService.PersistCurrentState(Owner);
         DivinerCombatRuntime.ForceRevelationEffectsThisCombat(Owner);
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);

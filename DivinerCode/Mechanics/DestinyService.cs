@@ -230,6 +230,15 @@ public static class DestinyService
 
     public static int AddDestiny(Player? player, int delta)
     {
+        if (CanUseDestiny(player) &&
+            delta < 0 &&
+            GetDestiny(player) == DestinyConstants.MinDestiny &&
+            player!.Creature.GetPower<FixedPointPower>() == null &&
+            DivinerCombatRuntime.TryLoseDredgeCountdown(player))
+        {
+            return DestinyConstants.MinDestiny;
+        }
+
         return CanUseDestiny(player)
             ? SetDestiny(player, GetDestiny(player) + delta)
             : AddDestiny(delta);

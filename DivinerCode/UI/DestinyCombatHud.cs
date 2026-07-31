@@ -171,7 +171,6 @@ public static class DestinyCombatHud
         {
             Name = PanelName,
             MouseFilter = Control.MouseFilterEnum.Stop,
-            TopLevel = true,
             Position = new Vector2(26, 156),
             Size = new Vector2(456, 424),
             CustomMinimumSize = new Vector2(456, 424)

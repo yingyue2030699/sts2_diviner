@@ -351,6 +351,23 @@ public static class DivinerCombatRuntime
         return Task.CompletedTask;
     }
 
+    public static bool TryLoseDredgeCountdown(Player? player)
+    {
+        if (player == null || !HasActiveDredgeCountdownFor(player))
+        {
+            return false;
+        }
+
+        int nextCountdown = Math.Max(0, StateFor(player).DredgeCountdown!.Value - 1);
+        SetDredgeCountdown(player, nextCountdown);
+        if (nextCountdown == 0)
+        {
+            _ = DefeatFromDredgeCountdown(player);
+        }
+
+        return true;
+    }
+
     public static void IncreaseEscapeCost(CardModel card)
     {
         var state = StateFor(card.Owner);
@@ -504,6 +521,12 @@ public static class DivinerCombatRuntime
         return EchoedOmenPower.GetTriggerCount(player);
     }
 
+    public static int ResolveForetellWithoutEcho(Player player, string label, int count = 1)
+    {
+        ResolveForetellFor(player, label, count);
+        return Math.Max(0, count);
+    }
+
     public static async Task<int> TriggerAllForetellNow(PlayerChoiceContext choiceContext, Player player)
     {
         var handlers = ImmediateForetellRequested?.GetInvocationList();
@@ -550,6 +573,22 @@ public static class DivinerCombatRuntime
 
         MainFile.Logger.Info("Countdown of Destiny reached 0. Defeating Diviner.");
         await CreatureCmd.Kill(playerCreature, true);
+    }
+
+    private static async Task DefeatFromDredgeCountdown(Player player)
+    {
+        try
+        {
+            MainFile.Logger.Info("Destiny loss reduced Countdown of Destiny to 0. Defeating Diviner.");
+            if (player.Creature.IsAlive)
+            {
+                await CreatureCmd.Kill(player.Creature, true);
+            }
+        }
+        catch (Exception ex)
+        {
+            MainFile.Logger.Error($"Failed to defeat Diviner after Countdown of Destiny reached 0: {ex}");
+        }
     }
 
     public static void PlayCriticalDoomedWarningIfNeeded()

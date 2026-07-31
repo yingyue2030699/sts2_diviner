@@ -13,15 +13,16 @@ public class Fortune : DivinerCard
         : base(0, CardType.Skill, CardRarity.Basic, TargetType.TargetedNoCreature)
     {
         WithCards(1, 1);
+        WithEnergy(1);
         WithKeywords([CardKeyword.Retain, CardKeyword.Exhaust]);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Fortune",
-        "Gain 1 Energy. Draw !Cards! card.",
+        "Gain {Energy:energyIcons()}. Draw !Cards! card.",
         "福运",
-        "获得 1 点能量。抽 !Cards! 张牌。",
-        ("upgradedDesc", "Gain 1 Energy. Draw !Cards! cards.", "获得 1 点能量。抽 !Cards! 张牌。")
+        "获得 {Energy:energyIcons()}。抽 !Cards! 张牌。",
+        ("upgradedDesc", "Gain {Energy:energyIcons()}. Draw !Cards! cards.", "获得 {Energy:energyIcons()}。抽 !Cards! 张牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

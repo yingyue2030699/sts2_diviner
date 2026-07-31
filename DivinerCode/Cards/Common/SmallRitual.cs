@@ -13,6 +13,7 @@ public class SmallRitual : DivinerCard
     public SmallRitual()
         : base(1, CardType.Power, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
+        WithEnergy(1);
         WithKeywords([CardKeyword.Innate]);
         WithCostUpgradeBy(-1);
         WithDivinerKeywordTips(DivinerKeywords.Divinate);
@@ -20,9 +21,9 @@ public class SmallRitual : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Small Ritual",
-        "Whenever you Divinate, gain 1 Energy.",
+        "Whenever you Divinate, gain {Energy:energyIcons()}.",
         "小仪式",
-        "每当你占卜时，获得 1 点能量。"
+        "每当你占卜时，获得 {Energy:energyIcons()}。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)

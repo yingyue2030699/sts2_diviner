@@ -113,13 +113,16 @@ public class HaruspexMethodPower : DivinerCardPower
             return;
         }
 
-        bool addUpgraded = Amount > 1;
-        await DivinationService.RecordPlaceholder(choiceContext, player, "Haruspex");
-        await PowerCmd.Remove(this);
+        // Once triggered, this power remains only to resolve its queued Foretell.
+        if (PendingCopiesByPlayer.ContainsKey(player))
+        {
+            return;
+        }
 
-        var pending = PendingCopiesByPlayer.GetValueOrDefault(player) ?? [];
-        PendingCopiesByPlayer[player] = pending;
-        pending.Add(addUpgraded);
+        bool addUpgraded = Amount > 1;
+        PendingCopiesByPlayer[player] = [addUpgraded];
+        await DivinationService.RecordPlaceholder(choiceContext, player, "Haruspex");
+
         DivinerCombatRuntime.QueueForetell(player, ForetellLabel);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
     }
@@ -139,6 +142,7 @@ public class HaruspexMethodPower : DivinerCardPower
         }
 
         int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingCopies.Count);
+        await PowerCmd.Remove(this);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
         for (int trigger = 0; trigger < triggerCount; trigger++)
         {
@@ -161,6 +165,12 @@ public class HaruspexMethodPower : DivinerCardPower
         }
 
         int triggerCount = DivinerCombatRuntime.ResolveForetell(player, ForetellLabel, pendingCopies.Count);
+        if (player.Creature.GetPower<HaruspexMethodPower>() is { } power)
+        {
+            await PowerCmd.Remove(power);
+        }
+        await DivinerStatusPowerSync.Sync(player, choiceContext);
+
         for (int trigger = 0; trigger < triggerCount; trigger++)
         {
             foreach (bool upgraded in pendingCopies)
@@ -498,11 +508,11 @@ public class FixedPointPower : DivinerCardPower
 
     public override List<(string, string)>? Localization => DivinerLoc.Power(
         "Fixed Point",
-        "Destiny cannot change this combat.",
-        "Destiny cannot change this combat.",
-        "定点",
-        "本场战斗中命运无法改变。",
-        "本场战斗中命运无法改变。"
+        "Destiny cannot change this turn.",
+        "Destiny cannot change this turn.",
+        "命运定点",
+        "本回合中命运无法改变。",
+        "本回合中命运无法改变。"
     );
 
     public static bool IsActive()
@@ -510,6 +520,16 @@ public class FixedPointPower : DivinerCardPower
         return DivinerCombatRuntime.GetLastObservedPlayer()?.Creature.GetPower<FixedPointPower>() != null;
     }
 
+    public override async Task AfterSideTurnEnd(
+        PlayerChoiceContext choiceContext,
+        CombatSide side,
+        IEnumerable<Creature> participants)
+    {
+        if (Owner != null && side == Owner.Side && participants.Contains(Owner))
+        {
+            await PowerCmd.Remove(this);
+        }
+    }
 }
 
 public class DualityPower : DivinerCardPower
@@ -604,7 +624,8 @@ public class ManyFuturesPower : DivinerCardPower
     {
         try
         {
-            if (Owner?.Player != player)
+            if (Owner?.Player != player ||
+                creationOptions.Source != CardCreationSource.Encounter)
             {
                 return false;
             }

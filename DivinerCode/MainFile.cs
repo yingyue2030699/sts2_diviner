@@ -90,13 +90,17 @@ public partial class MainFile : Node
             var rawDescription = TryGetRawCardLocalization(upgradedDescriptionKey);
             if (!string.IsNullOrEmpty(rawDescription))
             {
-                description = rawDescription;
-                return;
+                if (!rawDescription.Contains("energyIcons(", StringComparison.Ordinal))
+                {
+                    description = rawDescription;
+                    return;
+                }
             }
 
             try
             {
-                description = new LocString("cards", upgradedDescriptionKey).GetFormattedText();
+                description = ((DivinerCard)card).FormatDescription(
+                    new LocString("cards", upgradedDescriptionKey));
             }
             catch (Exception ex)
             {

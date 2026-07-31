@@ -1,4 +1,5 @@
 using BaseLib.Abstracts;
+using Diviner.DivinerCode.Cards.Ancient;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using MegaCrit.Sts2.Core.Combat;
@@ -7,12 +8,13 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace Diviner.DivinerCode.Cards;
 
-public class DivinationOfWoes : DivinerCard
+public class DivinationOfWoes : DivinerCard, ITranscendenceCard
 {
     private const string ForetellLabel = "Woes";
     private static readonly Dictionary<Player, List<int>> PendingDamageByPlayer = [];
@@ -126,5 +128,10 @@ public class DivinationOfWoes : DivinerCard
 
     protected override void OnUpgrade()
     {
+    }
+
+    public CardModel GetTranscendenceTransformedCard()
+    {
+        return ModelDb.Card<OmenOfPerishment>();
     }
 }

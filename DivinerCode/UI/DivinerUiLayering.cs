@@ -10,8 +10,7 @@ internal static class DivinerUiLayering
         var root = new Control
         {
             Name = name,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            TopLevel = true
+            MouseFilter = Control.MouseFilterEnum.Ignore
         };
         root.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         return root;

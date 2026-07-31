@@ -1,5 +1,4 @@
 using BaseLib.Abstracts;
-using BaseLib.Commands;
 using BaseLib.Utils;
 using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
@@ -13,6 +12,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace Diviner.DivinerCode.Cards.Rare;
@@ -49,12 +49,11 @@ public class Clairvoyance : DivinerCard
             return;
         }
 
-        var selected = await MultiPileCardSelect.Select(
+        var selected = await CardSelectCmd.FromSimpleGrid(
             choiceContext,
-            Owner,
-            new CardSelectorPrefs(new LocString("cards", $"{Id.Entry}.selectPrompt"), 0, 1),
             selectableCards,
-            [PileType.Hand, PileType.Draw, PileType.Discard, PileType.Exhaust]
+            Owner,
+            new CardSelectorPrefs(new LocString("cards", $"{Id.Entry}.selectPrompt"), 1)
         );
         await DivinerCardActions.MoveToHandFated(this, selected);
     }
@@ -67,7 +66,7 @@ public class Clairvoyance : DivinerCard
 public class Apocalypse : DivinerCard
 {
     public Apocalypse()
-        : base(1, CardType.Attack, CardRarity.Rare, TargetType.AllEnemies)
+        : base(2, CardType.Attack, CardRarity.Rare, TargetType.AllEnemies)
     {
         WithDamage(9, 1);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
@@ -75,10 +74,10 @@ public class Apocalypse : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Apocalypse",
-        "Deal !Damage! damage to a random enemy 9 times. Add Destiny to the cost of this card.",
+        "Deal !Damage! damage to a random enemy 9 times. After other cost modifiers, add Destiny to this card's cost.",
         "天启",
-        "随机对敌人造成 !Damage! 点伤害 9 次。本牌费用增加等同于命运的数值。",
-        ("upgradedDesc", "Deal !Damage! damage to a random enemy 10 times. Add Destiny to the cost of this card.", "随机对敌人造成 !Damage! 点伤害 10 次。本牌费用增加等同于命运的数值。")
+        "随机对敌人造成 !Damage! 点伤害 9 次。结算其他费用调整后，本牌费用再增加等同于命运的数值。",
+        ("upgradedDesc", "Deal !Damage! damage to a random enemy 10 times. After other cost modifiers, add Destiny to this card's cost.", "随机对敌人造成 !Damage! 点伤害 10 次。结算其他费用调整后，本牌费用再增加等同于命运的数值。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
@@ -107,7 +106,7 @@ public class Apocalypse : DivinerCard
         }
     }
 
-    public override bool TryModifyEnergyCostInCombat(MegaCrit.Sts2.Core.Models.CardModel card, decimal originalCost, out decimal modifiedCost)
+    public override bool TryModifyEnergyCostInCombatLate(MegaCrit.Sts2.Core.Models.CardModel card, decimal originalCost, out decimal modifiedCost)
     {
         modifiedCost = originalCost;
         if (!ReferenceEquals(card, this) || !DestinyService.CanUseDestiny(Owner))
@@ -313,25 +312,38 @@ public class UnavoidableEnd : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Unavoidable End",
-        "Deal !Damage! damage. Foretell: deal triple that damage to all enemies.",
-        "无可避免的结局",
-        "造成 !Damage! 点伤害。预言：对所有敌人造成三倍该伤害。"
+        "Deal !Damage! damage. Foretell: deal 3 times the damage actually dealt to all enemies.",
+        "终局",
+        "造成 !Damage! 点伤害。预言：对所有敌人造成此次实际伤害的 3 倍伤害。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        int damage = IsUpgraded ? 11 : 8;
-        await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
+        if (cardPlay.Target == null || CombatState == null)
+        {
+            return;
+        }
+
+        await using var attack = await AttackCommand.CreateContextAsync(CombatState, choiceContext, this);
+        var results = await CreatureCmd.Damage(
+            choiceContext,
+            cardPlay.Target,
+            IsUpgraded ? 11 : 8,
+            DamageProps.card,
+            Owner.Creature,
+            this);
+        attack.AddHit(results);
+        int actualDamage = results.Sum(result => result.TotalDamage + result.OverkillDamage);
         var pending = PendingDamageByPlayer.GetValueOrDefault(Owner) ?? [];
         PendingDamageByPlayer[Owner] = pending;
-        int foretellDamage = damage * 3 + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
+        int foretellDamage = actualDamage * 3 + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
         pending.Add(foretellDamage);
         DivinerCombatRuntime.QueueForetell(
             Owner,
             ForetellLabel,
             detail: DivinerLoc.Text(
                 $"Unavoidable End: deal {foretellDamage} damage to all enemies.",
-                $"无可避免的结局：对所有敌人造成 {foretellDamage} 点伤害。"));
+                $"终局：对所有敌人造成 {foretellDamage} 点伤害。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
@@ -394,7 +406,7 @@ public class UnavoidableEnd : DivinerCard
 public class GreaterPortent : DivinerCard
 {
     public GreaterPortent()
-        : base(3, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(4, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithCostUpgradeBy(-1);
         WithKeywords([CardKeyword.Exhaust]);
@@ -484,30 +496,28 @@ public class OraclesBargain : DivinerCard
 public class PerfectForecast : DivinerCard
 {
     public PerfectForecast()
-        : base(3, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(1, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
-        WithCostUpgradeBy(-1);
+        WithEnergy(1);
         WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Divinate);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Perfect Forecast",
-        "Divinate. Gain 1 Energy for each unique category ever recorded.",
+        "Divinate. Gain {Energy:energyIcons()} for every 7 recorded divinations.",
         "完美预测",
-        "占卜。每有一种已记录过的独特类别，获得 1 点能量。"
+        "占卜。每有 7 条已记录的占卜，获得 {Energy:energyIcons()}。",
+        ("upgradedDesc", "Divinate. Gain {Energy:energyIcons()} for every 5 recorded divinations.", "占卜。每有 5 条已记录的占卜，获得 {Energy:energyIcons()}。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await DivinationService.RecordPlaceholder(choiceContext, Owner, "Perfect Forecast");
-        int uniqueCategories = DivinationService.GetRecords(Owner)
-            .Select(record => record.Category)
-            .Distinct()
-            .Count();
-        if (uniqueCategories > 0)
+        int energy = DivinationService.GetRecords(Owner).Count / (IsUpgraded ? 5 : 7);
+        if (energy > 0)
         {
-            await PlayerCmd.GainEnergy(uniqueCategories, Owner);
+            await PlayerCmd.GainEnergy(energy, Owner);
         }
     }
 
@@ -530,24 +540,32 @@ public class OmenOfTranscendence : DivinerCard
     public OmenOfTranscendence()
         : base(1, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
-        WithCards(4, 1);
+        WithCards(3, 1);
+        WithEnergy(2, 1);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Omen of Transcendence",
-        "Foretell: Draw !Cards! cards and gain 3 Energy.",
+        "Foretell: Draw !Cards! cards and gain {Energy:energyIcons()}.",
         "超脱征兆",
-        "预言：抽 !Cards! 张牌并获得 3 点能量。",
-        ("upgradedDesc", "Foretell: Draw !Cards! cards and gain 4 Energy.", "预言：抽 !Cards! 张牌并获得 4 点能量。")
+        "预言：抽 !Cards! 张牌并获得 {Energy:energyIcons()}。",
+        ("upgradedDesc", "Foretell: Draw !Cards! cards and gain {Energy:energyIcons()}.", "预言：抽 !Cards! 张牌并获得 {Energy:energyIcons()}。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         var pending = PendingTranscendenceByPlayer.GetValueOrDefault(Owner) ?? [];
         PendingTranscendenceByPlayer[Owner] = pending;
-        pending.Add(new PendingTranscendence(IsUpgraded ? 5 : 4, IsUpgraded ? 4 : 3));
-        DivinerCombatRuntime.QueueForetell(Owner, ForetellLabel);
+        pending.Add(new PendingTranscendence(IsUpgraded ? 4 : 3, IsUpgraded ? 3 : 2));
+        int draw = IsUpgraded ? 4 : 3;
+        int energy = IsUpgraded ? 3 : 2;
+        DivinerCombatRuntime.QueueForetell(
+            Owner,
+            ForetellLabel,
+            detail: DivinerLoc.Text(
+                $"Omen of Transcendence: draw {draw} cards and gain {energy} Energy.",
+                $"超脱征兆：抽 {draw} 张牌并获得 {energy} 点能量。"));
         await DivinerStatusPowerSync.Sync(Owner, choiceContext);
     }
 
@@ -688,27 +706,30 @@ public class CheatTheEnding : DivinerCard
 public class FixedPoint : DivinerCard
 {
     public FixedPoint()
-        : base(2, CardType.Power, CardRarity.Rare, TargetType.TargetedNoCreature)
+        : base(1, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithCostUpgradeBy(-1);
+        WithKeywords([CardKeyword.Exhaust]);
+        WithTip(CardKeyword.Retain);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Fixed Point",
-        "Destiny cannot change this combat.",
-        "定点",
-        "本场战斗中命运无法改变。"
+        "Destiny cannot change this turn. Retain your hand this turn.",
+        "命运定点",
+        "本回合中命运无法改变。保留本回合的手牌。",
+        ("upgradedDesc", "Destiny cannot change this turn. Retain your hand this turn.", "本回合中命运无法改变。保留本回合的手牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        if (!DestinyService.CanUseDestiny(Owner))
-        {
-            return;
-        }
+        await PowerCmd.Apply<RetainHandPower>(choiceContext, Owner.Creature, 1, Owner.Creature, this, false);
 
-        await PowerCmd.Apply<FixedPointPower>(choiceContext, Owner.Creature, 1, Owner.Creature, this, false);
+        if (DestinyService.CanUseDestiny(Owner))
+        {
+            await PowerCmd.Apply<FixedPointPower>(choiceContext, Owner.Creature, 1, Owner.Creature, this, false);
+        }
     }
 
     protected override void OnUpgrade()

@@ -24,15 +24,16 @@ public class OmenOfVigor : DivinerCard
     public OmenOfVigor()
         : base(1, CardType.Skill, CardRarity.Common, TargetType.TargetedNoCreature)
     {
+        WithEnergy(3);
         WithCostUpgradeBy(-1);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Omen of Vigor",
-        "Foretell: Gain 3 Energy.",
-        "活力征兆",
-        "预言：获得 3 点能量。"
+        "Foretell: Gain {Energy:energyIcons()}.",
+        "活力预言",
+        "预言：获得 {Energy:energyIcons()}。"
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
