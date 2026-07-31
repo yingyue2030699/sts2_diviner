@@ -439,6 +439,40 @@ public static class DivinationService
         return true;
     }
 
+    public static bool TryConsumeRandomRecords(Player player, int count, IRunState? runState = null)
+    {
+        if (count <= 0)
+        {
+            return true;
+        }
+
+        var records = GetMutableRecords(player);
+        if (records.Count < count)
+        {
+            return false;
+        }
+
+        _activeRunState = runState ?? _activeRunState;
+        _activePlayer = player;
+        var availableIndexes = Enumerable.Range(0, records.Count).ToList();
+        var indexesToRemove = new List<int>(count);
+        for (int i = 0; i < count; i++)
+        {
+            int selectedPosition = player.PlayerRng.Rewards.NextInt(availableIndexes.Count);
+            indexesToRemove.Add(availableIndexes[selectedPosition]);
+            availableIndexes.RemoveAt(selectedPosition);
+        }
+
+        foreach (int index in indexesToRemove.OrderByDescending(index => index))
+        {
+            records.RemoveAt(index);
+        }
+
+        PersistRecords(player, _activeRunState, records);
+        RecordsChanged?.Invoke();
+        return true;
+    }
+
     private static void PersistCurrentRecords(IRunState? runState)
     {
         PersistRecords(_activePlayer, runState, GetRecords(_activePlayer));

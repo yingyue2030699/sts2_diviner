@@ -4,6 +4,7 @@ using Diviner.DivinerCode.Localization;
 using Diviner.DivinerCode.Mechanics;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.HoverTips;
 
 namespace Diviner.DivinerCode.Cards.Common;
 
@@ -15,6 +16,7 @@ public class LineOfFate : DivinerCard
         WithDamage(11, 3);
         WithKeywords([CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Divinate);
+        WithTip(StaticHoverTip.Fatal);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
@@ -29,7 +31,7 @@ public class LineOfFate : DivinerCard
     {
         var target = cardPlay.Target;
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-        if (target != null && !target.IsAlive)
+        if (DivinerCardActions.WasFatalKill(target))
         {
             await DivinationService.RecordPlaceholder(choiceContext, Owner, "Line of Fate");
         }

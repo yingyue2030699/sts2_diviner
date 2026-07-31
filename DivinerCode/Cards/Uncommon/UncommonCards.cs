@@ -470,19 +470,23 @@ public class SecondSight : DivinerCard
         : base(1, CardType.Skill, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
         WithKeywords([CardKeyword.Retain]);
+        WithDivinerKeywordTips(DivinerKeywords.Scry);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Second Sight",
-        "Draw until you have 5 cards in hand.",
+        "Scry 5. Draw until you have 5 cards in hand.",
         "二重视界",
-        "抽牌直到你有 5 张手牌。",
-        ("upgradedDesc", "Draw until you have 7 cards in hand.", "抽牌直到你有 7 张手牌。")
+        "预见 5。抽牌直到你有 5 张手牌。",
+        ("upgradedDesc", "Scry 6. Draw until you have 6 cards in hand.", "预见 6。抽牌直到你有 6 张手牌。"),
+        ("selectPrompt", "Choose cards to discard.", "选择要丢弃的牌。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
-        await DivinerCardActions.DrawUntilHandSize(this, choiceContext, IsUpgraded ? 7 : 5);
+        int targetHandSize = IsUpgraded ? 6 : 5;
+        await DivinerCardActions.Scry(this, choiceContext, targetHandSize);
+        await DivinerCardActions.DrawUntilHandSize(this, choiceContext, targetHandSize);
     }
 
     protected override void OnUpgrade()
@@ -638,16 +642,16 @@ public class UnaskedQuestion : DivinerCard
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
         "Unasked Question",
-        "Divinate. Lose 5 HP.",
+        "Divinate. Lose 4 HP.",
         "未问之问",
-        "占卜。失去 5 点生命。",
-        ("upgradedDesc", "Divinate. Lose 3 HP.", "占卜。失去 3 点生命。")
+        "占卜。失去 4 点生命。",
+        ("upgradedDesc", "Divinate. Lose 2 HP.", "占卜。失去 2 点生命。")
     );
 
     protected override async Task OnPlay(PlayerChoiceContext choiceContext, CardPlay cardPlay)
     {
         await DivinationService.RecordPlaceholder(choiceContext, Owner, "Unasked Question");
-        await CreatureCmd.Damage(choiceContext, Owner.Creature, IsUpgraded ? 3 : 5, DamageProps.nonCardHpLoss, Owner.Creature, this);
+        await CreatureCmd.Damage(choiceContext, Owner.Creature, IsUpgraded ? 2 : 4, DamageProps.nonCardHpLoss, Owner.Creature, this);
     }
 
     protected override void OnUpgrade()
@@ -805,7 +809,7 @@ public class EvilEye : DivinerCard
     public EvilEye()
         : base(1, CardType.Skill, CardRarity.Common, TargetType.AnyEnemy)
     {
-        WithEnergy(1);
+        WithEnergy(2);
         WithDivinerKeywordTips(DivinerKeywords.BadOmen);
     }
 
@@ -826,7 +830,7 @@ public class EvilEye : DivinerCard
 
         if (DestinyService.IsBadOmen(Owner))
         {
-            await PlayerCmd.GainEnergy(1, Owner);
+            await PlayerCmd.GainEnergy(2, Owner);
         }
     }
 

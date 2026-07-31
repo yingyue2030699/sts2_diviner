@@ -12,6 +12,7 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.ValueProps;
 
 namespace Diviner.DivinerCode.Relics;
@@ -78,7 +79,7 @@ public static class DivinerRelicHooks
 
     public static int ForetellDamageOrBlockBonus(Player? player)
     {
-        return HasRelic<PiedraDelSol>(player) ? 2 : 0;
+        return HasRelic<PiedraDelSol>(player) ? 3 : 0;
     }
 
     public static int DredgeStartingCountdown(Player? player)
@@ -128,7 +129,7 @@ public class CloudedLens : DivinerRelic
 
 public class BrassDowsingRod : DivinerRelic
 {
-    public override RelicRarity Rarity => RelicRarity.Common;
+    public override RelicRarity Rarity => RelicRarity.Uncommon;
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Brass Dowsing Rod",
@@ -160,10 +161,10 @@ public class PiedraDelSol : DivinerRelic
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Piedra del Sol",
-        "Foretell effects that deal damage or gain Block do 2 more.",
+        "Foretell effects that deal damage or gain Block do 3 more.",
         "A small sun caught in patient stone.",
         "太阳石",
-        "造成伤害或获得格挡的预言效果数值提高 2。",
+        "造成伤害或获得格挡的预言效果数值提高 3。",
         "一轮小太阳被耐心地困在石中。"
     );
 }
@@ -177,10 +178,10 @@ public class KnockedCompass : DivinerRelic
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Knocked Compass",
-        "At the start of combat, if Bad Omen, apply 2 Weak to all enemies.",
+        "At the start of combat, if Bad Omen, apply 1 Weak and 1 Vulnerable to all enemies.",
         "It points south. Then south again.",
         "敲歪的罗盘",
-        "战斗开始时，若为凶兆，给予所有敌人 2 层虚弱。",
+        "战斗开始时，若为凶兆，给予所有敌人 1 层虚弱和 1 层易伤。",
         "它指向南方。然后还是南方。"
     );
 
@@ -216,7 +217,8 @@ public class KnockedCompass : DivinerRelic
         Flash();
         foreach (var enemy in DivinerCombatRuntime.HittableEnemiesFor(player))
         {
-            await PowerCmd.Apply<WeakPower>(choiceContext, enemy, 2, player.Creature, null!, false);
+            await PowerCmd.Apply<WeakPower>(choiceContext, enemy, 1, player.Creature, null!, false);
+            await PowerCmd.Apply<VulnerablePower>(choiceContext, enemy, 1, player.Creature, null!, false);
         }
     }
 }
@@ -337,7 +339,7 @@ public class SealedEnvelope : DivinerRelic
 
 public class HourglassOfMercy : DivinerRelic
 {
-    public override RelicRarity Rarity => RelicRarity.Uncommon;
+    public override RelicRarity Rarity => RelicRarity.Common;
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Hourglass of Mercy",
@@ -399,10 +401,10 @@ public class LastProphecy : DivinerRelic
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Last Prophecy",
-        "Once per combat, if you would die with at least 8 recorded Divinations, delete up to 9 records and heal to 1 HP.",
+        "Once per combat, if you would die with at least 9 recorded Divinations, delete 9 random records and heal to 10% HP.",
         "The final sentence is always conditional.",
         "最后预言",
-        "每场战斗一次，若你将要死亡且至少记录了 8 次占卜，删除至多 9 条记录并回复至 1 点生命。",
+        "每场战斗一次，若你将要死亡且至少记录了 9 次占卜，随机删除 9 条记录并回复至 10% 生命。",
         "最后一句总是带有条件。"
     );
 
@@ -416,20 +418,26 @@ public class LastProphecy : DivinerRelic
         if (target != Owner.Creature ||
             TriggeredThisCombat.Contains(Owner) ||
             amount < target.CurrentHp ||
-            DivinationService.GetRecords(Owner).Count < 8)
+            DivinationService.GetRecords(Owner).Count < 9)
         {
             return amount;
         }
 
-        int recordsToDelete = Math.Min(9, DivinationService.GetRecords(Owner).Count);
-        if (!DivinationService.TryConsumeRecords(Owner, recordsToDelete, Owner.RunState))
+        if (!DivinationService.TryConsumeRandomRecords(Owner, 9, Owner.RunState))
         {
             return amount;
         }
 
         TriggeredThisCombat.Add(Owner);
         Flash();
-        return Math.Max(0, target.CurrentHp - 1);
+        int restoredHp = Math.Max(1, (int)Math.Ceiling(target.MaxHp * 0.1m));
+        if (target.CurrentHp < restoredHp)
+        {
+            target.SetCurrentHpInternal(restoredHp);
+            return 0;
+        }
+
+        return Math.Max(0, target.CurrentHp - restoredHp);
     }
 }
 
@@ -467,34 +475,27 @@ public class VelvetPouch : DivinerRelic
 
 public class FatedContract : DivinerRelic
 {
-    public override RelicRarity Rarity => RelicRarity.Rare;
-
-    public override bool HasUponPickupEffect => true;
+    public override RelicRarity Rarity => RelicRarity.Uncommon;
 
     public override List<(string, string)>? Localization => DivinerLoc.Relic(
         "Fated Contract",
-        "On pickup and at the start of each act, set Destiny to 5. Destiny of 4 or more no longer improves reward rarity.",
+        "At the end of combat, if Destiny is less than 4, set it to 4. Destiny of 4 or more no longer improves reward rarity.",
         "The future signs first, then asks.",
         "命定契约",
-        "拾取时以及每幕开始时，将命运设为 5。命运为 4 或更高时不再提高奖励稀有度。",
+        "战斗结束时，若命运低于 4，将其设为 4。命运为 4 或更高时不再提高奖励稀有度。",
         "未来先签名，再开口询问。"
     );
 
-    public override Task AfterObtained()
+    public override Task AfterCombatVictory(CombatRoom room)
     {
-        SetDestinyToFive();
-        return Task.CompletedTask;
-    }
+        if (DestinyService.GetDestiny(Owner) < 4)
+        {
+            DestinyService.SetDestiny(Owner, 4);
+            DestinyService.PersistCurrentState(Owner);
+            DestinyService.RecordCombatEndLuck(Owner);
+            Flash();
+        }
 
-    public override Task AfterActEntered()
-    {
-        SetDestinyToFive();
         return Task.CompletedTask;
-    }
-
-    private void SetDestinyToFive()
-    {
-        DestinyService.SetDestiny(Owner, DestinyConstants.EnlightenmentDestiny);
-        DestinyService.PersistCurrentState(Owner);
     }
 }

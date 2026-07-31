@@ -177,7 +177,7 @@ public partial class MainFile : Node
         damage = card.GetType().Name switch
         {
             "DivinationOfWoes" => card.IsUpgraded ? 13 : 10,
-            "FallenSky" => card.IsUpgraded ? 25 : 20,
+            "FallenSky" => card.IsUpgraded ? 22 : 18,
             "OmenOfPerishment" => card.IsUpgraded ? 33 : 22,
             _ => 0
         };
@@ -229,6 +229,7 @@ public partial class MainFile : Node
             "Scry",
             "Vulnerable",
             "Weak",
+            "Fatal",
             "Retain",
             "Exhaust",
             "Status",
@@ -249,6 +250,7 @@ public partial class MainFile : Node
             "预见",
             "虚弱",
             "易伤",
+            "致命",
             "保留",
             "状态",
             "诅咒"

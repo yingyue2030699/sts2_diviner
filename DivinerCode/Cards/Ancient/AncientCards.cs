@@ -16,7 +16,7 @@ namespace Diviner.DivinerCode.Cards.Ancient;
 public class ResonationOfFate : DivinerCard
 {
     public ResonationOfFate()
-        : base(3, CardType.Power, CardRarity.Ancient, TargetType.TargetedNoCreature)
+        : base(1, CardType.Power, CardRarity.Ancient, TargetType.TargetedNoCreature)
     {
         WithDivinerKeywordTips(DivinerKeywords.Fated);
     }

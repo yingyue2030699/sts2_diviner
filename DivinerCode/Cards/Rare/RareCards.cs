@@ -12,6 +12,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.ValueProps;
 
@@ -138,7 +139,7 @@ public class FallenSky : DivinerCard
         : base(0, CardType.Skill, CardRarity.Rare, TargetType.TargetedNoCreature)
     {
         WithEnergyCostX();
-        WithDamage(20, 5);
+        WithDamage(18, 4);
         WithDivinerKeywordTips(DivinerKeywords.Foretell);
     }
 
@@ -154,7 +155,7 @@ public class FallenSky : DivinerCard
         var pending = PendingDamageByPlayer.GetValueOrDefault(Owner) ?? [];
         PendingDamageByPlayer[Owner] = pending;
         int x = Math.Max(0, cardPlay.Resources.EnergySpent);
-        int damage = ((IsUpgraded ? 25 : 20) * x) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
+        int damage = ((IsUpgraded ? 22 : 18) * x) + DivinerCombatRuntime.ConsumeNextForetellDamageOrBlockBonus(Owner);
         pending.Add(damage);
         DivinerCombatRuntime.QueueForetell(
             Owner,
@@ -266,6 +267,7 @@ public class TheLastWord : DivinerCard
         WithDamage(20, 8);
         WithKeywords([CardKeyword.Retain, CardKeyword.Exhaust]);
         WithDivinerKeywordTips(DivinerKeywords.Destiny);
+        WithTip(StaticHoverTip.Fatal);
     }
 
     public override List<(string, string)>? Localization => DivinerLoc.Card(
@@ -279,7 +281,7 @@ public class TheLastWord : DivinerCard
     {
         Creature? target = cardPlay.Target;
         await CommonActions.CardAttack(this, cardPlay).Execute(choiceContext);
-        if (target != null && !target.IsAlive)
+        if (DivinerCardActions.WasFatalKill(target))
         {
             DestinyService.AddDestiny(Owner, 1);
             DestinyService.PersistCurrentState(Owner);

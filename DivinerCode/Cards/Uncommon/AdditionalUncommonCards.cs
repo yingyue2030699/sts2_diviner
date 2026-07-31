@@ -52,7 +52,7 @@ public class Epiphany : DivinerCard
 public class ForetoldFalter : DivinerCard
 {
     public ForetoldFalter()
-        : base(2, CardType.Power, CardRarity.Uncommon, TargetType.TargetedNoCreature)
+        : base(1, CardType.Power, CardRarity.Uncommon, TargetType.TargetedNoCreature)
     {
         WithCostUpgradeBy(-1);
     }

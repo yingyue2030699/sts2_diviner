@@ -58,7 +58,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Bad Feeling | Skill | 0 | Apply 2 Weak. Bad Omen: Apply 2 Vulnerable. | Apply 2 Weak to all enemies. Bad Omen: Apply 2 Vulnerable to all enemies. |
 | Cursed Prediction | Attack | 1 | Deal 11 damage. Doomed: add a Misfortune to your hand. | Deal 11 damage. Doomed: add a Misfortune+ to your hand. |
 | Dead Star | Attack | 2 | Deal 18 damage. Lose 3 HP. Bad Omen: deal 18 damage again. | 22 damage; lose 3 HP; Bad Omen deal 22 damage again. |
-| Evil Eye | Skill | 1 | Apply 3 Weak. Bad Omen: gain 1 Energy. | Apply 5 Weak. Bad Omen: gain 1 Energy. |
+| Evil Eye | Skill | 1 | Apply 3 Weak. Bad Omen: gain 2 Energy. | Apply 5 Weak. Bad Omen: gain 2 Energy. |
 | Precious Offering | Skill | 0 | Exhaust a card in your hand. If a rare card is exhausted, Divinate. | If an uncommon or rare card is exhausted, Divinate. |
 | Omen of Shelter | Skill | 1 | Foretell: gain 14 Block. | 18 Block. |
 | False Alarm | Skill | 0 | Gain 16 Block. Lose 1 Destiny. | 20 Block. |
@@ -91,11 +91,11 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Smoke and Mirrors | Skill | 1 | Gain 9 Block. The next Foretell effect you play this combat resolves with 7 more damage or Block. | Gain 11 Block. Foretell bonus becomes 9 more. |
 | Omen of Insight | Skill | 1 | Exhaust. Foretell: Divinate. | Costs 0. |
 | Omen of Pestilence | Skill | 1 | Foretell: Apply 1 Weak and 9 Poison to all enemies. | Apply 1 Weak and 13 Poison. |
-| Second Sight | Skill | 1 | Retain. Draw until you have 5 cards in hand. | Draw until you have 7 cards. |
+| Second Sight | Skill | 1 | Retain. Scry 5. Draw until you have 5 cards. | Scry 6. Draw until you have 6 cards. |
 | Wheel of Fortune | Skill | 1 | Add a Fortune and a Misfortune to your hand. | Fortune+ and Misfortune+. |
 | Cold Reading | Skill | 1 | Apply 1 Weak. Draw 2 card. | Apply 2 Weak and draw 2 cards. |
 | Read Ahead | Skill | 0 | Draw 1 card. Put 1 card from your hand on top of your draw pile. Foretell: draw 1 card. Exhaust. | Draw 2 cards. Put 1 card from your hand on top of your draw pile. Foretell: draw 1 card. Exhaust. |
-| Unasked Question | Skill | 0 | Lose 5 HP. Divinate. Exhaust.  | Lose 3 HP. |
+| Unasked Question | Skill | 0 | Divinate. Lose 4 HP. Exhaust. | Lose 2 HP. |
 | Rewrite the Sign | Skill | 0 | Exhaust. Transform all Misfortunes in your hand, draw pile, and discard pile into Fortunes. | Transform into `Fortune+` instead of `Fortune`. |
 | Predestined Path | Skill | 1 | Choose up to 1 card from your draw pile. Foretell: put it into your hand; it is Fated that turn. Exhaust. Echoed Omen does not repeat this Foretell. | Choose up to 2 cards. |
 | Read the Ashes | Skill | 1 | Exhaust a card. Foretell: draw 2 cards. If a Status or Curse was Exhausted, Foretell: gain 2 Energy. | Costs 0. |
@@ -108,7 +108,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Haruspex | Power | 1 | The next time you Exhaust a card, Divinate and Foretell: add a copy of this card to your hand. | Costs 0. |
 | Chosen Line | Power | 1 | Revelation: draw 1 extra card per turn, and the first card you draw each turn is Fated. | Costs 0. |
 | Ledger of Signs | Power | 1 | Every time you queue a Foretell gain 4 Block. | Gain 6 Block. |
-| Foretold Falter | Power | 2 | Enemies with more than 10 stacks of Weak deal half damage to you. | Cost 1 |
+| Foretold Falter | Power | 1 | Enemies with more than 10 stacks of Weak deal half damage to you. | Cost 0 |
 | Weave the Aegis | Power | 1 | Whenever your Destiny changes, gain 12 Block. | Gain 16 Block. |
 | Small Ritual | Power | 1 | Innate. When you Divinate, gain 1 Energy. | Cost 0. |
 
@@ -125,7 +125,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 | Clairvoyance | Skill | 2 | Search anywhere for 1 card. Put it into your hand; it is Fated. Exhaust. | Cost 1. |
 | Reversal | Skill | 0 | Exhaust. Set Destiny to 5 minus its current value. | Gains Retain. |
 | Oracle's Bargain | Skill | 1 | Gain 1 Destiny. Shuffle 3 Misfortunes into your draw pile. Exhaust. | Costs 0. |
-| Omen of Fallen Sky | Skill | X | Foretell: Deal 20 * X damage to all enemies. | Deal 25 * X damage. |
+| Omen of Fallen Sky | Skill | X | Foretell: Deal 18 * X damage to all enemies. | Deal 22 * X damage. |
 | Omen of Transcendence | Skill | 1 | Foretell: draw 3 cards and gain 2 Energy. | Draw 4 cards and gain 3 Energy. |
 | Relic Banishing | Skill | 3 | Divinate twice for relic divinations only. Add a Bend Future to your hand. Exhaust. | Add a Bend Future+. |
 | Perfect Forecast | Skill | 1 | Exhaust. Divinate. Gain 1 Energy for every 7 recorded divinations. | Gain 1 Energy for every 5 recorded divinations. |
@@ -142,7 +142,7 @@ Current implementation reference for the Diviner card pool. Deprecated design dr
 
 | Name | Type | Cost | Effect | Upgrade | Ancient Notes |
 |---|---|---:|---|---|
-| Resonation of Fate | Power | 3 | Fated cards are played an additional time. At start of turn, make 1 random card in your hand Fated. | make 2 random cards in your hand Fated. | From Dusty Tome |
+| Resonation of Fate | Power | 1 | Fated cards are played an additional time. At start of turn, make 1 random card in your hand Fated. | make 2 random cards in your hand Fated. | From Dusty Tome |
 | Omen of Perishment | Skill | 1 | Foretell: deal 22 damage and apply 3 Weak and 3 Vulnerable to all enemies. | 33 damage, 5 Weak and 5 Vulnerable. | Ancient version of Omen of Woes from Archaic Tooth |
 
 

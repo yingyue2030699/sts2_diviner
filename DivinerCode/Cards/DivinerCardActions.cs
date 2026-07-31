@@ -62,6 +62,12 @@ public static class DivinerCardActions
         return creature.Powers.Any(power => power is WeakPower or VulnerablePower);
     }
 
+    public static bool WasFatalKill(Creature? target)
+    {
+        return target is { IsAlive: false } &&
+               target.Powers.All(power => power.ShouldOwnerDeathTriggerFatal());
+    }
+
     public static async Task ApplyWeakAndVulnerable(
         DivinerCard source,
         PlayerChoiceContext choiceContext,

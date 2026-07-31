@@ -27,12 +27,24 @@ const enKeywords = parse("Diviner/localization/eng/card_keywords.json");
 const zhKeywords = parse("Diviner/localization/zhs/card_keywords.json");
 const enPowers = parse("Diviner/localization/eng/powers.json");
 const zhPowers = parse("Diviner/localization/zhs/powers.json");
+const enPotions = parse("Diviner/localization/eng/potions.json");
+const zhPotions = parse("Diviner/localization/zhs/potions.json");
+const enRelics = parse("Diviner/localization/eng/relics.json");
+const zhRelics = parse("Diviner/localization/zhs/relics.json");
 
 const enKeys = Object.keys(enCards).sort();
 const zhKeys = Object.keys(zhCards).sort();
 check(
   JSON.stringify(enKeys) === JSON.stringify(zhKeys),
   "English and Simplified Chinese card localization keys differ."
+);
+check(
+  JSON.stringify(Object.keys(enPotions).sort()) === JSON.stringify(Object.keys(zhPotions).sort()),
+  "English and Simplified Chinese potion localization keys differ."
+);
+check(
+  JSON.stringify(Object.keys(enRelics).sort()) === JSON.stringify(Object.keys(zhRelics).sort()),
+  "English and Simplified Chinese relic localization keys differ."
 );
 
 const requiredLocalization = [
@@ -83,7 +95,20 @@ const requiredLocalization = [
   [enCards, "DIVINER-THE_FINAL_STRAND.description", "no longer reduce Destiny"],
   [zhCards, "DIVINER-THE_FINAL_STRAND.description", "不再降低命运"],
   [enCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"],
-  [zhCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"]
+  [zhCards, "DIVINER-OMEN_OF_TRANSCENDENCE.description", "{Energy:energyIcons()}"],
+  [enCards, "DIVINER-SECOND_SIGHT.description", "Scry 5. Draw until you have 5 cards"],
+  [enCards, "DIVINER-SECOND_SIGHT.upgradedDesc", "Scry 6. Draw until you have 6 cards"],
+  [enCards, "DIVINER-UNASKED_QUESTION.description", "Lose 4 HP"],
+  [enCards, "DIVINER-UNASKED_QUESTION.upgradedDesc", "Lose 2 HP"],
+  [enPotions, "DIVINER-TAR_OF_DREAD.description", "Fill your hand with Misfortune"],
+  [enPotions, "DIVINER-BREW_OF_BREW.description", "For each potion discarded"],
+  [zhPotions, "DIVINER-BREW_OF_BREW.description", "每因此丢弃 1 瓶药水"],
+  [enPotions, "DIVINER-CONDENSED_MISFORTUNE.description", "Misfortune+"],
+  [enPotions, "DIVINER-BLOOD_OF_THE_MARTYR.description", "Heal 60% of Max HP. Set Destiny to 0"],
+  [enRelics, "DIVINER-PIEDRA_DEL_SOL.description", "do 3 more"],
+  [enRelics, "DIVINER-KNOCKED_COMPASS.description", "1 Weak and 1 Vulnerable"],
+  [enRelics, "DIVINER-LAST_PROPHECY.description", "delete 9 random records and heal to 10% HP"],
+  [enRelics, "DIVINER-FATED_CONTRACT.description", "if Destiny is less than 4, set it to 4"]
 ];
 
 for (const [table, key, expected] of requiredLocalization) {
@@ -242,7 +267,12 @@ const runtimeFiles = {
   finalStrand: read("DivinerCode/Cards/Rare/AdditionalRareCards.cs"),
   rare: read("DivinerCode/Cards/Rare/RareCards.cs"),
   uncommon: read("DivinerCode/Cards/Uncommon/UncommonCards.cs"),
-  powers: read("DivinerCode/Powers/CardPowers/DivinerCardPowers.cs")
+  powers: read("DivinerCode/Powers/CardPowers/DivinerCardPowers.cs"),
+  ancient: read("DivinerCode/Cards/Ancient/AncientCards.cs"),
+  divinerCardActions: read("DivinerCode/Cards/DivinerCardActions.cs"),
+  divinerRelics: read("DivinerCode/Relics/DivinerRelics.cs"),
+  divinerPotions: read("DivinerCode/Potions/DivinerPotions.cs"),
+  ancientRelicPatches: read("DivinerCode/Patches/AncientRelicUpgradePatches.cs")
 };
 
 for (const [file, needle, message] of [
@@ -271,7 +301,17 @@ for (const [file, needle, message] of [
   ["powers", "Amount > 1", "Doom Spiral+ does not generate Misfortune+."],
   ["finalStrand", "SetDestiny(Owner, DestinyConstants.MinDestiny)", "The Final Strand still loses Destiny incrementally."],
   ["omenOfWoes", "ITranscendenceCard", "Omen of Woes is not registered for Archaic Tooth."],
-  ["powers", "CardCreationSource.Encounter", "Many Futures is not guarded to encounter rewards."]
+  ["powers", "CardCreationSource.Encounter", "Many Futures is not guarded to encounter rewards."],
+  ["ancient", ": base(1, CardType.Power, CardRarity.Ancient", "Resonation of Fate does not cost 1."],
+  ["uncommon", "WithEnergy(2)", "Evil Eye does not expose its 2-Energy Bad Omen value."],
+  ["uncommon", "DivinerCardActions.Scry(this, choiceContext, targetHandSize)", "Second Sight does not Scry before drawing."],
+  ["divinerCardActions", "ShouldOwnerDeathTriggerFatal()", "Fatal cards do not use the base game's minion eligibility rule."],
+  ["divinerRelics", "HasRelic<PiedraDelSol>(player) ? 3 : 0", "Piedra del Sol does not add 3."],
+  ["divinerRelics", "PowerCmd.Apply<VulnerablePower>", "Knocked Compass does not apply Vulnerable."],
+  ["divinerRelics", "TryConsumeRandomRecords(Owner, 9", "Last Prophecy does not consume 9 random records."],
+  ["divinerPotions", "CardPile.MaxCardsInHand - hand.Cards.Count", "Tar of Dread does not fill remaining hand space."],
+  ["divinerPotions", "DestinyService.AddDestiny(player, otherPotions.Count)", "Brew of Brew does not gain Destiny per discarded potion."],
+  ["ancientRelicPatches", "ModelDb.Relic<DestinedCrystalBall>()", "Touch of Orobas does not map Crystal Ball to Destined Crystal Ball."]
 ]) {
   includes(runtimeFiles[file], needle, message);
 }

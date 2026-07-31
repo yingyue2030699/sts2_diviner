@@ -67,15 +67,15 @@ public class BitterTea : DivinerPotion
 
 public class TarOfDread : DivinerPotion
 {
-    public override PotionRarity Rarity => PotionRarity.Common;
+    public override PotionRarity Rarity => PotionRarity.Rare;
 
     public override PotionUsage Usage => PotionUsage.CombatOnly;
 
     public override List<(string, string)>? Localization => DivinerLoc.Potion(
         "Tar of Dread",
-        "Add 3 Misfortune to your hand.",
+        "Fill your hand with Misfortune.",
         "恐惧焦油",
-        "将 3 张噩运加入你的手牌。"
+        "用噩运填满你的手牌。"
     );
 
     protected override async Task OnUse(PlayerChoiceContext choiceContext, Creature? target)
@@ -86,7 +86,12 @@ public class TarOfDread : DivinerPotion
             return;
         }
 
-        await DivinerCardActions.AddGeneratedToCombat<Misfortune>(player, 3, PileType.Hand, CardPilePosition.Bottom);
+        var hand = PileType.Hand.GetPile(player);
+        int cardsToAdd = Math.Max(0, CardPile.MaxCardsInHand - hand.Cards.Count);
+        if (cardsToAdd > 0)
+        {
+            await DivinerCardActions.AddGeneratedToCombat<Misfortune>(player, cardsToAdd, PileType.Hand, CardPilePosition.Bottom);
+        }
     }
 }
 
@@ -100,9 +105,9 @@ public class BrewOfBrew : DivinerPotion
 
     public override List<(string, string)>? Localization => DivinerLoc.Potion(
         "Brew of Brew",
-        "Heal 5 HP and discard all other potions. Gain 1 Destiny and heal 5 extra HP for each potion discarded.",
+        "Heal 5 HP and discard all other potions. For each potion discarded, heal 5 extra HP and gain 1 Destiny.",
         "酿中酿",
-        "回复 5 点生命并丢弃所有其他药水。获得 1 点命运；每因此丢弃 1 瓶药水，额外回复 5 点生命。"
+        "回复 5 点生命并丢弃所有其他药水。每因此丢弃 1 瓶药水，额外回复 5 点生命并获得 1 点命运。"
     );
 
     protected override async Task OnUse(PlayerChoiceContext choiceContext, Creature? target)
@@ -122,9 +127,12 @@ public class BrewOfBrew : DivinerPotion
         }
 
         await CreatureCmd.Heal(player.Creature, 5 + otherPotions.Count * 5, true);
-        DestinyService.AddDestiny(player, 1);
-        DestinyService.PersistCurrentState(player);
-        await DivinerStatusPowerSync.Sync(player, choiceContext);
+        if (otherPotions.Count > 0)
+        {
+            DestinyService.AddDestiny(player, otherPotions.Count);
+            DestinyService.PersistCurrentState(player);
+            await DivinerStatusPowerSync.Sync(player, choiceContext);
+        }
     }
 }
 
@@ -196,22 +204,24 @@ public class CondensedMisfortune : DivinerPotion
 
     public override List<(string, string)>? Localization => DivinerLoc.Potion(
         "Condensed Misfortune",
-        "Add a Misfortune to your hand. It costs 0 this combat.",
+        "Add a Misfortune+ to your hand.",
         "凝缩噩运",
-        "将 1 张噩运加入你的手牌。本场战斗中它耗能为 0。"
+        "将 1 张噩运+加入你的手牌。"
     );
 
     protected override async Task OnUse(PlayerChoiceContext choiceContext, Creature? target)
     {
         var player = ResolvePlayer(target);
-        if (player == null || DivinerCombatRuntime.CombatState == null)
+        if (player == null)
         {
             return;
         }
 
-        var card = DivinerCombatRuntime.CombatState.CreateCard(ModelDb.Card<Misfortune>(), player);
-        card.SetToFreeThisCombat();
-        await CardPileCmd.AddGeneratedCardToCombat(card, PileType.Hand, player, CardPilePosition.Bottom);
+        await DivinerCardActions.AddGeneratedToCombat<Misfortune>(
+            player,
+            PileType.Hand,
+            CardPilePosition.Bottom,
+            upgraded: true);
     }
 }
 
@@ -258,9 +268,9 @@ public class BloodOfTheMartyr : DivinerPotion
 
     public override List<(string, string)>? Localization => DivinerLoc.Potion(
         "Blood of the Martyr",
-        "Heal to full HP. Lose 5 Destiny.",
+        "Heal 60% of Max HP. Set Destiny to 0.",
         "殉道者之血",
-        "回复至满生命。失去 5 点命运。"
+        "回复最大生命的 60%。将命运设为 0。"
     );
 
     protected override async Task OnUse(PlayerChoiceContext choiceContext, Creature? target)
@@ -271,13 +281,13 @@ public class BloodOfTheMartyr : DivinerPotion
             return;
         }
 
-        decimal missingHp = Math.Max(0, player.Creature.MaxHp - player.Creature.CurrentHp);
-        if (missingHp > 0)
+        decimal healing = Math.Ceiling(player.Creature.MaxHp * 0.6m);
+        if (healing > 0)
         {
-            await CreatureCmd.Heal(player.Creature, missingHp, true);
+            await CreatureCmd.Heal(player.Creature, healing, true);
         }
 
-        DestinyService.AddDestiny(player, -5);
+        DestinyService.SetDestiny(player, 0);
         DestinyService.PersistCurrentState(player);
         await DivinerStatusPowerSync.Sync(player, choiceContext);
     }
