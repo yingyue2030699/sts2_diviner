@@ -21,6 +21,9 @@
 
 ### Fixes
 
+- Fixed Misfortune freezing the turn during its end-of-turn trigger by using the
+  standard attack pipeline and avoiding a conflicting pile move inside the
+  engine-owned turn-end wrapper.
 - Haruspex now keeps its resolver alive until its queued Foretell triggers.
 - Clairvoyance now selects the exact underlying card from hand, draw, discard, or
   Exhaust, fixing duplicated entries, missing entries, and broken clicks.
@@ -48,6 +51,8 @@
 
 ### 错误修复
 
+- 修复“噩运”在回合结束时触发会卡住回合的问题。该效果现在使用游戏标准攻击流程，
+  并且不再于引擎负责的回合结束处理过程中重复移动卡牌。
 - 修复“脏卜术”进入预言队列后不结算、无法将脏卜术加入手牌的问题。
 - “千里眼”现在会从手牌、抽牌堆、弃牌堆或消耗牌堆中选择正确的卡牌实例，
   修复重复条目、缺失条目以及无法点击的问题。

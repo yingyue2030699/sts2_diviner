@@ -217,6 +217,7 @@ const runtimeFiles = {
   destiny: read("DivinerCode/Mechanics/DestinyService.cs"),
   divulge: read("DivinerCode/Cards/Common/Divulge.cs"),
   narrowEscape: read("DivinerCode/Cards/Common/NarrowEscape.cs"),
+  misfortune: read("DivinerCode/Cards/Misfortune.cs"),
   threadCut: read("DivinerCode/Cards/Common/ThreadCut.cs"),
   omenOfWoes: read("DivinerCode/Cards/DivinationOfWoes.cs"),
   finalStrand: read("DivinerCode/Cards/Rare/AdditionalRareCards.cs"),
@@ -230,6 +231,7 @@ for (const [file, needle, message] of [
   ["divulge", "WithCards(1, 1)", "Divulge does not draw 1/2 cards."],
   ["divulge", "DestinyService.AddDestiny(Owner, -1)", "Divulge does not lose Destiny."],
   ["narrowEscape", "IsUpgraded ? 2 : 1", "Narrow Escape+ does not gain 2 Countdown."],
+  ["misfortune", "DamageCmd.Attack(25 + DoomEnginePower.GetDamageBonus(Owner))", "Misfortune does not use the standard attack pipeline."],
   ["threadCut", "IsUpgraded ? 12m : 10m", "Thread Cut+ does not use a 12-damage second hit."],
   ["uncommon", "WithDamage(6, 3)", "Doomscript+ does not deal 9 damage."],
   ["uncommon", "new PendingPestilence(1, IsUpgraded ? 13 : 9)", "Omen of Pestilence values are stale."],
@@ -247,6 +249,17 @@ for (const [file, needle, message] of [
 ]) {
   includes(runtimeFiles[file], needle, message);
 }
+
+excludes(
+  runtimeFiles.misfortune,
+  "AttackCommand.CreateContextAsync",
+  "Misfortune still opens a card-play attack context during its turn-end hand effect."
+);
+excludes(
+  runtimeFiles.misfortune,
+  "CardCmd.Exhaust",
+  "Misfortune still moves piles inside the engine-owned turn-end hand wrapper."
+);
 
 if (failures.length > 0) {
   console.error(`Balance validation failed with ${failures.length} issue(s):`);
